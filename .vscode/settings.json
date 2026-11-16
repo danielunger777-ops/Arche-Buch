@@ -1,0 +1,25 @@
+{
+    "editor.wordWrap": "on",
+    "editor.bracketPairColorization.independentColorPoolPerBracketType": true,
+    "editor.defaultFormatter": "google.google-antigravity",
+    "editor.experimental.asyncTokenizationLogging": true,
+    "editor.experimentalGpuAcceleration": "off",
+    "editor.largeFileOptimizations": true,
+    "workbench.localHistory.maxFileSize": 10240,
+    "html.validate.scripts": false,
+    "html.format.enable": false,
+    "files.watcherExclude": {
+        "**/.backups/**": true,
+        "**/.git/objects/**": true,
+        "**/scratch/**": true,
+        "**/assets/blend/**": true,
+        "**/assets/glb/**": true
+    },
+    "search.exclude": {
+        "**/.backups/**": true,
+        "**/scratch/**": true
+    },
+    "[html]": {
+        "editor.defaultFormatter": "vscode.html-language-features"
+    }
+}

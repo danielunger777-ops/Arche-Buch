@@ -1,0 +1,1307 @@
+{
+  "version": "2.0.0",
+  "coordinateSystem": {
+    "blenderSource": "Z-Up, +Y Forward, +X Right, Metric 1.0, 1 Elle = 0.466667 m",
+    "glbExport": "glTF 2.0 Binary (.glb), export_yup=true",
+    "archeLoaderRotationX": 1.5707963267948966,
+    "instancedAdapterNote": "Arche.Assets.extractInstancedTemplate() bakes +PI/2 X-rotation into vertices/normals for THREE.InstancedMesh"
+  },
+  "budgets": {
+    "ark": {
+      "minTris": 2000,
+      "maxTris": 15000,
+      "maxMats": 2,
+      "texSize": 1024,
+      "instanced": false
+    },
+    "botany": {
+      "minTris": 1500,
+      "maxTris": 4000,
+      "lod2Tris": 32,
+      "maxMats": 2,
+      "texSize": 1024,
+      "instanced": true
+    },
+    "world": {
+      "minTris": 300,
+      "maxTris": 2500,
+      "maxMats": 1,
+      "texSize": 1024,
+      "instanced": true
+    },
+    "family": {
+      "minTris": 1200,
+      "maxTris": 3000,
+      "maxMats": 1,
+      "texSize": 512,
+      "instanced": true
+    },
+    "character": {
+      "minTris": 4000,
+      "maxTris": 8000,
+      "maxMats": 2,
+      "texSize": 1024,
+      "instanced": false
+    },
+    "prop": {
+      "minTris": 150,
+      "maxTris": 800,
+      "maxMats": 1,
+      "texSize": 512,
+      "instanced": true
+    }
+  },
+  "categories": {
+    "ark": {
+      "blendDir": "assets/blend/ark",
+      "glbDir": "assets/glb/ark",
+      "requiredTag": "Col_Meta",
+      "items": {
+        "ark_sole_and_keels": {
+          "enabled": false,
+          "url": "assets/glb/ark/ark_sole_and_keels.glb",
+          "category": "ark",
+          "tempC": 18.0,
+          "etaEC5": 35.0
+        },
+        "ark_outer_wall_bb": {
+          "enabled": false,
+          "url": "assets/glb/ark/ark_outer_wall_bb.glb",
+          "category": "ark",
+          "tempC": 21.0,
+          "etaEC5": 42.0
+        },
+        "ark_outer_wall_sb": {
+          "enabled": false,
+          "url": "assets/glb/ark/ark_outer_wall_sb.glb",
+          "category": "ark",
+          "tempC": 21.0,
+          "etaEC5": 42.0
+        },
+        "ark_decks_d1_d3": {
+          "enabled": false,
+          "url": "assets/glb/ark/ark_decks_d1_d3.glb",
+          "category": "ark",
+          "tempC": 24.0,
+          "etaEC5": 38.0
+        },
+        "ark_roof_and_zohar": {
+          "enabled": false,
+          "url": "assets/glb/ark/ark_roof_and_zohar.glb",
+          "category": "ark",
+          "tempC": 28.0,
+          "etaEC5": 29.0
+        },
+        "ark_badgir_unit": {
+          "enabled": false,
+          "url": "assets/glb/ark/ark_badgir_unit.glb",
+          "category": "ark",
+          "instanced": true,
+          "tempC": 23.0,
+          "etaEC5": 22.0
+        },
+        "prop_barrel_oak": {
+          "enabled": false,
+          "url": "assets/glb/ark/prop_barrel_oak.glb",
+          "category": "prop",
+          "instanced": true,
+          "tempC": 20.0,
+          "etaEC5": 18.0
+        }
+      }
+    },
+    "botany": {
+      "blendDir": "assets/blend/botany",
+      "glbDir": "assets/glb/botany",
+      "requiredTag": "Col_Wind",
+      "items": {
+        "tree_cedar_01": {
+          "enabled": false,
+          "url": "assets/glb/botany/tree_cedar_01.glb",
+          "category": "botany",
+          "instanced": true,
+          "wind": true,
+          "sssColor": [
+            0.22,
+            0.56,
+            0.14
+          ],
+          "sssStrength": 0.45
+        },
+        "tree_cypress_01": {
+          "enabled": false,
+          "url": "assets/glb/botany/tree_cypress_01.glb",
+          "category": "botany",
+          "instanced": true,
+          "wind": true,
+          "sssColor": [
+            0.2,
+            0.52,
+            0.16
+          ],
+          "sssStrength": 0.4
+        },
+        "tree_oak_01": {
+          "enabled": false,
+          "url": "assets/glb/botany/tree_oak_01.glb",
+          "category": "botany",
+          "instanced": true,
+          "wind": true,
+          "sssColor": [
+            0.34,
+            0.6,
+            0.14
+          ],
+          "sssStrength": 0.5
+        },
+        "tree_palm_01": {
+          "enabled": false,
+          "url": "assets/glb/botany/tree_palm_01.glb",
+          "category": "botany",
+          "instanced": true,
+          "wind": true,
+          "sssColor": [
+            0.36,
+            0.62,
+            0.16
+          ],
+          "sssStrength": 0.55
+        },
+        "olive_sapling_01": {
+          "enabled": false,
+          "url": "assets/glb/botany/olive_sapling_01.glb",
+          "category": "botany",
+          "instanced": true,
+          "wind": true,
+          "sssColor": [
+            0.42,
+            0.58,
+            0.22
+          ],
+          "sssStrength": 0.6
+        },
+        "trees_cedar": {
+          "enabled": true,
+          "url": "assets/glb/botany/trees_cedar.glb",
+          "blend": "assets/blend/botany/trees_cedar.blend",
+          "category": "botany",
+          "species": "cedar",
+          "instanced": true,
+          "wind": true,
+          "variantsCount": 15,
+          "stages": [
+            "sapling",
+            "young",
+            "mature",
+            "ancient"
+          ],
+          "lods": [
+            "LOD0",
+            "LOD1",
+            "LOD2",
+            "LOD3"
+          ],
+          "lod0TrisRange": [
+            9320,
+            11320
+          ],
+          "lod1TrisRange": [
+            2328,
+            2640
+          ],
+          "lod2TrisRange": [
+            362,
+            422
+          ],
+          "lod3TrisRange": [
+            24,
+            24
+          ],
+          "materials": 2,
+          "hasRequiredTag": true,
+          "sharedTextures": {
+            "bark": [
+              "assets/textures/botany_bark_trim_baseColor.png",
+              "assets/textures/botany_bark_trim_normal.png",
+              "assets/textures/botany_bark_trim_orm.png"
+            ],
+            "foliage": [
+              "assets/textures/botany_leaf_atlas_baseColor.png",
+              "assets/textures/botany_leaf_atlas_normal.png",
+              "assets/textures/botany_leaf_atlas_orm.png",
+              "assets/textures/botany_leaf_atlas_thickness.png"
+            ]
+          },
+          "sssColor": [
+            0.22,
+            0.56,
+            0.14
+          ],
+          "sssStrength": 0.45,
+          "glbSizeKB": 8204.5,
+          "exportedAt": "2026-11-16 18:30:58"
+        },
+        "trees_cypress": {
+          "enabled": true,
+          "url": "assets/glb/botany/trees_cypress.glb",
+          "blend": "assets/blend/botany/trees_cypress.blend",
+          "category": "botany",
+          "species": "cypress",
+          "instanced": true,
+          "wind": true,
+          "variantsCount": 15,
+          "stages": [
+            "sapling",
+            "young",
+            "mature",
+            "ancient"
+          ],
+          "lods": [
+            "LOD0",
+            "LOD1",
+            "LOD2",
+            "LOD3"
+          ],
+          "lod0TrisRange": [
+            4672,
+            5632
+          ],
+          "lod1TrisRange": [
+            1216,
+            1392
+          ],
+          "lod2TrisRange": [
+            162,
+            174
+          ],
+          "lod3TrisRange": [
+            20,
+            20
+          ],
+          "materials": 2,
+          "hasRequiredTag": true,
+          "sharedTextures": {
+            "bark": [
+              "assets/textures/botany_bark_trim_baseColor.png",
+              "assets/textures/botany_bark_trim_normal.png",
+              "assets/textures/botany_bark_trim_orm.png"
+            ],
+            "foliage": [
+              "assets/textures/botany_leaf_atlas_baseColor.png",
+              "assets/textures/botany_leaf_atlas_normal.png",
+              "assets/textures/botany_leaf_atlas_orm.png",
+              "assets/textures/botany_leaf_atlas_thickness.png"
+            ]
+          },
+          "sssColor": [
+            0.2,
+            0.52,
+            0.16
+          ],
+          "sssStrength": 0.4,
+          "glbSizeKB": 4608.5,
+          "exportedAt": "2026-11-16 18:30:58"
+        },
+        "trees_oak": {
+          "enabled": true,
+          "url": "assets/glb/botany/trees_oak.glb",
+          "blend": "assets/blend/botany/trees_oak.blend",
+          "category": "botany",
+          "species": "oak",
+          "instanced": true,
+          "wind": true,
+          "variantsCount": 15,
+          "stages": [
+            "sapling",
+            "young",
+            "mature",
+            "ancient"
+          ],
+          "lods": [
+            "LOD0",
+            "LOD1",
+            "LOD2",
+            "LOD3"
+          ],
+          "lod0TrisRange": [
+            5828,
+            7052
+          ],
+          "lod1TrisRange": [
+            1306,
+            1472
+          ],
+          "lod2TrisRange": [
+            222,
+            254
+          ],
+          "lod3TrisRange": [
+            24,
+            24
+          ],
+          "materials": 2,
+          "hasRequiredTag": true,
+          "sharedTextures": {
+            "bark": [
+              "assets/textures/botany_bark_trim_baseColor.png",
+              "assets/textures/botany_bark_trim_normal.png",
+              "assets/textures/botany_bark_trim_orm.png"
+            ],
+            "foliage": [
+              "assets/textures/botany_leaf_atlas_baseColor.png",
+              "assets/textures/botany_leaf_atlas_normal.png",
+              "assets/textures/botany_leaf_atlas_orm.png",
+              "assets/textures/botany_leaf_atlas_thickness.png"
+            ]
+          },
+          "sssColor": [
+            0.34,
+            0.6,
+            0.14
+          ],
+          "sssStrength": 0.5,
+          "glbSizeKB": 5330.4,
+          "exportedAt": "2026-11-16 18:30:58"
+        },
+        "trees_hornbeam": {
+          "enabled": true,
+          "url": "assets/glb/botany/trees_hornbeam.glb",
+          "blend": "assets/blend/botany/trees_hornbeam.blend",
+          "category": "botany",
+          "species": "hornbeam",
+          "instanced": true,
+          "wind": true,
+          "variantsCount": 15,
+          "stages": [
+            "sapling",
+            "young",
+            "mature",
+            "ancient"
+          ],
+          "lods": [
+            "LOD0",
+            "LOD1",
+            "LOD2",
+            "LOD3"
+          ],
+          "lod0TrisRange": [
+            2192,
+            7664
+          ],
+          "lod1TrisRange": [
+            690,
+            2240
+          ],
+          "lod2TrisRange": [
+            162,
+            522
+          ],
+          "lod3TrisRange": [
+            20,
+            20
+          ],
+          "materials": 2,
+          "hasRequiredTag": true,
+          "sharedTextures": {
+            "bark": [
+              "assets/textures/botany_bark_trim_baseColor.png",
+              "assets/textures/botany_bark_trim_normal.png",
+              "assets/textures/botany_bark_trim_orm.png"
+            ],
+            "foliage": [
+              "assets/textures/botany_leaf_atlas_baseColor.png",
+              "assets/textures/botany_leaf_atlas_normal.png",
+              "assets/textures/botany_leaf_atlas_orm.png",
+              "assets/textures/botany_leaf_atlas_thickness.png"
+            ]
+          },
+          "sssColor": [
+            0.36,
+            0.62,
+            0.16
+          ],
+          "sssStrength": 0.52,
+          "glbSizeKB": 3583.7,
+          "exportedAt": "2026-11-16 18:30:58"
+        },
+        "trees_palm": {
+          "enabled": true,
+          "url": "assets/glb/botany/trees_palm.glb",
+          "blend": "assets/blend/botany/trees_palm.blend",
+          "category": "botany",
+          "species": "palm",
+          "instanced": true,
+          "wind": true,
+          "variantsCount": 15,
+          "stages": [
+            "sapling",
+            "young",
+            "mature",
+            "ancient"
+          ],
+          "lods": [
+            "LOD0",
+            "LOD1",
+            "LOD2",
+            "LOD3"
+          ],
+          "lod0TrisRange": [
+            2376,
+            2760
+          ],
+          "lod1TrisRange": [
+            676,
+            772
+          ],
+          "lod2TrisRange": [
+            224,
+            256
+          ],
+          "lod3TrisRange": [
+            36,
+            36
+          ],
+          "materials": 2,
+          "hasRequiredTag": true,
+          "sharedTextures": {
+            "bark": [
+              "assets/textures/botany_bark_trim_baseColor.png",
+              "assets/textures/botany_bark_trim_normal.png",
+              "assets/textures/botany_bark_trim_orm.png"
+            ],
+            "foliage": [
+              "assets/textures/botany_leaf_atlas_baseColor.png",
+              "assets/textures/botany_leaf_atlas_normal.png",
+              "assets/textures/botany_leaf_atlas_orm.png",
+              "assets/textures/botany_leaf_atlas_thickness.png"
+            ]
+          },
+          "sssColor": [
+            0.36,
+            0.62,
+            0.16
+          ],
+          "sssStrength": 0.55,
+          "glbSizeKB": 2016.2,
+          "exportedAt": "2026-11-16 18:30:58"
+        },
+        "trees_acacia": {
+          "enabled": true,
+          "url": "assets/glb/botany/trees_acacia.glb",
+          "blend": "assets/blend/botany/trees_acacia.blend",
+          "category": "botany",
+          "species": "acacia",
+          "instanced": true,
+          "wind": true,
+          "variantsCount": 15,
+          "stages": [
+            "sapling",
+            "young",
+            "mature",
+            "ancient"
+          ],
+          "lods": [
+            "LOD0",
+            "LOD1",
+            "LOD2",
+            "LOD3"
+          ],
+          "lod0TrisRange": [
+            1904,
+            4784
+          ],
+          "lod1TrisRange": [
+            690,
+            1660
+          ],
+          "lod2TrisRange": [
+            162,
+            352
+          ],
+          "lod3TrisRange": [
+            24,
+            24
+          ],
+          "materials": 2,
+          "hasRequiredTag": true,
+          "sharedTextures": {
+            "bark": [
+              "assets/textures/botany_bark_trim_baseColor.png",
+              "assets/textures/botany_bark_trim_normal.png",
+              "assets/textures/botany_bark_trim_orm.png"
+            ],
+            "foliage": [
+              "assets/textures/botany_leaf_atlas_baseColor.png",
+              "assets/textures/botany_leaf_atlas_normal.png",
+              "assets/textures/botany_leaf_atlas_orm.png",
+              "assets/textures/botany_leaf_atlas_thickness.png"
+            ]
+          },
+          "sssColor": [
+            0.38,
+            0.58,
+            0.16
+          ],
+          "sssStrength": 0.5,
+          "glbSizeKB": 2530.1,
+          "exportedAt": "2026-11-16 18:30:58"
+        },
+        "trees_olive": {
+          "enabled": true,
+          "url": "assets/glb/botany/trees_olive.glb",
+          "blend": "assets/blend/botany/trees_olive.blend",
+          "category": "botany",
+          "species": "olive",
+          "instanced": true,
+          "wind": true,
+          "variantsCount": 15,
+          "stages": [
+            "sapling",
+            "young",
+            "mature",
+            "ancient"
+          ],
+          "lods": [
+            "LOD0",
+            "LOD1",
+            "LOD2",
+            "LOD3"
+          ],
+          "lod0TrisRange": [
+            5828,
+            11816
+          ],
+          "lod1TrisRange": [
+            1306,
+            2858
+          ],
+          "lod2TrisRange": [
+            222,
+            546
+          ],
+          "lod3TrisRange": [
+            20,
+            20
+          ],
+          "materials": 2,
+          "hasRequiredTag": true,
+          "sharedTextures": {
+            "bark": [
+              "assets/textures/botany_bark_trim_baseColor.png",
+              "assets/textures/botany_bark_trim_normal.png",
+              "assets/textures/botany_bark_trim_orm.png"
+            ],
+            "foliage": [
+              "assets/textures/botany_leaf_atlas_baseColor.png",
+              "assets/textures/botany_leaf_atlas_normal.png",
+              "assets/textures/botany_leaf_atlas_orm.png",
+              "assets/textures/botany_leaf_atlas_thickness.png"
+            ]
+          },
+          "sssColor": [
+            0.34,
+            0.48,
+            0.24
+          ],
+          "sssStrength": 0.46,
+          "glbSizeKB": 8025.2,
+          "exportedAt": "2026-11-16 18:30:58"
+        },
+        "trees_fig": {
+          "enabled": true,
+          "url": "assets/glb/botany/trees_fig.glb",
+          "blend": "assets/blend/botany/trees_fig.blend",
+          "category": "botany",
+          "species": "fig",
+          "instanced": true,
+          "wind": true,
+          "variantsCount": 15,
+          "stages": [
+            "sapling",
+            "young",
+            "mature",
+            "ancient"
+          ],
+          "lods": [
+            "LOD0",
+            "LOD1",
+            "LOD2",
+            "LOD3"
+          ],
+          "lod0TrisRange": [
+            5828,
+            10352
+          ],
+          "lod1TrisRange": [
+            1306,
+            2248
+          ],
+          "lod2TrisRange": [
+            222,
+            368
+          ],
+          "lod3TrisRange": [
+            24,
+            24
+          ],
+          "materials": 2,
+          "hasRequiredTag": true,
+          "sharedTextures": {
+            "bark": [
+              "assets/textures/botany_bark_trim_baseColor.png",
+              "assets/textures/botany_bark_trim_normal.png",
+              "assets/textures/botany_bark_trim_orm.png"
+            ],
+            "foliage": [
+              "assets/textures/botany_leaf_atlas_baseColor.png",
+              "assets/textures/botany_leaf_atlas_normal.png",
+              "assets/textures/botany_leaf_atlas_orm.png",
+              "assets/textures/botany_leaf_atlas_thickness.png"
+            ]
+          },
+          "sssColor": [
+            0.32,
+            0.58,
+            0.14
+          ],
+          "sssStrength": 0.52,
+          "glbSizeKB": 6108.3,
+          "exportedAt": "2026-11-16 18:30:58"
+        },
+        "trees_poplar": {
+          "enabled": true,
+          "url": "assets/glb/botany/trees_poplar.glb",
+          "blend": "assets/blend/botany/trees_poplar.blend",
+          "category": "botany",
+          "species": "poplar",
+          "instanced": true,
+          "wind": true,
+          "variantsCount": 15,
+          "stages": [
+            "sapling",
+            "young",
+            "mature",
+            "ancient"
+          ],
+          "lods": [
+            "LOD0",
+            "LOD1",
+            "LOD2",
+            "LOD3"
+          ],
+          "lod0TrisRange": [
+            4672,
+            5632
+          ],
+          "lod1TrisRange": [
+            1216,
+            1392
+          ],
+          "lod2TrisRange": [
+            162,
+            174
+          ],
+          "lod3TrisRange": [
+            20,
+            20
+          ],
+          "materials": 2,
+          "hasRequiredTag": true,
+          "sharedTextures": {
+            "bark": [
+              "assets/textures/botany_bark_trim_baseColor.png",
+              "assets/textures/botany_bark_trim_normal.png",
+              "assets/textures/botany_bark_trim_orm.png"
+            ],
+            "foliage": [
+              "assets/textures/botany_leaf_atlas_baseColor.png",
+              "assets/textures/botany_leaf_atlas_normal.png",
+              "assets/textures/botany_leaf_atlas_orm.png",
+              "assets/textures/botany_leaf_atlas_thickness.png"
+            ]
+          },
+          "sssColor": [
+            0.38,
+            0.62,
+            0.16
+          ],
+          "sssStrength": 0.56,
+          "glbSizeKB": 4608.3,
+          "exportedAt": "2026-11-16 18:30:58"
+        },
+        "trees_terebinth": {
+          "enabled": true,
+          "url": "assets/glb/botany/trees_terebinth.glb",
+          "blend": "assets/blend/botany/trees_terebinth.blend",
+          "category": "botany",
+          "species": "terebinth",
+          "instanced": true,
+          "wind": true,
+          "variantsCount": 15,
+          "stages": [
+            "sapling",
+            "young",
+            "mature",
+            "ancient"
+          ],
+          "lods": [
+            "LOD0",
+            "LOD1",
+            "LOD2",
+            "LOD3"
+          ],
+          "lod0TrisRange": [
+            5828,
+            7052
+          ],
+          "lod1TrisRange": [
+            1306,
+            1472
+          ],
+          "lod2TrisRange": [
+            222,
+            254
+          ],
+          "lod3TrisRange": [
+            24,
+            24
+          ],
+          "materials": 2,
+          "hasRequiredTag": true,
+          "sharedTextures": {
+            "bark": [
+              "assets/textures/botany_bark_trim_baseColor.png",
+              "assets/textures/botany_bark_trim_normal.png",
+              "assets/textures/botany_bark_trim_orm.png"
+            ],
+            "foliage": [
+              "assets/textures/botany_leaf_atlas_baseColor.png",
+              "assets/textures/botany_leaf_atlas_normal.png",
+              "assets/textures/botany_leaf_atlas_orm.png",
+              "assets/textures/botany_leaf_atlas_thickness.png"
+            ]
+          },
+          "sssColor": [
+            0.34,
+            0.54,
+            0.15
+          ],
+          "sssStrength": 0.5,
+          "glbSizeKB": 5337.4,
+          "exportedAt": "2026-11-16 18:30:58"
+        },
+        "shrubs_oriental": {
+          "enabled": true,
+          "url": "assets/glb/botany/shrubs_oriental.glb",
+          "blend": "assets/blend/botany/shrubs_oriental.blend",
+          "category": "botany",
+          "description": "5 vorderorientalische Wildstraucharten x 12 Varianten x 4 LODs",
+          "speciesList": [
+            "thornbush",
+            "tamarisk",
+            "oleander",
+            "broom",
+            "juniper"
+          ],
+          "instanced": true,
+          "wind": true,
+          "variantsCount": 60,
+          "lods": [
+            "LOD0",
+            "LOD1",
+            "LOD2",
+            "LOD3"
+          ],
+          "lod0TrisRange": [
+            352,
+            352
+          ],
+          "lod1TrisRange": [
+            96,
+            96
+          ],
+          "lod2TrisRange": [
+            28,
+            28
+          ],
+          "lod3TrisRange": [
+            4,
+            4
+          ],
+          "hasRequiredTag": true,
+          "sssColor": [
+            0.32,
+            0.56,
+            0.18
+          ],
+          "sssStrength": 0.46,
+          "sharedTextures": {
+            "baseColor": "assets/textures/understory_crops_atlas_baseColor.png",
+            "normal": "assets/textures/understory_crops_atlas_normal.png",
+            "orm": "assets/textures/understory_crops_atlas_orm.png",
+            "thickness": "assets/textures/understory_crops_atlas_thickness.png"
+          },
+          "preview": "assets/previews/understory_showcase.png",
+          "glbSizeKB": 2613.5,
+          "exportedAt": "2026-11-16 19:21:01"
+        },
+        "grass_and_reeds": {
+          "enabled": true,
+          "url": "assets/glb/botany/grass_and_reeds.glb",
+          "blend": "assets/blend/botany/grass_and_reeds.blend",
+          "category": "botany",
+          "description": "Steppen-Bueschelgras, Hochgras & Euphrat-Schilf/Papyrus (3 x 14 = 42 Var x 4 LODs)",
+          "speciesList": [
+            "steppe_grass",
+            "tall_grass",
+            "euphrates_reed"
+          ],
+          "instanced": true,
+          "wind": true,
+          "variantsCount": 42,
+          "lods": [
+            "LOD0",
+            "LOD1",
+            "LOD2",
+            "LOD3"
+          ],
+          "lod0TrisRange": [
+            24,
+            34
+          ],
+          "lod1TrisRange": [
+            8,
+            10
+          ],
+          "lod2TrisRange": [
+            4,
+            4
+          ],
+          "lod3TrisRange": [
+            4,
+            4
+          ],
+          "hasRequiredTag": true,
+          "sssColor": [
+            0.42,
+            0.62,
+            0.16
+          ],
+          "sssStrength": 0.58,
+          "sharedTextures": {
+            "baseColor": "assets/textures/understory_crops_atlas_baseColor.png",
+            "normal": "assets/textures/understory_crops_atlas_normal.png",
+            "orm": "assets/textures/understory_crops_atlas_orm.png",
+            "thickness": "assets/textures/understory_crops_atlas_thickness.png"
+          },
+          "preview": "assets/previews/understory_showcase.png",
+          "glbSizeKB": 339.0,
+          "exportedAt": "2026-11-16 19:21:01"
+        },
+        "crops_mesopotamia": {
+          "enabled": true,
+          "url": "assets/glb/botany/crops_mesopotamia.glb",
+          "blend": "assets/blend/botany/crops_mesopotamia.blend",
+          "category": "botany",
+          "description": "5 mesopotamische Kulturpflanzen x 12 Varianten x 4 LODs",
+          "speciesList": [
+            "emmer_wheat",
+            "barley",
+            "lentil_chickpea",
+            "flax",
+            "grapevine"
+          ],
+          "instanced": true,
+          "wind": true,
+          "variantsCount": 60,
+          "lods": [
+            "LOD0",
+            "LOD1",
+            "LOD2",
+            "LOD3"
+          ],
+          "lod0TrisRange": [
+            24,
+            76
+          ],
+          "lod1TrisRange": [
+            8,
+            32
+          ],
+          "lod2TrisRange": [
+            4,
+            4
+          ],
+          "lod3TrisRange": [
+            4,
+            4
+          ],
+          "hasRequiredTag": true,
+          "sssColor": [
+            0.48,
+            0.6,
+            0.18
+          ],
+          "sssStrength": 0.52,
+          "sharedTextures": {
+            "baseColor": "assets/textures/understory_crops_atlas_baseColor.png",
+            "normal": "assets/textures/understory_crops_atlas_normal.png",
+            "orm": "assets/textures/understory_crops_atlas_orm.png",
+            "thickness": "assets/textures/understory_crops_atlas_thickness.png"
+          },
+          "preview": "assets/previews/understory_showcase.png",
+          "glbSizeKB": 551.7,
+          "exportedAt": "2026-11-16 19:21:01"
+        },
+        "ornamental_gardens": {
+          "enabled": true,
+          "url": "assets/glb/botany/ornamental_gardens.glb",
+          "blend": "assets/blend/botany/ornamental_gardens.blend",
+          "category": "botany",
+          "description": "Granatapfel-Zierbaeume, Tempel-Myrte/Lilien, Terrakotta-Kuebel & Lotus/Zypergras (4 x 13 = 52 Var x 4 LODs)",
+          "speciesList": [
+            "pomegranate_ornamental",
+            "myrtle_lily",
+            "terracotta_planter",
+            "lotus_cyperus"
+          ],
+          "instanced": true,
+          "wind": true,
+          "variantsCount": 52,
+          "lods": [
+            "LOD0",
+            "LOD1",
+            "LOD2",
+            "LOD3"
+          ],
+          "lod0TrisRange": [
+            84,
+            324
+          ],
+          "lod1TrisRange": [
+            10,
+            96
+          ],
+          "lod2TrisRange": [
+            6,
+            58
+          ],
+          "lod3TrisRange": [
+            2,
+            29
+          ],
+          "hasRequiredTag": true,
+          "sssColor": [
+            0.38,
+            0.6,
+            0.22
+          ],
+          "sssStrength": 0.5,
+          "sharedTextures": {
+            "baseColor": "assets/textures/ornamental_garden_atlas_baseColor.png",
+            "normal": "assets/textures/ornamental_garden_atlas_normal.png",
+            "orm": "assets/textures/ornamental_garden_atlas_orm.png",
+            "thickness": "assets/textures/ornamental_garden_atlas_thickness.png"
+          },
+          "preview": "assets/previews/understory_showcase.png",
+          "glbSizeKB": 1128.3,
+          "exportedAt": "2026-11-16 19:21:01"
+        }
+      }
+    },
+    "world": {
+      "blendDir": "assets/blend/world",
+      "glbDir": "assets/glb/world",
+      "requiredTag": "foundation_-0.5m",
+      "items": {
+        "env_crane_aframe": {
+          "enabled": false,
+          "url": "assets/glb/world/env_crane_aframe.glb",
+          "category": "world",
+          "instanced": true,
+          "tempC": 23.0,
+          "etaEC5": 44.0
+        },
+        "city_mudbrick_house_01": {
+          "enabled": false,
+          "url": "assets/glb/world/city_mudbrick_house_01.glb",
+          "category": "world",
+          "instanced": true,
+          "tempC": 31.0,
+          "etaEC5": 16.0
+        },
+        "city_ziggurat_temple": {
+          "enabled": false,
+          "url": "assets/glb/world/city_ziggurat_temple.glb",
+          "category": "world",
+          "instanced": false,
+          "tempC": 32.0,
+          "etaEC5": 18.0
+        },
+        "ararat_altar_cyclopean": {
+          "enabled": true,
+          "url": "assets/glb/world/ararat_altar_cyclopean.glb",
+          "category": "world",
+          "instanced": false,
+          "tempC": 120.0,
+          "etaEC5": 20.0,
+          "maxTris": 12000,
+          "tris": 10000,
+          "meshes": 2,
+          "materials": 2,
+          "hasRequiredTag": true,
+          "hasShapeKeys": false,
+          "exportedAt": "2026-11-16 02:07:38",
+          "bakedTextures": {
+            "baseColor": "assets/textures/ararat_altar_cyclopean_baseColor.png",
+            "normal": "assets/textures/ararat_altar_cyclopean_normal.png",
+            "orm": "assets/textures/ararat_altar_cyclopean_orm.png",
+            "emissive": "assets/textures/ararat_altar_cyclopean_emissive.png"
+          },
+          "lods": {
+            "lod1": "assets/glb/world/ararat_altar_cyclopean_lod1.glb"
+          },
+          "preview": "assets/previews/ararat_altar_cyclopean_preview.png",
+          "highPolyTris": 134216,
+          "lod0Tris": 10000,
+          "lod1Tris": 2148,
+          "lodDistance": 25.0,
+          "emissiveStrength": 4.5
+        }
+      }
+    },
+    "families": {
+      "blendDir": "assets/blend/families",
+      "glbDir": "assets/glb/families",
+      "requiredTag": "Col_Rig + ShapeKeys",
+      "items": {
+        "fam_bovid": {
+          "enabled": false,
+          "url": "assets/glb/families/fam_bovid.glb",
+          "category": "family",
+          "instanced": true,
+          "sssColor": [
+            0.88,
+            0.28,
+            0.12
+          ],
+          "sssStrength": 0.35,
+          "tempC": 37.5
+        },
+        "fam_cervid": {
+          "enabled": false,
+          "url": "assets/glb/families/fam_cervid.glb",
+          "category": "family",
+          "instanced": true,
+          "sssColor": [
+            0.88,
+            0.28,
+            0.12
+          ],
+          "sssStrength": 0.42,
+          "tempC": 38.0
+        },
+        "fam_felid": {
+          "enabled": false,
+          "url": "assets/glb/families/fam_felid.glb",
+          "category": "family",
+          "instanced": true,
+          "sssColor": [
+            0.88,
+            0.26,
+            0.12
+          ],
+          "sssStrength": 0.32,
+          "tempC": 38.5
+        },
+        "fam_equid": {
+          "enabled": false,
+          "url": "assets/glb/families/fam_equid.glb",
+          "category": "family",
+          "instanced": true,
+          "sssColor": [
+            0.88,
+            0.28,
+            0.12
+          ],
+          "sssStrength": 0.35,
+          "tempC": 37.8
+        },
+        "fam_waterfowl": {
+          "enabled": false,
+          "url": "assets/glb/families/fam_waterfowl.glb",
+          "category": "family",
+          "instanced": true,
+          "sssColor": [
+            0.92,
+            0.48,
+            0.28
+          ],
+          "sssStrength": 0.45,
+          "tempC": 39.5
+        }
+      }
+    },
+    "characters": {
+      "blendDir": "assets/blend/characters",
+      "glbDir": "assets/glb/characters",
+      "requiredTag": "PartTags",
+      "items": {
+        "char_noah_hero": {
+          "enabled": false,
+          "url": "assets/glb/characters/char_noah_hero.glb",
+          "category": "character",
+          "sssColor": [
+            0.88,
+            0.24,
+            0.1
+          ],
+          "sssStrength": 0.48,
+          "tempC": 36.8
+        },
+        "char_wife_hero": {
+          "enabled": false,
+          "url": "assets/glb/characters/char_wife_hero.glb",
+          "category": "character",
+          "sssColor": [
+            0.88,
+            0.24,
+            0.1
+          ],
+          "sssStrength": 0.48,
+          "tempC": 36.8
+        },
+        "char_son_01": {
+          "enabled": false,
+          "url": "assets/glb/characters/char_son_01.glb",
+          "category": "character",
+          "sssColor": [
+            0.88,
+            0.24,
+            0.1
+          ],
+          "sssStrength": 0.46,
+          "tempC": 36.8
+        },
+        "char_worker_01": {
+          "enabled": false,
+          "url": "assets/glb/characters/char_worker_01.glb",
+          "category": "prop",
+          "instanced": true,
+          "sssColor": [
+            0.88,
+            0.24,
+            0.1
+          ],
+          "sssStrength": 0.4,
+          "tempC": 37.2
+        }
+      }
+    }
+  },
+  "slots": {
+    "noah_hero": {
+      "enabled": false,
+      "url": "assets/glb/characters/char_noah_hero.glb",
+      "category": "character",
+      "assetClass": "hero_character",
+      "maxTris": 8000,
+      "targetScene": "ararat_altar",
+      "noDeckClip": true,
+      "sssColor": [
+        0.88,
+        0.24,
+        0.1
+      ],
+      "sssStrength": 0.48,
+      "tempC": 36.8,
+      "etaEC5": 15.0,
+      "description": "Patriarch Noah (Hero-Charakter am Ararat-Altar & Werft-Spalier)",
+      "fallbackInfo": "Prozeduraler Mensch-Mesh (Arche.Fauna.humanCrewGeo)"
+    },
+    "altar_hero": {
+      "enabled": true,
+      "url": "assets/glb/world/ararat_altar_cyclopean.glb",
+      "category": "world",
+      "assetClass": "prop",
+      "maxTris": 12000,
+      "tris": 10000,
+      "meshes": 2,
+      "materials": 2,
+      "targetScene": "ararat",
+      "noDeckClip": true,
+      "sssStrength": 0.0,
+      "tempC": 120.0,
+      "etaEC5": 20.0,
+      "bakedTextures": {
+        "baseColor": "assets/textures/ararat_altar_cyclopean_baseColor.png",
+        "normal": "assets/textures/ararat_altar_cyclopean_normal.png",
+        "orm": "assets/textures/ararat_altar_cyclopean_orm.png",
+        "emissive": "assets/textures/ararat_altar_cyclopean_emissive.png"
+      },
+      "preview": "assets/previews/ararat_altar_cyclopean_preview.png",
+      "description": "Zyklopischer Dankopfer-Steinaltar (Gen 8,20) auf dem Ararat-Sattel",
+      "fallbackInfo": "Prozeduraler Basalt-/Kalkstein-Altar (altarStoneGroup, Glut & Flammen bleiben aktiv)",
+      "highPolyTris": 134216,
+      "lod0Tris": 10000,
+      "lod1Tris": 2148,
+      "lodDistance": 25.0,
+      "lods": {
+        "lod1": "assets/glb/world/ararat_altar_cyclopean_lod1.glb"
+      },
+      "emissiveStrength": 4.5
+    },
+    "ox_hero": {
+      "enabled": false,
+      "url": "assets/glb/families/ox_hero.glb",
+      "category": "family",
+      "assetClass": "animal",
+      "maxTris": 3000,
+      "targetScene": "shipyard",
+      "noDeckClip": true,
+      "sssColor": [
+        0.88,
+        0.28,
+        0.12
+      ],
+      "sssStrength": 0.35,
+      "tempC": 37.5,
+      "etaEC5": 32.0,
+      "description": "Bronzezeitlicher Zugochse am Göpel-Sägewerk (Werftplatz)",
+      "fallbackInfo": "Prozeduraler Zugochse (Arche.Fauna.draughtOxGeo)"
+    },
+    "dove_hero": {
+      "enabled": false,
+      "url": "assets/glb/families/dove_hero.glb",
+      "category": "family",
+      "assetClass": "animal",
+      "maxTris": 3000,
+      "targetScene": "ararat",
+      "noDeckClip": true,
+      "sssColor": [
+        0.92,
+        0.55,
+        0.38
+      ],
+      "sssStrength": 0.45,
+      "tempC": 39.0,
+      "etaEC5": 12.0,
+      "description": "Noahs Taube mit Olivenzweig (Gen 8,11) über dem Ararat",
+      "fallbackInfo": "Prozedurale Taube + doveSprigGroup"
+    },
+    "carpentry_bench_hero": {
+      "enabled": false,
+      "url": "assets/glb/world/carpentry_bench_hero.glb",
+      "category": "world",
+      "assetClass": "prop",
+      "maxTris": 2500,
+      "targetScene": "shipyard",
+      "noDeckClip": false,
+      "sssStrength": 0.0,
+      "tempC": 22.0,
+      "etaEC5": 25.0,
+      "description": "Zimmermanns-Hobelbank mit Bronze-Werkzeugen am Werft-Gerüst (Backbord)",
+      "fallbackInfo": "Prozedurale Hainbuchen-/Eichen-Hobelbank (carpentryBenchGroup)"
+    }
+  }
+}
