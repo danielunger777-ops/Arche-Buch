@@ -1,54 +1,64 @@
-# AGENTS.md — Projekt-Workflow & Denklevel-Steuerung (`Arche Buch`)
+# AGENTS.md — Projekt-Workflow & Qualitäts-Gates (`Arche Buch`)
 
-Diese Datei regelt die Rollenverteilung, Modell-/Denklevel-Empfehlungen und verbindlichen Qualitäts-Gates für alle Agenten und Subagenten im Workspace `Arche Buch`.
+Diese Datei regelt den schlanken **Single-Agent-Workflow** (ohne unnötigen Subagenten-Overhead), die Aufgaben-Steuerung und die verbindlichen Qualitäts-Gates für alle KI-Sessions im Workspace `Arche Buch`.
 
 ---
 
 ## 1. Projekt-Überblick & zentrale Dateien
 
-- **`Arche Simulation 3.0.html`** — Monolithische Single-File-3D-Simulation (~35.700+ Zeilen, Three.js / WebGL1, EC5-Statik, Hydrostatik, Werftplatz, Ur/Schwemmland, `101` Unit-Tests `T01–T101`).
+- **`Arche Simulation 3.0.html`** — Monolithische Single-File-3D-Simulation (~44.900+ Zeilen, Three.js r128 / WebGL1, EC5-Statik, Hydrostatik, Werftplatz, Ur-Schinar, Ararat, `101` Unit-Tests `T01–T101`).
 - **`ARCHE_INDEX.md`** — Automatisch generiertes Inhaltsverzeichnis mit Sektionen, Namespaces, Baugruppen, Funktionszeilen und Test-Ankern.
 - **`index_arche.js`** — Index-Generator für `ARCHE_INDEX.md`.
+- **`verify_arche.js`** — Ein-Befehl-Gate: Datei-Integrität, `vm.Script`-Kompilierung, WebGL1-GLSL-Check, Index-Update & atomares `.backups/`-Snapshot.
+- **`qa_arche.js`** — Ein-Befehl-Browser-QA-Runner (CDP, `1440×900` & `1920×1080`, `--quick`, `--critic`, `--ipad`, `--no-shots`, Draw-Call-Budget & Screenshots nach `scratch/`).
+- **`rules/visual-critic.md`** — Verbindliches 7-Punkte-Visual-Critic-Gate für `scratch/qa_*.png` und `assets/previews/*.png`.
+- **`BLENDER_PIPELINE.md`** *(falls noch nicht umbenannt: `BLENDER _PIPELINE.md`)* — Verbindlicher Asset-, Koordinaten-, Material-, 4-LOD- & `.glb`-Pipeline-Standard für alle Blender-Geometrien.
 - **`Rohdatei arche.txt`** — Buch- und Fachvorlage (Kapitel/Anforderungen für historische, konstruktive und logistische Details).
 
 ---
 
-## 2. Verbindliche Grundregeln (für alle Denklevel)
+## 2. Verbindliche Grundregeln (für alle Sessions & Modelle)
 
-1. **32k-Zeilen-Schutz:** `Arche Simulation 3.0.html` **niemals** vollständig am Stück lesen. Immer zuerst `ARCHE_INDEX.md` oder gezielte Suche (`Select-String`) nutzen und nur benötigte Blöcke (`StartLine` / `EndLine`, ideal ≤ 150 Zeilen) laden.
-2. **Compile- & Index-Pflicht:** Nach jedem Code-Edit zwingend ausführen:
-   - `node verify_arche.js` (prüft Datei-Integrität, `vm.Script`-Kompilierung, WebGL1-GLSL, aktualisiert `ARCHE_INDEX.md` über `index_arche.js` und legt bei Änderungen einen Sicherheits-Snapshot in `.backups/` ab)
-3. **Qualitäts- & Performance-Gates:**
-   - Alle **`101 / 101` Unit-Tests (`T01–T101`)** müssen `PASS` bleiben (keine Statik-/EC5-Formeln verbiegen).
+1. **Single-Agent- & Quota-Schutz (KEINE unnötigen Subagenten!):**
+   - Spawne **keine** `research`-, `browser`- oder `flash`-Subagenten.
+   - Orientierung erfolgt direkt über `ARCHE_INDEX.md` oder gezieltes `Select-String`; Browser-Prüfung, FPS-Messung und Screenshots erfolgen ausschließlich deterministisch über **`node qa_arche.js`**.
+2. **40k-Zeilen-Schutz:** `Arche Simulation 3.0.html` **niemals** vollständig am Stück lesen. Immer zuerst `ARCHE_INDEX.md` oder `Select-String` nutzen und nur gezielte Blöcke (ideal `≤ 150` Zeilen) laden.
+3. **Compile- & Index-Pflicht:** Nach jedem Code-Edit zwingend **`node verify_arche.js`** ausführen (`VERIFY_ARCHE_PASS` + aktueller `ARCHE_INDEX.md` + Snapshot in `.backups/`).
+4. **Physik-, Authentizitäts- & Test-Gates:**
+   - Alle **`101 / 101` Unit-Tests (`T01–T101`)** müssen `PASS` bleiben (**striktes Verbot**, EC5-/Statik-/Physikbeiwerte künstlich zu verbiegen).
    - **`0` Console-Errors, `0` Page-Errors, `0` WebGL-Shader-Fehler**.
-   - **Desktop-Performance (`1440×900`):** Ziel **`~60 FPS`** (Kleinteile über `createStaticGeometryBatcher()` oder `InstancedMesh` bündeln, keine Draw-Call-Explosion).
    - **macOS Safari / WebGL1-Konformität:** Strikt WebGL1-kompatibles GLSL (keine WebGL2-only-Syntax).
    - **100 % Bronzezeit-Authentizität:** Nur Zeder, Eiche, Zypresse, Hainbuche, Basalt, Kalkstein/Travertin, Lehmziegel, Terrakotta, Lapislazuli, Hanfseile, Kopher-Pech, Zinnbronze, Schilf/Leinen, Feuer/Rauch.
-4. **Workspace- & Server-Hygiene:**
-   - Temporäre Hilfs- oder Prüfskripte ausschließlich in `scratch/` ablegen und nach Abschluss entfernen.
+   - **Rumpf-/Arche-Farben nicht eigenmächtig verändern:** Kopher-Pech und Außenholz der Arche bleiben unangetastet, sofern nicht ausdrücklich anders beauftragt; `EC5`- und `THERMAL`-Ansichten bleiben 100 % unverfälscht.
+5. **Draw-Call-, Schatten- & Performance-Schutz (Pflicht für jedes Feature!):**
+   - **Desktop-Ziel (`1440×900` & `1920×1080`):** **`~55–60 FPS`** bei strenger Einhaltung der Draw-Call-Obergrenzen in `qa_arche.js`.
+   - **Kein `new THREE.Mesh(...)` in Schleifen:** Starre Baugruppen zwingend über `createStaticGeometryBatcher()` bzw. räumliche Chunks bündeln; wiederholte Objekte (`≥ 4` Stück) zwingend als `THREE.InstancedMesh` (`frustumCulled = false` bei bewegten Instanzen, `visible = false` wenn `count === 0`).
+   - **Material-Sortierung vor `geo.addGroup`:** Dreiecke nach Material-ID sortieren (`1` Group pro Material statt fragmentierter Draw-Calls).
+   - **Schatten als Opt-In (`castShadow = false` als Standard):** Nur große Hauptbauwerke und nahe Bäume (`LOD0/1`) dürfen Schatten werfen; Gräser, Feldpflanzen, Kleindeko und Fernobjekte bleiben `castShadow = false`.
+   - **Maus-Raycast-Disziplin:** `perform3DRaycastInspect` bleibt gethrottelt (`≥ 90 ms`), pausiert beim Orbit-Drag und ignoriert reine Terrain-/Deko-Meshes ohne Tooltip.
+6. **Workspace- & Server-Hygiene:**
+   - Temporäre Hilfs- oder Prüfskripte ausschließlich in `scratch/` ablegen und nach Abschluss bereinigen.
    - PowerShell-Befehle mit `;` verketten (nicht `&&`).
-   - Lokale HTTP-Testserver nach Abschluss der Browser-Verifikation sauber beenden.
+   - Gestartete HTTP-Testserver nach Abschluss sauber beenden (`node qa_arche.js` startet und schließt seinen Server selbstständig).
 
 ---
 
-## 3. Denklevel-Matrix nach Rolle & Aufgabe
+## 3. Aufgaben-Matrix & empfohlene Modell-/Denkstufe
 
-| Rolle / Aufgabe | Empfohlenes Denklevel | Typische Aufgaben im Projekt | Begründung |
-| :--- | :--- | :--- | :--- |
-| **Index & Code-Lookup** | **Hydrogen (Low)** *(Subagent: `flash_lite` / `flash`)* | `node index_arche.js` ausführen, Zeilen in `ARCHE_INDEX.md` nachschlagen, `Select-String`-Treffer sammeln, `vm.Script`-Syntaxcheck & Dateigrößen prüfen | Rein mechanisch/deterministisch; minimale Latenz & minimaler Tokenverbrauch |
-| **Browser-QA & Screenshot-Check** (`browser`) | **Hydrogen (Low)** *(Standard)* / **Medium** *(bei Fehlerdiagnose)* | Lokale Test-URL (`1440×900`) öffnen, `T01–T101` prüfen, Foreground-FPS (`requestAnimationFrame`) messen, Console/WebGL-Errors auslesen, definierte Kamera-Shots aufnehmen | Feste Prüfcheckliste ohne Code-Eingriff; nur bei tiefergehender Shader-/DOM-Analyse auf Medium eskalieren |
-| **3D-Szenenbau & Asset-Politur** | **Hydrogen (Medium)** | Baugruppen in `buildShipyard3D` / `updateLandmarksAndTerrain3D` ergänzen, Bodenkontakt über `evalShipyardTerrainZ(x, y)` sichern, Batcher/`InstancedMesh` erweitern, Ufer-/Kanal-Bauwerke platzieren | Optimale Balance aus räumlichem Verständnis, Edit-Präzision und Geschwindigkeit |
-| **GLSL-Shader, Topologie & Performance-Tuning** | **Hydrogen (High)** *(oder **Medium** bei kleinen Parameter-Tweaks)* | Neue/komplexe `onBeforeCompile`-Shader (Wasser, Reflexionen, Kaustiken, `alluvialGroundMat`), Terrain-Durchstiche, komplexe Z-Fighting-/Draw-Call-/FPS-Optimierungen | Verhindert WebGL1-Inkompatibilitäten, Naht-/Clip-Artefakte und subtile Render-Bugs |
-| **Statik, Physik & Unit-Tests** | **Hydrogen (High)** | Änderungen an EC5-Statik, Hydrostatik, Lastfällen, Göpel-/Klima-Kopplung (`uWetness`, `uWindVec`, `isThermalMode`), Abgleich mit `Rohdatei arche.txt`, neue/angepasste Tests in `T01–T101` | Null Fehlertoleranz bei physikalischen Formeln und Regressionsschutz |
-| **Koordination & Recovery** (Hauptagent) | **Hydrogen (Medium)** *(Regelbetrieb)* / **High** *(große Umbauten / Recovery)* | Aufgaben-Schnitt, Delegation an `research`/`browser`, Abnahme nach Standard-Workflow, Notfall-Wiederherstellung | Hält den Workflow straff und reserviert High-Kontingent für komplexe Architektur- oder Fehlerfälle |
+*(Ohne Subagenten — immer als 1 direkter Hauptagent pro frischem Chat arbeiten!)*
+
+| Aufgaben-Typ | Empfohlenes Modell / Denklevel | Typische Aufgaben im Projekt |
+| :--- | :--- | :--- |
+| **Index, Verify & kleine Fixes** | **Hydrogen (Low)** | `node verify_arche.js`, Zeilen-Lookup, Text-/Tooltip-/UI-Kleinänderungen |
+| **3D-Szenenbau, UI, Kamera & QA** | **Hydrogen (Medium)** *(bzw. **Claude Sonnet 5.5 Medium**)* | Baugruppen in `buildShipyard3D` / `buildAraratLandingSite3D`, Kamera-Tours, Innenraum-UI, `qa_arche.js`-Lauf & Screenshot-Abnahme |
+| **Shader, Topologie, Performance & Blender** | **Hydrogen (High)** *(bzw. **Claude Sonnet 5.5 Medium**)* | `onBeforeCompile`-Shader, LODs, Draw-Call-/Chunk-Optimierung, SSCS/Atmosphäre, `bpy`-Asset-Pipeline |
+| **Statik, Physik & Unit-Tests** | **Hydrogen (High / xhigh)** *(bzw. **Claude Sonnet 5.5**)* | EC5-Statik, D'Alembert, Hydrostatik, Klima-/Veterinär-Kern, `T01–T101` |
 
 ---
 
-## 4. Standard-Abnahme-Workflow
+## 4. Standard-Abnahme-Workflow (4 saubere Schritte)
 
-1. **Orientieren (`Low`):** Zielbereich über `ARCHE_INDEX.md` oder `Select-String` lokalisieren und nur den relevanten Zeilenbereich lesen.
-2. **Umsetzen (`Medium` / `High`):** Gezielte `edit_file`-Änderungen mit sauberer Geometry-/Material-/Shader-Disziplin.
-3. **Indizieren & Kompilieren (`Low`):** `node verify_arche.js` ausführen (`VERIFY_ARCHE_PASS` + `0` Fehler).
-4. **Browser-Verifikation (`Low`):** Lokalen HTTP-Server starten, mit Cache-Buster (`?v=...`) im `browser`-Subagent bei `1440×900` prüfen: `101 / 101 PASS`, `0` Errors, `~60 FPS`, Screenshots über `Arche.QA.go('<preset>')` (`shipyard`, `aqueduct`, `ur_city`, `barge_mouth`, `se_mouth`, `east_mouth`, `sw_lake`, `overview`) gezielt aufnehmen.
-5. **Sichtprüfung & Abschluss:** Screenshots selbst ansehen, eventuelle Rest-Artefakte beheben, HTTP-Daemon beenden und nur direkt beobachtete Ergebnisse berichten.
-
+1. **Orientieren:** Zielbereich direkt über `ARCHE_INDEX.md` oder `Select-String` lokalisieren und nur den relevanten Zeilenbereich lesen.
+2. **Umsetzen:** Gezielte `edit_file`-Änderungen mit strikter Einhaltung von Abschnitt 2 (Draw-Calls, Batching, WebGL1, keine Arche-Farbänderung).
+3. **Verifizieren (Node.js):** `node verify_arche.js` ausführen → **`VERIFY_ARCHE_PASS`** (`0` Fehler, `ARCHE_INDEX.md` aktuell).
+4. **Browser-QA & Visual Critic:** `node qa_arche.js` (bei großen Änderungen inkl. `--ipad`, bei schnellen Checks `--quick`) ausführen → **`QA_ARCHE_PASS`** (`101 / 101 PASS`, `0` Console-/Page-/Shader-Errors, Draw-Call-Budget eingehalten, `~60 FPS`). Anschließend alle betroffenen `scratch/qa_*.png` sowie `assets/previews/*.png` streng nach **`rules/visual-critic.md`** prüfen (alle 7 Kriterien mit `PASS` / `MINOR` / `FAIL`) und bei `FAIL` nachbessern.
