@@ -1,0 +1,15 @@
+{
+  "scene": "ararat",
+  "width": 512,
+  "height": 512,
+  "worldSizeMeters": 3000.0,
+  "halfSpanMeters": 1500.0,
+  "xMin": -1500.0,
+  "xMax": 1500.0,
+  "yMin": -1500.0,
+  "yMax": 1500.0,
+  "zMin": -75.4872,
+  "zMax": 333.5172,
+  "encoding": "uint16_grayscale_top_to_bottom_y_plus_to_minus",
+  "formula": "z = zMin + (pixel_u16 / 65535.0) * (zMax - zMin)"
+}

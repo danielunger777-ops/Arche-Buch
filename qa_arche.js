@@ -290,9 +290,9 @@ async function run() {
       while (Date.now() - hydStart < 20000) {
         hydState = await cdp.eval(`(() => {
           const ud = (typeof shipyardGroup !== 'undefined' && shipyardGroup && shipyardGroup.userData) ? shipyardGroup.userData : {};
-          return { forest: Boolean(ud.blenderForestHydrated || ud.blenderHydrated), extra: Boolean(ud.blenderExtraHydrated) };
+          return { forest: Boolean(ud.blenderForestHydrated || ud.blenderHydrated), extra: Boolean(ud.blenderExtraHydrated), city: Boolean(ud.mesopotamiaCityHydrated) };
         })()`);
-        if (hydState.forest && hydState.extra) break;
+        if (hydState.forest && hydState.extra && hydState.city) break;
         await new Promise((r) => setTimeout(r, 250));
       }
 
@@ -530,10 +530,10 @@ async function run() {
 
     // Warte kurz auf asynchrone Blender-Botanik-Hydration + ersten Render-Warmup, bevor Benchmarks laufen
     const preHydStart = Date.now();
-    while (Date.now() - preHydStart < 12000) {
+    while (Date.now() - preHydStart < 15000) {
       const hs = await cdp.eval(`(() => {
         const ud = (typeof shipyardGroup !== 'undefined' && shipyardGroup && shipyardGroup.userData) ? shipyardGroup.userData : {};
-        return Boolean((ud.blenderForestHydrated || ud.blenderHydrated) && ud.blenderExtraHydrated);
+        return Boolean((ud.blenderForestHydrated || ud.blenderHydrated) && ud.blenderExtraHydrated && ud.mesopotamiaCityHydrated && ud.shipyardIndustryHydrated);
       })()`);
       if (hs) break;
       await new Promise((r) => setTimeout(r, 200));
@@ -670,7 +670,16 @@ async function run() {
         if (btn) btn.click();
         if (typeof Arche !== 'undefined' && Arche.QA) Arche.QA.go('shipyard');
       })()`);
-      await new Promise((r) => setTimeout(r, 900));
+      const ipadHydStart = Date.now();
+      while (Date.now() - ipadHydStart < 12000) {
+        const hs = await cdp.eval(`(() => {
+          const ud = (typeof shipyardGroup !== 'undefined' && shipyardGroup && shipyardGroup.userData) ? shipyardGroup.userData : {};
+          return Boolean((ud.blenderForestHydrated || ud.blenderHydrated) && ud.mesopotamiaCityHydrated && ud.shipyardIndustryHydrated);
+        })()`);
+        if (hs) break;
+        await new Promise((r) => setTimeout(r, 200));
+      }
+      await new Promise((r) => setTimeout(r, 500));
 
       const ipadCheck = await cdp.eval(`(() => {
         const gl = renderer.getContext();

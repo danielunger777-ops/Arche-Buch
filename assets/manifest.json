@@ -1067,6 +1067,754 @@
           "lod1Tris": 2148,
           "lodDistance": 25.0,
           "emissiveStrength": 4.5
+        },
+        "mesopotamia_city_kit": {
+          "enabled": true,
+          "url": "assets/glb/world/mesopotamia_city_kit.glb",
+          "blend": "assets/blend/world/mesopotamia_city_kit.blend",
+          "category": "world",
+          "description": "Modulares Mesopotamien-Architektur- & Strassen-Kit (22 Module, 4 LODs, -0.50m Sockel, 1 Shared 2048x1024 Trim-Sheet)",
+          "instanced": true,
+          "materials": 1,
+          "modulesCount": 22,
+          "totalLod0Tris": 17254,
+          "lodBandsMeters": {
+            "LOD0": [
+              0,
+              150
+            ],
+            "LOD1": [
+              150,
+              500
+            ],
+            "LOD2": [
+              500,
+              1500
+            ],
+            "LOD3": [
+              1500,
+              3000
+            ]
+          },
+          "sharedTextures": {
+            "baseColor": "assets/textures/city_trim_atlas_baseColor.png",
+            "normal": "assets/textures/city_trim_atlas_normal.png",
+            "orm": "assets/textures/city_trim_atlas_orm.png"
+          },
+          "modules": {
+            "ur_courtyard_house_01": {
+              "lods": {
+                "LOD0": 1216,
+                "LOD1": 324,
+                "LOD2": 80,
+                "LOD3": 12
+              },
+              "minZ": -0.5,
+              "description": "Zweistoeckiges Atriumhaus mit Holzgalerie & Aussentreppe"
+            },
+            "ur_courtyard_house_02": {
+              "lods": {
+                "LOD0": 1216,
+                "LOD1": 308,
+                "LOD2": 88,
+                "LOD3": 24
+              },
+              "minZ": -0.5,
+              "description": "L-foermiges Eck-Wohnhaus mit Dachterrasse, Pergola & Vigas"
+            },
+            "ur_courtyard_house_03": {
+              "lods": {
+                "LOD0": 1156,
+                "LOD1": 712,
+                "LOD2": 80,
+                "LOD3": 12
+              },
+              "minZ": -0.5,
+              "description": "Kaufmanns-Wohnhaus mit gekalktem Portal, Brunnen & Dachzinnen"
+            },
+            "ur_courtyard_house_04": {
+              "lods": {
+                "LOD0": 1360,
+                "LOD1": 316,
+                "LOD2": 92,
+                "LOD3": 12
+              },
+              "minZ": -0.5,
+              "description": "Handwerker-/Laden-Wohnhaus mit Ocker-Markise, Werkbank & Amphoren"
+            },
+            "ur_courtyard_house_05": {
+              "lods": {
+                "LOD0": 1336,
+                "LOD1": 488,
+                "LOD2": 52,
+                "LOD3": 24
+              },
+              "minZ": -0.5,
+              "description": "Doppel-Terrassen-Wohnhaus mit Windfang-Pavillon, Tannur & Leiter"
+            },
+            "ur_mudbrick_small_01": {
+              "lods": {
+                "LOD0": 580,
+                "LOD1": 252,
+                "LOD2": 32,
+                "LOD3": 12
+              },
+              "minZ": -0.5,
+              "description": "Kompaktes Einraumhaus mit Aussentreppe & Schilf-Vorbau"
+            },
+            "ur_mudbrick_small_02": {
+              "lods": {
+                "LOD0": 492,
+                "LOD1": 260,
+                "LOD2": 40,
+                "LOD3": 12
+              },
+              "minZ": -0.5,
+              "description": "Zweiteiliges Flachdachhaus mit Backofen & Hofmauer"
+            },
+            "ur_mudbrick_small_03": {
+              "lods": {
+                "LOD0": 676,
+                "LOD1": 184,
+                "LOD2": 44,
+                "LOD3": 12
+              },
+              "minZ": -0.5,
+              "description": "Kleines Lager-/Handwerkerhaus mit Holz-Vordach & Amphoren"
+            },
+            "ur_mudbrick_small_04": {
+              "lods": {
+                "LOD0": 624,
+                "LOD1": 344,
+                "LOD2": 40,
+                "LOD3": 12
+              },
+              "minZ": -0.5,
+              "description": "Versetztes Doppelraum-Haus mit Dach-Pergola & Holzleiter"
+            },
+            "ur_mudbrick_small_05": {
+              "lods": {
+                "LOD0": 396,
+                "LOD1": 264,
+                "LOD2": 40,
+                "LOD3": 12
+              },
+              "minZ": -0.5,
+              "description": "Laendliches Gehoeft mit Kleinvieh-Maeuerchen & Schatten-Vordach"
+            },
+            "ur_mudhif_hut": {
+              "lods": {
+                "LOD0": 764,
+                "LOD1": 358,
+                "LOD2": 64,
+                "LOD3": 24
+              },
+              "minZ": -0.5,
+              "description": "Sumerische Schilf-Bogenhuette (Mudhif) fuer Kanaldoerfer"
+            },
+            "ur_ziggurat_temple": {
+              "lods": {
+                "LOD0": 2172,
+                "LOD1": 860,
+                "LOD2": 296,
+                "LOD3": 48
+              },
+              "minZ": -0.5,
+              "description": "Gestufte Ziggurat mit 3 Freitreppen, Nischenpilastern & Lapislazuli-Schrein"
+            },
+            "ur_city_gate": {
+              "lods": {
+                "LOD0": 1108,
+                "LOD1": 796,
+                "LOD2": 268,
+                "LOD3": 36
+              },
+              "minZ": -0.5,
+              "description": "Doppelturm-Stadttor mit Stufenzinnen, Bronzetoren & Lapislazuli-Fries"
+            },
+            "ur_wall_segment": {
+              "lods": {
+                "LOD0": 324,
+                "LOD1": 140,
+                "LOD2": 44,
+                "LOD3": 12
+              },
+              "minZ": -0.5,
+              "description": "Geboeschte Lehmziegel-Stadtmauer mit Wehrgang & Zinnen"
+            },
+            "ur_wall_tower": {
+              "lods": {
+                "LOD0": 376,
+                "LOD1": 248,
+                "LOD2": 68,
+                "LOD3": 12
+              },
+              "minZ": -0.5,
+              "description": "Vorspringender Wehrturm mit Zinnen & Schiessscharten"
+            },
+            "ur_grain_silo": {
+              "lods": {
+                "LOD0": 426,
+                "LOD1": 226,
+                "LOD2": 91,
+                "LOD3": 42
+              },
+              "minZ": -0.5,
+              "description": "Bienenkorb-Kornspeicher aus Lehmziegeln"
+            },
+            "ur_kiln_dome": {
+              "lods": {
+                "LOD0": 460,
+                "LOD1": 164,
+                "LOD2": 122,
+                "LOD3": 42
+              },
+              "minZ": -0.5,
+              "description": "Kuppelfoermiger Toepfer-/Backofen mit Feuerungsbogen"
+            },
+            "ur_canal_bridge": {
+              "lods": {
+                "LOD0": 252,
+                "LOD1": 172,
+                "LOD2": 36,
+                "LOD3": 12
+              },
+              "minZ": -0.65,
+              "description": "Gemauerte Bogenbruecke mit Seitenbruestung"
+            },
+            "ur_wooden_bridge": {
+              "lods": {
+                "LOD0": 1232,
+                "LOD1": 424,
+                "LOD2": 96,
+                "LOD3": 12
+              },
+              "minZ": -0.65,
+              "description": "Hoelzerne Zedern-Balkenbruecke fuer Nebenstrassen & schmale Kanaele"
+            },
+            "road_curb_lamp_post": {
+              "lods": {
+                "LOD0": 140,
+                "LOD1": 98
+              },
+              "minZ": -0.35,
+              "description": "Strassen-Fackel-/Kohlepfannen-Staender & Grenzstele"
+            },
+            "road_cart_parked": {
+              "lods": {
+                "LOD0": 268,
+                "LOD1": 224
+              },
+              "minZ": 0.0,
+              "description": "Abgestellter Zweirad-Ochsenkarren mit Kornsaecken"
+            },
+            "road_market_awning": {
+              "lods": {
+                "LOD0": 680,
+                "LOD1": 168
+              },
+              "minZ": -0.3,
+              "description": "Marktstand-Pavillon mit Web-Markise, Koerben & Toepfen"
+            }
+          },
+          "preview": "assets/previews/mesopotamia_city_showcase.png",
+          "glbSizeKB": 8699.7,
+          "exportedAt": "2026-11-18 17:04:08"
+        },
+        "shipyard_industry_kit": {
+          "enabled": true,
+          "url": "assets/glb/world/shipyard_industry_kit.glb",
+          "blend": "assets/blend/world/shipyard_industry_kit.blend",
+          "category": "world",
+          "description": "Modulares Bronzezeit-Werft-, Aquädukt-, Fluss- & Magur-Boots-Kit (38 Module, 4 LODs, -0.35m Sockel, 1 Shared 2048x1024 Trim-Sheet inkl. Emissive=4.0)",
+          "instanced": true,
+          "materials": 1,
+          "emissiveStrength": 4.0,
+          "modulesCount": 38,
+          "totalLod0Tris": 16768,
+          "lodBandsMeters": {
+            "LOD0": [
+              0,
+              150
+            ],
+            "LOD1": [
+              150,
+              500
+            ],
+            "LOD2": [
+              500,
+              1500
+            ],
+            "LOD3": [
+              1500,
+              3000
+            ]
+          },
+          "sharedTextures": {
+            "baseColor": "assets/textures/shipyard_trim_atlas_baseColor.png",
+            "normal": "assets/textures/shipyard_trim_atlas_normal.png",
+            "orm": "assets/textures/shipyard_trim_atlas_orm.png",
+            "emissive": "assets/textures/shipyard_trim_atlas_emissive.png"
+          },
+          "modules": {
+            "sy_scaffold_bay": {
+              "lods": {
+                "LOD0": 936,
+                "LOD1": 388,
+                "LOD2": 208,
+                "LOD3": 12
+              },
+              "minZ": -0.351,
+              "maxZ": 8.79,
+              "description": "Mehrstoeckiges Baugeruest-Feld mit Diagonalstreben, Leitern & Seilbunden (Origin Boden, -0.35m)"
+            },
+            "sy_cribbing_block": {
+              "lods": {
+                "LOD0": 192,
+                "LOD1": 144,
+                "LOD2": 84,
+                "LOD3": 12
+              },
+              "minZ": -0.35,
+              "maxZ": 1.47,
+              "description": "Massive Eichen-Kielkloetze mit Keilen (Origin Boden, -0.35m)"
+            },
+            "sy_ramp_module": {
+              "lods": {
+                "LOD0": 372,
+                "LOD1": 216,
+                "LOD2": 144,
+                "LOD3": 12
+              },
+              "minZ": -0.35,
+              "maxZ": 2.395,
+              "description": "Bohlen-Beladerampe mit Radabweisern & Bockstuetzen (Origin Boden, -0.35m)"
+            },
+            "sy_drawbridge_flap": {
+              "lods": {
+                "LOD0": 240,
+                "LOD1": 152,
+                "LOD2": 56,
+                "LOD3": 12
+              },
+              "minZ": -0.16,
+              "maxZ": 1.162,
+              "description": "Zugbruecken-Klappe (Origin exakt auf Scharnierachse X @ (0,0,0))"
+            },
+            "sy_crane_aframe": {
+              "lods": {
+                "LOD0": 240,
+                "LOD1": 176,
+                "LOD2": 144,
+                "LOD3": 36
+              },
+              "minZ": -0.425,
+              "maxZ": 8.54,
+              "description": "Schwerer Bockkran-A-Rahmen mit Ballastschlitten & Seilrolle (Origin Boden, -0.35m)"
+            },
+            "sy_crane_winch_rotor": {
+              "lods": {
+                "LOD0": 436,
+                "LOD1": 224,
+                "LOD2": 92,
+                "LOD3": 20
+              },
+              "minZ": -0.92,
+              "maxZ": 0.92,
+              "description": "Drehbare Kran-Seilwinde mit Handspeichen & Sperrrad (Origin exakt auf Wellenachse X @ (0,0,0))"
+            },
+            "sy_crane_timber_load": {
+              "lods": {
+                "LOD0": 100,
+                "LOD1": 80,
+                "LOD2": 80,
+                "LOD3": 12
+              },
+              "minZ": -1.94,
+              "maxZ": 0.14,
+              "description": "Haengender 5-t-Zedernbalken mit Hanfseil-Schlinge (Origin exakt am Aufhaenge-Schaekel (0,0,0))"
+            },
+            "sy_pitch_kiln": {
+              "lods": {
+                "LOD0": 276,
+                "LOD1": 204,
+                "LOD2": 108,
+                "LOD3": 32
+              },
+              "minZ": -0.35,
+              "maxZ": 2.45,
+              "description": "Gemauerter Kopher-Pechsiedeofen mit Kessel, Glutraum, Kelle & Kuebeln (Origin Boden, -0.35m)"
+            },
+            "sy_smithy_forge": {
+              "lods": {
+                "LOD0": 452,
+                "LOD1": 356,
+                "LOD2": 288,
+                "LOD3": 84
+              },
+              "minZ": -0.35,
+              "maxZ": 4.02,
+              "description": "Ueberdachte Tubal-Kain-Schmiede mit Esse, Blasebalg, Amboss, Trog & Werkzeug (Origin Boden, -0.35m)"
+            },
+            "sy_charcoal_kiln": {
+              "lods": {
+                "LOD0": 352,
+                "LOD1": 256,
+                "LOD2": 77,
+                "LOD3": 28
+              },
+              "minZ": -0.35,
+              "maxZ": 2.35,
+              "description": "Kuppel-Holzkohlemeiler mit Holzstoss, Glut-Lueftungen & Erdmantel (Origin Boden, -0.35m)"
+            },
+            "sy_sawmill_base": {
+              "lods": {
+                "LOD0": 376,
+                "LOD1": 328,
+                "LOD2": 232,
+                "LOD3": 72
+              },
+              "minZ": -0.381,
+              "maxZ": 4.39,
+              "description": "Saegewerk Galgenportal & Basalt-Ochsenring (Origin Koenigswellen-Mitte (0,0,0), -0.35m)"
+            },
+            "sy_sawmill_capstan_rotor": {
+              "lods": {
+                "LOD0": 976,
+                "LOD1": 600,
+                "LOD2": 368,
+                "LOD3": 68
+              },
+              "minZ": 0.0,
+              "maxZ": 4.15,
+              "description": "Drehendes 48er-Kammrad + Jochbalken (Origin exakt auf Koenigswellen-Mitte Z @ (0,0,0))"
+            },
+            "sy_sawmill_driveshaft": {
+              "lods": {
+                "LOD0": 656,
+                "LOD1": 488,
+                "LOD2": 328,
+                "LOD3": 48
+              },
+              "minZ": -1.007,
+              "maxZ": 1.007,
+              "description": "Vorgelegewelle mit 8er-Stockritzel, Schwungrad & Kurbelzapfen (Origin exakt auf Wellenachse X @ (0,0,0))"
+            },
+            "sy_sawmill_frame": {
+              "lods": {
+                "LOD0": 260,
+                "LOD1": 80,
+                "LOD2": 80,
+                "LOD3": 12
+              },
+              "minZ": -0.056,
+              "maxZ": 2.665,
+              "description": "Vertikales Saegegatter mit Bronze-Saegeblatt (Origin exakt auf unterem Gatterzapfen (0,0,0))"
+            },
+            "sy_sawmill_pitman": {
+              "lods": {
+                "LOD0": 92,
+                "LOD1": 76,
+                "LOD2": 52,
+                "LOD3": 12
+              },
+              "minZ": -0.12,
+              "maxZ": 2.52,
+              "description": "Pleuelstange mit Lageraugen (Origin exakt auf Kurbelzapfen (0,0,0))"
+            },
+            "sy_sawpit_shed": {
+              "lods": {
+                "LOD0": 324,
+                "LOD1": 284,
+                "LOD2": 264,
+                "LOD3": 36
+              },
+              "minZ": -0.35,
+              "maxZ": 3.79,
+              "description": "Ueberdachte Saegegrube mit Stammauflage & Zedernstamm (Origin Boden, -0.35m)"
+            },
+            "sy_timber_chute_segment": {
+              "lods": {
+                "LOD0": 196,
+                "LOD1": 172,
+                "LOD2": 136,
+                "LOD3": 12
+              },
+              "minZ": -0.358,
+              "maxZ": 1.92,
+              "description": "Holzriesen-Rinne auf Bockstuetzen (Origin Boden, -0.35m)"
+            },
+            "sy_log_stack": {
+              "lods": {
+                "LOD0": 396,
+                "LOD1": 288,
+                "LOD2": 148,
+                "LOD3": 12
+              },
+              "minZ": -0.35,
+              "maxZ": 1.45,
+              "description": "Verzimmerter Balken-/Plankenstapel mit Werkbank & Bronze-Werkzeug (Origin Boden, -0.35m)"
+            },
+            "sy_tent_worker": {
+              "lods": {
+                "LOD0": 370,
+                "LOD1": 278,
+                "LOD2": 74,
+                "LOD3": 12
+              },
+              "minZ": -0.35,
+              "maxZ": 2.84,
+              "description": "Gestreiftes Arbeiterzelt mit Abspannseilen & Vordach (Origin Boden, -0.35m)"
+            },
+            "sy_cage_rolling": {
+              "lods": {
+                "LOD0": 1796,
+                "LOD1": 1356,
+                "LOD2": 908,
+                "LOD3": 12
+              },
+              "minZ": -0.049,
+              "maxZ": 2.02,
+              "description": "Eichen-/Bronze-Raubtier-Transportkaefig auf Holzraedern (Origin Radaufstand Z=0.0)"
+            },
+            "sy_aqueduct_source": {
+              "lods": {
+                "LOD0": 176,
+                "LOD1": 164,
+                "LOD2": 72,
+                "LOD3": 12
+              },
+              "minZ": -0.35,
+              "maxZ": 2.75,
+              "description": "Quellbecken-Fassung am Hang mit Einlaufgitter (Origin Boden, -0.35m)"
+            },
+            "sy_aqueduct_pier_span": {
+              "lods": {
+                "LOD0": 288,
+                "LOD1": 240,
+                "LOD2": 180,
+                "LOD3": 36
+              },
+              "minZ": -0.35,
+              "maxZ": 5.24,
+              "description": "Gemauerter Basalt-/Quellsteinbogen mit ueberlappendem Holzgerinne (Origin Boden, -0.35m)"
+            },
+            "sy_aqueduct_trough": {
+              "lods": {
+                "LOD0": 132,
+                "LOD1": 132,
+                "LOD2": 84,
+                "LOD3": 12
+              },
+              "minZ": -0.35,
+              "maxZ": 1.55,
+              "description": "Ablauf-Trog & Verteilungsbecken mit Bronze-Auslaeufen (Origin Boden, -0.35m)"
+            },
+            "river_magur_cargo": {
+              "lods": {
+                "LOD0": 1154,
+                "LOD1": 642,
+                "LOD2": 114,
+                "LOD3": 36
+              },
+              "minZ": -0.52,
+              "maxZ": 2.181,
+              "description": "Sumerisches Magur-Frachtboot mit Amphoren/Kornsaecken & Stechruder (Origin Wasserlinie Z=0.0)"
+            },
+            "river_magur_timber": {
+              "lods": {
+                "LOD0": 610,
+                "LOD1": 458,
+                "LOD2": 90,
+                "LOD3": 36
+              },
+              "minZ": -0.52,
+              "maxZ": 2.181,
+              "description": "Sumerisches Magur-Holzboot mit Zedernstaemmen & Stechruder (Origin Wasserlinie Z=0.0)"
+            },
+            "river_waterwheel_base": {
+              "lods": {
+                "LOD0": 144,
+                "LOD1": 144,
+                "LOD2": 84,
+                "LOD3": 24
+              },
+              "minZ": -0.35,
+              "maxZ": 3.93,
+              "description": "Lagerboecke & Gerinne fuer Noria-Wasserrad (Origin Boden, Achse bei Z=2.05m, -0.35m)"
+            },
+            "river_waterwheel_rotor": {
+              "lods": {
+                "LOD0": 1236,
+                "LOD1": 852,
+                "LOD2": 492,
+                "LOD3": 36
+              },
+              "minZ": -2.365,
+              "maxZ": 2.365,
+              "description": "Schaufel- & schoepfkastenbestuecktes Noria-Wasserrad (Origin exakt auf Drehachse X @ (0,0,0))"
+            },
+            "river_shaduf_post": {
+              "lods": {
+                "LOD0": 128,
+                "LOD1": 112,
+                "LOD2": 80,
+                "LOD3": 24
+              },
+              "minZ": -0.352,
+              "maxZ": 2.282,
+              "description": "Gabelpfosten-Staender fuer Schaduf (Origin Boden, Kippachse Z=2.10m, -0.35m)"
+            },
+            "river_shaduf_arm": {
+              "lods": {
+                "LOD0": 144,
+                "LOD1": 100,
+                "LOD2": 100,
+                "LOD3": 32
+              },
+              "minZ": -1.62,
+              "maxZ": 0.549,
+              "description": "Schwenkbarer Schaduf-Schoepfbaum mit Gegengewicht & Eimer (Origin exakt auf Kippachse (0,0,0))"
+            },
+            "river_sluice_gate": {
+              "lods": {
+                "LOD0": 160,
+                "LOD1": 160,
+                "LOD2": 84,
+                "LOD3": 48
+              },
+              "minZ": -0.35,
+              "maxZ": 2.97,
+              "description": "Gemauerte Kanal-Schleuse mit Schuetztafel & Winde (Origin Boden, -0.35m)"
+            },
+            "river_weir": {
+              "lods": {
+                "LOD0": 292,
+                "LOD1": 184,
+                "LOD2": 140,
+                "LOD3": 12
+              },
+              "minZ": -0.35,
+              "maxZ": 1.19,
+              "description": "Holzbohlen-Wehr mit Ramm-Pfaehlen & Basalt-Schuettung (Origin Boden, -0.35m)"
+            },
+            "river_timber_jetty": {
+              "lods": {
+                "LOD0": 1084,
+                "LOD1": 696,
+                "LOD2": 224,
+                "LOD3": 108
+              },
+              "minZ": -0.5,
+              "maxZ": 1.28,
+              "description": "Hoelzerner Landungssteg mit Pollern, Tauwerk & Faessern (Origin Boden, -0.50m Pfaehle)"
+            },
+            "field_straw_rick": {
+              "lods": {
+                "LOD0": 220,
+                "LOD1": 128,
+                "LOD2": 68,
+                "LOD3": 24
+              },
+              "minZ": -0.35,
+              "maxZ": 2.92,
+              "description": "Konischer Stroh-/Heudiemen mit Holzgabel (Origin Boden, -0.35m)"
+            },
+            "field_shelter": {
+              "lods": {
+                "LOD0": 336,
+                "LOD1": 244,
+                "LOD2": 152,
+                "LOD3": 60
+              },
+              "minZ": -0.35,
+              "maxZ": 2.58,
+              "description": "Offener Schilfdach-Feldunterstand mit Wasserkrugen (Origin Boden, -0.35m)"
+            },
+            "world_boulder_01": {
+              "lods": {
+                "LOD0": 54,
+                "LOD1": 42,
+                "LOD2": 20,
+                "LOD3": 16
+              },
+              "minZ": -0.35,
+              "maxZ": 1.399,
+              "description": "Verwitterter Steppen-Findling Form 1 (breiter Basaltblock, -0.35m)"
+            },
+            "world_boulder_02": {
+              "lods": {
+                "LOD0": 48,
+                "LOD1": 36,
+                "LOD2": 20,
+                "LOD3": 16
+              },
+              "minZ": -0.35,
+              "maxZ": 1.876,
+              "description": "Verwitterter Steppen-Findling Form 2 (schlanker Spaltfels, -0.35m)"
+            },
+            "world_boulder_03": {
+              "lods": {
+                "LOD0": 96,
+                "LOD1": 64,
+                "LOD2": 32,
+                "LOD3": 16
+              },
+              "minZ": -0.35,
+              "maxZ": 1.155,
+              "description": "Verwitterter Steppen-Findling Form 3 (Dreier-Felsgruppe, -0.35m)"
+            },
+            "world_supply_cart": {
+              "lods": {
+                "LOD0": 1428,
+                "LOD1": 784,
+                "LOD2": 504,
+                "LOD3": 24
+              },
+              "minZ": -0.052,
+              "maxZ": 1.4,
+              "description": "Beladener Vorratskarren mit Kornsaecken, Fass & Amphore (Origin Radaufstand Z=0.0)"
+            }
+          },
+          "preview": "assets/previews/shipyard_industry_showcase.png",
+          "glbSizeKB": 9674.0,
+          "exportedAt": "2026-11-18 18:32:07"
+        },
+        "ur_fountain_hero": {
+          "enabled": true,
+          "url": "assets/glb/world/ur_fountain_hero.glb",
+          "blend": "assets/blend/world/ur_fountain_hero.blend",
+          "category": "world",
+          "description": "Sumerischer Marktplatzbrunnen aus gebranntem Ziegel, Kalkstein, 4 Schoepf-Nischen, Kruegen, feuchtem Sockel (-0.30m) & Blender-Wasseroberflaeche (LOD0 + LOD1)",
+          "instanced": false,
+          "materials": 2,
+          "lods": {
+            "LOD0": 4272,
+            "LOD1": 1536
+          },
+          "minZ": -0.3,
+          "maxZ": 1.241,
+          "lodBandsMeters": {
+            "LOD0": [
+              0,
+              80
+            ],
+            "LOD1": [
+              80,
+              600
+            ]
+          },
+          "sharedTextures": {
+            "cityTrimBaseColor": "assets/textures/city_trim_atlas_baseColor.png",
+            "cityTrimNormal": "assets/textures/city_trim_atlas_normal.png",
+            "cityTrimOrm": "assets/textures/city_trim_atlas_orm.png",
+            "waterNormalA": "assets/textures/water_blender_normal_a.png",
+            "waterNormalB": "assets/textures/water_blender_normal_b.png",
+            "waterFoam": "assets/textures/water_blender_foam.png"
+          },
+          "preview": "assets/previews/terrain_water_showcase.png",
+          "glbSizeKB": 9023.8,
+          "exportedAt": "2026-11-18 20:25:32"
         }
       }
     },
