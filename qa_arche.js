@@ -26,6 +26,9 @@ const XRAY_MODE = args.includes('--xray');
 const HTML_FILE = 'Arche Simulation 3.0.html';
 const SCRATCH_DIR = path.join(__dirname, 'scratch');
 const MIN_PNG_BYTES = 30 * 1024;
+// Dauerhafter Shader-Wächter: feste Obergrenze (reduzierter Ist-Wert + 8 Reserve-Slots) & 0 Nach-Kompilierungen auf Werft-Presets
+const MAX_PROGRAMS_DESKTOP = 50; // Ist=42 + 8 Reserve
+const MAX_PROGRAMS_IPAD = 55;    // Ist=47 + 8 Reserve
 const IPAD_UA = 'Mozilla/5.0 (iPad; CPU OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
 
 function checkPngSanity(buf, relPath) {
@@ -553,6 +556,13 @@ async function run() {
     const generatedShots = [];
     const sanityFails = [];
     const viewStats = [];
+    const programsAfterBoot = envInfo.totalPrograms;
+    let maxShipyardPrograms = programsAfterBoot;
+    let checkedShipyardPresets = 0;
+    const isShipyardPreset = (name) => {
+      const n = String(name || '').toLowerCase();
+      return !n.startsWith('ararat') && !n.includes('storm') && !n.includes('interior') && !n.includes('flood') && !n.includes('ocean');
+    };
     const measureViewMetrics = async (durationMs = 650) => cdp.eval(`new Promise(resolve => {
       const origRender = renderer.render.bind(renderer);
       let renSum = 0, renCount = 0;
@@ -583,6 +593,11 @@ async function run() {
       await cdp.eval(`Arche.QA.go(${JSON.stringify(preset)})`);
       await new Promise((r) => setTimeout(r, 350));
       const metrics = await measureViewMetrics(650);
+      if (isShipyardPreset(preset)) {
+        const curProgs = await cdp.eval(`(renderer.info && renderer.info.programs) ? renderer.info.programs.length : 0`);
+        if (curProgs > maxShipyardPrograms) maxShipyardPrograms = curProgs;
+        checkedShipyardPresets++;
+      }
 
       let shotRel = null;
       let sanity = null;
@@ -781,9 +796,15 @@ async function run() {
       };
     }
 
+    const shipyardDeltaPrograms = maxShipyardPrograms - programsAfterBoot;
+    const shaderCountOk = envInfo.totalPrograms <= MAX_PROGRAMS_DESKTOP;
+    const shaderDeltaOk = shipyardDeltaPrograms === 0;
+
     console.log(`GPU: ${envInfo.gpu}`);
     console.log(`Renderer: DPR=${envInfo.dpr} (${envInfo.canvasW}x${envInfo.canvasH}) | Tier=${envInfo.tier} | ShadowType=${envInfo.shadowType}`);
-    console.log(`Shaders: ${envInfo.totalPrograms} Programme, ${envInfo.brokenPrograms} fehlerhaft`);
+    console.log(`Shaders: ${envInfo.totalPrograms} / ${MAX_PROGRAMS_DESKTOP} Programme (${envInfo.brokenPrograms} fehlerhaft) | Werft-Delta=${shipyardDeltaPrograms} (${checkedShipyardPresets} Presets) -> ${(shaderCountOk && shaderDeltaOk) ? 'SHADER_GUARD_OK' : 'SHADER_GUARD_FAIL'}`);
+    if (!shaderCountOk) console.error(`SHADER_GUARD_FAIL: Desktop WebGL-Programme (${envInfo.totalPrograms}) überschreiten maxPrograms=${MAX_PROGRAMS_DESKTOP}!`);
+    if (!shaderDeltaOk) console.error(`SHADER_GUARD_FAIL: ${shipyardDeltaPrograms} unerwartete Nach-Kompilierung(en) zwischen Ladescreen (${programsAfterBoot}) und Werft-Presets (${maxShipyardPrograms})!`);
     console.log(`Errors: console=${consoleErrors.length}, page=${pageErrors.length}`);
     if (consoleErrors.length) console.error('Console-Errors:', consoleErrors);
     if (pageErrors.length) console.error('Page-Errors:', pageErrors);
@@ -801,7 +822,10 @@ async function run() {
     if (ipadReport) {
       console.log(`iPad-Emulation (${ipadReport.innerW}x${ipadReport.innerH}, DPR=${ipadReport.dpr}, canvas=${ipadReport.canvasW}x${ipadReport.canvasH}):`);
       console.log(`  - detectInitialTier=${ipadReport.detectedTier} | currentTier=${ipadReport.currentTier} | isTablet=${ipadReport.isTablet} | tabletCompact=${ipadReport.tabletCompact} | touchPts=${ipadReport.touchPts}`);
-      console.log(`  - Shaders=${ipadReport.totalPrograms} (${ipadReport.brokenPrograms} fehlerhaft) | Errors: console=${ipadReport.consoleErrors.length}, page=${ipadReport.pageErrors.length}`);
+      console.log(`  - Shaders=${ipadReport.totalPrograms} / ${MAX_PROGRAMS_IPAD} (${ipadReport.brokenPrograms} fehlerhaft) | Errors: console=${ipadReport.consoleErrors.length}, page=${ipadReport.pageErrors.length}`);
+      if (ipadReport.totalPrograms > MAX_PROGRAMS_IPAD) {
+        console.error(`  - SHADER_GUARD_FAIL (iPad): ${ipadReport.totalPrograms} > maxPrograms=${MAX_PROGRAMS_IPAD}!`);
+      }
       console.log(`  - Touch-UI Panels=[${ipadReport.visiblePanels.join(', ')}] | Overlaps=${ipadReport.overlaps.length} | OutOfBounds=${ipadReport.outOfBounds.length}`);
       if (ipadReport.overlaps.length) console.error('  - iPad Overlaps:', ipadReport.overlaps);
       if (ipadReport.outOfBounds.length) console.error('  - iPad OutOfBounds:', ipadReport.outOfBounds);
@@ -835,6 +859,7 @@ async function run() {
       ipadReport.detectedTier === 2 &&
       ipadReport.isTablet &&
       ipadReport.brokenPrograms === 0 &&
+      ipadReport.totalPrograms <= MAX_PROGRAMS_IPAD &&
       ipadReport.consoleErrors.length === 0 &&
       ipadReport.pageErrors.length === 0 &&
       ipadReport.overlaps.length === 0 &&
@@ -845,6 +870,8 @@ async function run() {
       consoleErrors.length === 0 &&
       pageErrors.length === 0 &&
       envInfo.brokenPrograms === 0 &&
+      shaderCountOk &&
+      shaderDeltaOk &&
       sanityFails.length === 0 &&
       ipadOk;
     if (!ok) {

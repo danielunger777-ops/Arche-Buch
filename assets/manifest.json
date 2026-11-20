@@ -107,6 +107,420 @@
           "instanced": true,
           "tempC": 20.0,
           "etaEC5": 18.0
+        },
+        "ark_wave_a_kit": {
+          "enabled": true,
+          "url": "assets/glb/ark/ark_wave_a_kit.glb",
+          "blend": "assets/blend/ark/ark_wave_a_kit.blend",
+          "category": "ark",
+          "shaderKey": "arche_asset_v1_std",
+          "lods": [
+            "LOD0",
+            "LOD1",
+            "LOD2"
+          ],
+          "lodDistances": [
+            28,
+            75,
+            145
+          ],
+          "sharedTextures": {
+            "arkMasterTrim": [
+              "assets/textures/ark/ark_master_basecolor.png",
+              "assets/textures/ark/ark_master_normal.png",
+              "assets/textures/ark/ark_master_roughness.png"
+            ]
+          },
+          "modules": {
+            "ark_gate_leaf_s7": {
+              "lods": {
+                "LOD0": 4884,
+                "LOD1": 1000,
+                "LOD2": 276
+              },
+              "description": "Hero-Seitentor S7 Torblatt (4.20x3.15m, Pivot an oberer Scharnierachse Z=0 -> -3.15m, Gen 6,14 innen & aussen Kopher-verpicht / 3 Hainbuchen-Sperrbalken & Bronze-Scharniere)"
+            },
+            "ark_gate_zarge_s7": {
+              "lods": {
+                "LOD0": 2568,
+                "LOD1": 824,
+                "LOD2": 332
+              },
+              "description": "Hero-Seitentor S7 Eichen-Blockzarge (4.20x3.15m lichte Oeffnung ueber 0.583m Flutsuell mit Kopher-Dichtfalzen & Flutsuell-Innenkante, 0.467m Eichenpfosten, 3 Riegeltaschen & 2 Kopfbaender)"
+            },
+            "ark_storm_shutter": {
+              "lods": {
+                "LOD0": 242,
+                "LOD1": 60,
+                "LOD2": 24
+              },
+              "description": "Gezimmertes Zohar-/Badgir-Sturmklappen-Blatt (1.0x1.0x1.0 normiert, Pivot Mitte Oberkante Z=0 -> -1.0, 3 Lamellen, Diagonalstrebe & Zugseil-Oese)"
+            },
+            "ark_root_knee_01": {
+              "lods": {
+                "LOD0": 368,
+                "LOD1": 112,
+                "LOD2": 36
+              },
+              "description": "Organisches Eichen-Wurzelknie Variante 01 (0.187m breit, 0.630m Schenkel, 0.171m dick, 6 Duebel, Origin an rechtwinkliger Aussenecke)"
+            },
+            "ark_root_knee_02": {
+              "lods": {
+                "LOD0": 368,
+                "LOD1": 112,
+                "LOD2": 36
+              },
+              "description": "Organisches Eichen-Wurzelknie Variante 02 (0.187m breit, 0.630m Schenkel, Naturwulst-Kehle & 7 versetzte Duebel, Origin an Aussenecke)"
+            },
+            "ark_root_knee_03": {
+              "lods": {
+                "LOD0": 424,
+                "LOD1": 112,
+                "LOD2": 36
+              },
+              "description": "Organisches Eichen-Wurzelknie Variante 03 (0.187m breit, 0.630m Schenkel, Stirnklauen & 6 grosse 1-Hand-Duebel, Origin an Aussenecke)"
+            },
+            "ark_kingpost_capital": {
+              "lods": {
+                "LOD0": 580,
+                "LOD1": 144,
+                "LOD2": 48
+              },
+              "description": "Koenigsstuetzen-Sattelholz-Kapitell (umschließt 0.336x0.336m Stuetze, Sattelholz 0.386x1.100x0.260m, 2 Kopfband-Knaggen, Origin Unterkante Unterzug Z=0)"
+            },
+            "ark_door_frame_d1": {
+              "lods": {
+                "LOD0": 564,
+                "LOD1": 144,
+                "LOD2": 48
+              },
+              "description": "Plastische Schotttuer-Blockzarge Deck 1 (Lichte Oeffnung exakt 2.800x2.917m ueber 0.583m Flutsuell, 0.0cm T99-Verengung)"
+            },
+            "ark_door_frame_d2": {
+              "lods": {
+                "LOD0": 564,
+                "LOD1": 144,
+                "LOD2": 48
+              },
+              "description": "Plastische Schotttuer-Blockzarge Deck 2 (Lichte Oeffnung exakt 1.867x2.217m ueber 0.233m Suell, 0.0cm T99-Verengung)"
+            },
+            "ark_door_frame_d3": {
+              "lods": {
+                "LOD0": 564,
+                "LOD1": 144,
+                "LOD2": 48
+              },
+              "description": "Plastische Schotttuer-Blockzarge Deck 3 (Lichte Oeffnung exakt 1.400x1.983m ueber 0.233m Suell, 0.0cm T99-Verengung)"
+            },
+            "ark_door_frame_foyer": {
+              "lods": {
+                "LOD0": 564,
+                "LOD1": 144,
+                "LOD2": 48
+              },
+              "description": "Plastische Schotttuer-Blockzarge S7-Foyer-Hauptportal (Lichte Oeffnung exakt 3.593x2.917m ueber 0.117m Schwelle, 0.0cm T99-Verengung)"
+            },
+            "ark_badgir_cap": {
+              "lods": {
+                "LOD0": 1200,
+                "LOD1": 288,
+                "LOD2": 84
+              },
+              "description": "Gezimmerter Badgir-Windturm-Kopf (1.633x1.400m Schachtsitz, Origin Z=0.0 an zTop, +0.45m Kopher-Zedern-Zeltdachhaube, 16 Sparrenkoepfe & Kreuzwand)"
+            }
+          },
+          "previews": [
+            "assets/previews/ark_wave_a_overview.png",
+            "assets/previews/ark_wave_a_gate_closeup.png",
+            "assets/previews/ark_wave_a_carpentry_closeup.png"
+          ],
+          "glbSizeKB": 2189.4,
+          "exportedAt": "2026-11-20 12:44:41"
+        },
+        "ark_base_structure_kit": {
+          "enabled": true,
+          "url": "assets/glb/ark/ark_base_structure_kit.glb",
+          "blend": "assets/blend/ark/ark_base_structure_kit.blend",
+          "category": "ark",
+          "shaderKey": "arche_asset_v1_std",
+          "metricUvScale": "1.0 UV = 2.0 m",
+          "exteriorLods": [
+            "LOD0",
+            "LOD1",
+            "LOD2",
+            "LOD3"
+          ],
+          "exteriorLodDistances": [
+            150,
+            500,
+            1500,
+            3000
+          ],
+          "interiorLods": [
+            "LOD0",
+            "LOD1",
+            "LOD2"
+          ],
+          "interiorLodDistances": [
+            28,
+            75,
+            145
+          ],
+          "materialSlots": {
+            "MAT_ARK_KOPHER": "kopher_pitch",
+            "MAT_ARK_ROOF_WOOD": "wood_cedar_c18",
+            "MAT_ARK_DECKS": "wood_oak_d35",
+            "MAT_ARK_HEAVY_TIMBER": "wood_oak_d35",
+            "MAT_ARK_LONG_BH": "wood_cypress_c27",
+            "MAT_ARK_TRANS_BH": "wood_cypress_c27"
+          },
+          "woodLibraryTextures": {
+            "kopher_pitch": [
+              "assets/textures/ark/materials/kopher_pitch_basecolor.png",
+              "assets/textures/ark/materials/kopher_pitch_normal.png",
+              "assets/textures/ark/materials/kopher_pitch_roughness.png"
+            ],
+            "wood_oak_d35": [
+              "assets/textures/ark/materials/wood_oak_d35_basecolor.png",
+              "assets/textures/ark/materials/wood_oak_d35_normal.png",
+              "assets/textures/ark/materials/wood_oak_d35_roughness.png"
+            ],
+            "wood_cypress_c27": [
+              "assets/textures/ark/materials/wood_cypress_c27_basecolor.png",
+              "assets/textures/ark/materials/wood_cypress_c27_normal.png",
+              "assets/textures/ark/materials/wood_cypress_c27_roughness.png"
+            ],
+            "wood_cedar_c18": [
+              "assets/textures/ark/materials/wood_cedar_c18_basecolor.png",
+              "assets/textures/ark/materials/wood_cedar_c18_normal.png",
+              "assets/textures/ark/materials/wood_cedar_c18_roughness.png"
+            ],
+            "wood_hornbeam": [
+              "assets/textures/ark/materials/wood_hornbeam_basecolor.png",
+              "assets/textures/ark/materials/wood_hornbeam_normal.png",
+              "assets/textures/ark/materials/wood_hornbeam_roughness.png"
+            ]
+          },
+          "modules": {
+            "ark_hull_wall_bb": {
+              "materials": [
+                "MAT_ARK_KOPHER"
+              ],
+              "lodDistances": [
+                150,
+                500,
+                1500,
+                3000
+              ],
+              "lods": {
+                "LOD0": 7796,
+                "LOD1": 4492,
+                "LOD2": 948,
+                "LOD3": 768
+              },
+              "description": "Backbord-Aussenwand (Y=-11.500..-11.189m, Z=0..13.533m, Gen 6,14 aussen & innen Kopher-verpicht, 4 Berghoelzer, Lisenen, Steven-Koepfe & exakte S7-Tor-Aussparung)"
+            },
+            "ark_hull_wall_sb": {
+              "materials": [
+                "MAT_ARK_KOPHER"
+              ],
+              "lodDistances": [
+                150,
+                500,
+                1500,
+                3000
+              ],
+              "lods": {
+                "LOD0": 11952,
+                "LOD1": 6912,
+                "LOD2": 1728,
+                "LOD3": 1428
+              },
+              "description": "Steuerbord-Aussenwand (Y=+11.189..+11.500m) + Bug-/Heck-Stirnwaende (xLocal=+-70m) inkl. Giebel bis First Z=14.700m & 4 Giebel-Sturmklappen-Aussparungen (Gen 6,14 aussen & innen Kopher-verpicht)"
+            },
+            "ark_hull_roof": {
+              "materials": [
+                "MAT_ARK_KOPHER",
+                "MAT_ARK_ROOF_WOOD"
+              ],
+              "lodDistances": [
+                150,
+                500,
+                1500,
+                3000
+              ],
+              "lods": {
+                "LOD0": 9084,
+                "LOD1": 7644,
+                "LOD2": 4092,
+                "LOD3": 2652
+              },
+              "description": "140-m-Satteldach (First Z=14.700..14.972m, 1-Elle-Traufueberstand bis |Y|=11.967m, aussen Kopher mit Stossleisten, Firstbalken & 8 Badgir-Kragen, innen Zedernholz mit Sparrenkoepfen alle 2.333m)"
+            },
+            "ark_hull_zohar": {
+              "materials": [
+                "MAT_ARK_ROOF_WOOD"
+              ],
+              "lodDistances": [
+                150,
+                500,
+                1500,
+                3000
+              ],
+              "lods": {
+                "LOD0": 6408,
+                "LOD1": 6408,
+                "LOD2": 4392,
+                "LOD3": 792
+              },
+              "description": "1-Elle-Zohar-Lichtgaden (Z=13.533..14.000m an Y=+-11.500m, Traufschwelle, Pfette, 116 profilierte Zohar-Stiele im 5-E.-Raster & 2-lagig schraege Wetterlamellen)"
+            },
+            "ark_hull_keels": {
+              "materials": [
+                "MAT_ARK_KOPHER"
+              ],
+              "lodDistances": [
+                150,
+                500,
+                1500,
+                3000
+              ],
+              "lods": {
+                "LOD0": 1976,
+                "LOD1": 1136,
+                "LOD2": 132,
+                "LOD3": 108
+              },
+              "description": "3 massive Kopher-Aussenkiele (Y=-8.167, 0.0, +8.167m, Z=-0.467..0.000m, Breite 1.167m, Bug-/Heck-Anlaufkufen, Stosslaschen & Sohlen-Kimm-Gurt)"
+            },
+            "ark_hull_sole": {
+              "materials": [
+                "MAT_ARK_KOPHER",
+                "MAT_ARK_HEAVY_TIMBER"
+              ],
+              "lodDistances": [
+                150,
+                500,
+                1500,
+                3000
+              ],
+              "lods": {
+                "LOD0": 6384,
+                "LOD1": 2632,
+                "LOD2": 1068,
+                "LOD3": 516
+              },
+              "description": "Boden-Sohle Z=0.000..0.350m (Gen 6,14 aussen & innen Kopher-verpicht) + 3 massive Innen-Kielschweine Z=0.350..0.690m in MAT_ARK_HEAVY_TIMBER mit Kopher-Fussfuge"
+            },
+            "ark_hull_deck_d1": {
+              "materials": [
+                "MAT_ARK_DECKS",
+                "MAT_ARK_KOPHER"
+              ],
+              "lodDistances": [
+                28,
+                75,
+                145
+              ],
+              "lods": {
+                "LOD0": 8456,
+                "LOD1": 4872,
+                "LOD2": 1056
+              },
+              "description": "Deck 1 (Z=1.883..2.117m, MAT_ARK_DECKS + Kopher-Dichtungskehle) mit 2 Paternoster-Schaechten & 4 Schnecken-Durchbruechen inkl. Wechselbalken"
+            },
+            "ark_hull_deck_d2": {
+              "materials": [
+                "MAT_ARK_DECKS",
+                "MAT_ARK_KOPHER"
+              ],
+              "lodDistances": [
+                28,
+                75,
+                145
+              ],
+              "lods": {
+                "LOD0": 9716,
+                "LOD1": 6300,
+                "LOD2": 1884
+              },
+              "description": "Deck 2 (Z=5.883..6.117m, MAT_ARK_DECKS + Kopher-Dichtungskehle) mit 8 Silo-, 2 Paternoster-, 4 Schnecken-, 8 Badgir- & D1->D2 Schwerlastrampen-Durchbruechen"
+            },
+            "ark_hull_deck_d3": {
+              "materials": [
+                "MAT_ARK_DECKS",
+                "MAT_ARK_KOPHER"
+              ],
+              "lodDistances": [
+                28,
+                75,
+                145
+              ],
+              "lods": {
+                "LOD0": 8568,
+                "LOD1": 5432,
+                "LOD2": 1512
+              },
+              "description": "Deck 3 (Z=9.903..10.097m, MAT_ARK_DECKS + Kopher-Dichtungskehle) mit 8 Silo-, 2 Paternoster-, 8 Badgir- & D2->D3 Leichtrampen-Durchbruechen"
+            },
+            "ark_hull_heavy_timber": {
+              "materials": [
+                "MAT_ARK_HEAVY_TIMBER"
+              ],
+              "lodDistances": [
+                28,
+                75,
+                145
+              ],
+              "lods": {
+                "LOD0": 10808,
+                "LOD1": 10808,
+                "LOD2": 4632
+              },
+              "description": "Alle 15 Laengsunterzuege (0.355x0.228m unter D1-D3 & Dachpfetten) + 45 Koenigsstuetzen-Schaefte (0.336x0.336m an X_STATIONS[0..14], buendig unter Sattelholz-Kapitellen)"
+            },
+            "ark_hull_long_bh": {
+              "materials": [
+                "MAT_ARK_LONG_BH"
+              ],
+              "lodDistances": [
+                28,
+                75,
+                145
+              ],
+              "lods": {
+                "LOD0": 24852,
+                "LOD1": 15444,
+                "LOD2": 3348
+              },
+              "description": "2 Laengsschotten (Y=+-5.000m, 0.233m stark) mit plastischen Bohlenlagen, Staenderrippen & exakt allen 60 Laengsschotttuer-Positionen (inkl. S7-Bb Foyer-Hauptportal)"
+            },
+            "ark_hull_trans_bh": {
+              "materials": [
+                "MAT_ARK_TRANS_BH"
+              ],
+              "lodDistances": [
+                28,
+                75,
+                145
+              ],
+              "lods": {
+                "LOD0": 27264,
+                "LOD1": 16516,
+                "LOD2": 5316
+              },
+              "description": "13 Querschotten QS01..QS13 (xShip=10..130m, 0.233m stark) mit 39 Mittelschiff-Tueren, 16 Seitenschiff-Tueren, 26 D2-Duekern & 2 grossen QS07-Rampendurchbruechen"
+            }
+          },
+          "previews": [
+            "assets/previews/ark_base_exterior_34.png",
+            "assets/previews/ark_base_cutaway_full.png",
+            "assets/previews/ark_base_interior_corridor.png",
+            "assets/previews/ark_base_gate_zohar_closeup.png",
+            "assets/previews/ark_base_wood_swatches.png"
+          ],
+          "glbSizeKB": 16846.0,
+          "exportedAt": "2026-11-20 12:59:16"
         }
       }
     },
@@ -1815,6 +2229,197 @@
           "preview": "assets/previews/terrain_water_showcase.png",
           "glbSizeKB": 9023.8,
           "exportedAt": "2026-11-18 20:25:32"
+        },
+        "temenos_hero_kit": {
+          "enabled": true,
+          "url": "assets/glb/city/temenos_hero_kit.glb",
+          "blend": "assets/blend/city/temenos_hero_kit.blend",
+          "category": "world",
+          "lods": [
+            "LOD0",
+            "LOD1",
+            "LOD2",
+            "LOD3"
+          ],
+          "lodDistances": [
+            150,
+            500,
+            1500,
+            3000
+          ],
+          "sharedTextures": {
+            "trim": [
+              "assets/textures/temenos_hero_trim_baseColor.png",
+              "assets/textures/temenos_hero_trim_normal.png",
+              "assets/textures/temenos_hero_trim_orm.png",
+              "assets/textures/temenos_hero_trim_emissive.png"
+            ],
+            "botany": [
+              "assets/textures/temenos_botany_atlas_baseColor.png",
+              "assets/textures/temenos_botany_atlas_normal.png",
+              "assets/textures/temenos_botany_atlas_orm.png",
+              "assets/textures/temenos_botany_atlas_thickness.png"
+            ]
+          },
+          "modules": {
+            "hero_ziggurat_ur": {
+              "lods": {
+                "LOD0": 28552,
+                "LOD1": 7434,
+                "LOD2": 1680,
+                "LOD3": 72
+              },
+              "description": "Monumentale 3-Stufen-Ziggurat mit Dreifachtreppe, Torhaus, E-Nanna-Schrein & IvyGen-Terrassengaerten"
+            },
+            "hero_abzu_pond": {
+              "lods": {
+                "LOD0": 1614,
+                "LOD1": 800,
+                "LOD2": 444,
+                "LOD3": 12
+              },
+              "description": "Versenkter 3D-Abzu-Tempelteich (-0.50m Mosaikboden, Stufen, Wasserspeier, Papyrus, 3D-Lotos)"
+            },
+            "abzu_water_surface": {
+              "lods": {
+                "LOD0": 200,
+                "LOD1": 32,
+                "LOD2": 2,
+                "LOD3": 2
+              },
+              "description": "Separate reflektierende Wasseroberflaeche fuer hero_abzu_pond bei Z=+0.14m (0% Z-Fighting)"
+            },
+            "hero_temple_annex_01": {
+              "lods": {
+                "LOD0": 2560,
+                "LOD1": 1272,
+                "LOD2": 352,
+                "LOD3": 12
+              },
+              "description": "Tempel-Nebengebaeude 01 (Schatzhaus mit Pilastern, Zedern-Portikus, Dachpergola & Amphoren)"
+            },
+            "hero_temple_annex_02": {
+              "lods": {
+                "LOD0": 2588,
+                "LOD1": 1288,
+                "LOD2": 392,
+                "LOD3": 12
+              },
+              "description": "Tempel-Nebengebaeude 02 (Priester-/Archivhaus mit Kolonnade, Nischen & Dachpergola)"
+            },
+            "hero_temenos_gate": {
+              "lods": {
+                "LOD0": 1220,
+                "LOD1": 1028,
+                "LOD2": 276,
+                "LOD3": 36
+              },
+              "description": "Temenos-Prunktor mit Doppeltuermen, Lapislazuli-Fries & offenen Bronze-Zederntoren"
+            },
+            "hero_temenos_wall_seg": {
+              "lods": {
+                "LOD0": 218,
+                "LOD1": 156,
+                "LOD2": 24,
+                "LOD3": 12
+              },
+              "description": "Temenos-Innenmauer-Modul (6m) mit Nischen, Zinnen, Fackelhalter & -0.35m Schuerze"
+            },
+            "temple_planter_long": {
+              "lods": {
+                "LOD0": 388,
+                "LOD1": 244,
+                "LOD2": 108,
+                "LOD3": 36
+              },
+              "description": "Gemauertes Hochbeet (3.2m) mit Oleander, Granatapfel, Feige & Efeu"
+            },
+            "temple_planter_corner": {
+              "lods": {
+                "LOD0": 212,
+                "LOD1": 140,
+                "LOD2": 84,
+                "LOD3": 36
+              },
+              "description": "Gemauertes Eck-Hochbeet (1.6m) mit Oleander, Kraeutern & Efeu"
+            },
+            "temple_tree_pomegranate": {
+              "lods": {
+                "LOD0": 14182,
+                "LOD1": 1030,
+                "LOD2": 670,
+                "LOD3": 22
+              },
+              "description": "Heiliger-Hain Granatapfelbaum (Sapling Tree Gen, 4 LODs)"
+            },
+            "temple_tree_cypress": {
+              "lods": {
+                "LOD0": 6382,
+                "LOD1": 1926,
+                "LOD2": 146,
+                "LOD3": 22
+              },
+              "description": "Heiliger-Hain Tempel-Zypresse (Sapling Tree Gen, 4 LODs)"
+            },
+            "temple_pergola_vine": {
+              "lods": {
+                "LOD0": 304,
+                "LOD1": 268,
+                "LOD2": 172,
+                "LOD3": 172
+              },
+              "description": "Zedern- & Schilf-Pergola mit echten IvyGen-Wein-/Efeuranken"
+            },
+            "temple_altar_incense": {
+              "lods": {
+                "LOD0": 300,
+                "LOD1": 222,
+                "LOD2": 183,
+                "LOD3": 183
+              },
+              "description": "Monumentaler Kalkstein-Hornaltar mit Bronze-Raeucherschale & gluehender Kohle"
+            },
+            "temple_stele_01": {
+              "lods": {
+                "LOD0": 108,
+                "LOD1": 108,
+                "LOD2": 72,
+                "LOD3": 72
+              },
+              "description": "Sumerische Kalkstein-Stele mit Relief-Normalmap & Stufensockel"
+            },
+            "temple_brazier_01": {
+              "lods": {
+                "LOD0": 176,
+                "LOD1": 128,
+                "LOD2": 68,
+                "LOD3": 68
+              },
+              "description": "Freistehender Bronze-Feuerstaender mit gluehender Holzkohle"
+            },
+            "temple_paving_slab": {
+              "lods": {
+                "LOD0": 48,
+                "LOD1": 48,
+                "LOD2": 36,
+                "LOD3": 36
+              },
+              "description": "Abgeschraegtes Travertin-Prozessionspflaster (+0.04m, -0.12m Schuerze)"
+            }
+          },
+          "previews": [
+            "assets/previews/temenos_hero_overview.png",
+            "assets/previews/temenos_ziggurat_closeup.png",
+            "assets/previews/temenos_abzu_pond_closeup.png",
+            "assets/previews/temenos_garden_props_lineup.png",
+            "assets/previews/ziggurat_axial_front.png",
+            "assets/previews/ziggurat_axial_top.png",
+            "assets/previews/ziggurat_walkability_front.png",
+            "assets/previews/ziggurat_walkability_top.png",
+            "assets/previews/ziggurat_shrine_gatehouse_closeup.png"
+          ],
+          "glbSizeKB": 6795.2,
+          "exportedAt": "2026-11-19 23:34:54"
         }
       }
     },
@@ -1943,6 +2548,52 @@
           ],
           "sssStrength": 0.4,
           "tempC": 37.2
+        },
+        "noah_family_kit": {
+          "enabled": true,
+          "url": "assets/glb/characters/noah_family_kit.glb",
+          "blend": "assets/blend/characters/noah_family_kit.blend",
+          "category": "character",
+          "generator": "MPFB v2 (bl_ext.blender_org.mpfb)",
+          "instanced": false,
+          "figures": 8,
+          "highPolyTrisAvg": 31410,
+          "lod0TrisAvg": 7998,
+          "lod1TrisAvg": 2099,
+          "lod2TrisAvg": 533,
+          "colorAttr": "Col_Rig",
+          "glbSizeKB": 9619.7,
+          "sharedTextures": [
+            "assets/textures/character_trim_atlas_baseColor.png",
+            "assets/textures/character_trim_atlas_normal.png",
+            "assets/textures/character_trim_atlas_orm.png",
+            "assets/textures/character_trim_atlas_thickness.png"
+          ],
+          "updatedAt": "2026-11-19T19:48:58"
+        },
+        "mesopotamia_citizens_kit": {
+          "enabled": true,
+          "url": "assets/glb/characters/mesopotamia_citizens_kit.glb",
+          "blend": "assets/blend/characters/mesopotamia_citizens_kit.blend",
+          "category": "character",
+          "generator": "MPFB v2 (bl_ext.blender_org.mpfb)",
+          "instanced": true,
+          "types": 9,
+          "variantsPerType": 5,
+          "totalLod0Figures": 45,
+          "highPolyBaseTrisAvg": 30071,
+          "lod0TrisAvg": 3749,
+          "lod1TrisAvg": 956,
+          "lod2TrisAvg": 293,
+          "colorAttr": "Col_Rig",
+          "glbSizeKB": 14712.5,
+          "sharedTextures": [
+            "assets/textures/character_trim_atlas_baseColor.png",
+            "assets/textures/character_trim_atlas_normal.png",
+            "assets/textures/character_trim_atlas_orm.png",
+            "assets/textures/character_trim_atlas_thickness.png"
+          ],
+          "updatedAt": "2026-11-19T19:48:58"
         }
       }
     }

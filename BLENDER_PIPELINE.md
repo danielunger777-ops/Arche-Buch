@@ -52,13 +52,13 @@ Damit **Etagen-Schnitte (`uMaxSliceZ`)**, **Bordwand-Ausblendung**, **EC5-Spannu
      - `R` = Wind-Biegegewicht (`0.0` am Wurzelstock → `1.0` in den Astspitzen, für die durchlaufende Wind-Böenwelle!)
      - `G` = Blatt-Flatterphase (leichtes Rauschen pro Ast/Blattbüschel)
      - `B` = Baked Ambient Occlusion (Kronen-Inneres dunkler als Spitzen!)
-3. **Verbindlicher 4-LOD-Standard & weiche Übergänge für JEDE Pflanze (Pflicht in allen `build_*.py`!):**
-   Jede Pflanzen-Variante (`<species>_<stage>_<var>_LOD0..LOD3`) muss exakt **4 Detailstufen** exportieren:
-   - **`LOD0` (Hero-Nahbereich `0–90 m`):** `5.000–14.000 Tris` (`≥ 5×` Detail gegenüber Erstgeneration: tertiäre Zweige, gewölbte 2×2-Segment-Laubkarten, 10–12 Stamm-Facetten).
-   - **`LOD1` (Mittel-Nah `90–250 m`):** `1.800–4.200 Tris` (Sekundäräste, gestaffelte gekreuzte Blattkarten, 6–7 Stamm-Facetten).
-   - **`LOD2` (Mittel-Fern `250–680 m`):** `350–850 Tris` (Hauptkrone + vereinfachtes Astgerüst).
-   - **`LOD3` (Horizont `680–2.800 m`):** `40–140 Tris` (kompakter 3-Kant-Stamm + gekreuzte Ganzkronen-Proxy-Karten).
-   - **Pflicht-Crossfade zwischen LOD-Stufen (Kein Aufploppen!):** Alle 4-LOD-Assets (Botanik sowie generische `THREE.LOD`-Slots) überblenden über überlappende Distanzbänder (`±13–18 %` der Schwellendistanz, zzgl. `120–240 m` Horizont-Ausblendung) mittels komplementärem **Screen-Space-Dithering** (`lodInterleavedNoise(gl_FragCoord.xy)`): gerade LODs (`LOD0/LOD2`) behalten `_dither < visibility`, ungerade (`LOD1/LOD3`) behalten `_dither >= (1.0 - visibility)`. Dadurch greifen absteigende und aufsteigende LODs lückenlos und ohne Alpha-Sorting-Fehler ineinander.
+3. **Verbindlicher 4-LOD-Standard & weiche Übergänge für JEDE Pflanze & Architektur/Werft (Pflicht in allen `build_*.py`!):**
+   Jede Pflanzen-Variante (`<species>_<stage>_<var>_LOD0..LOD3`) sowie modulare Architektur-/Werft-Baugruppen müssen exakt **4 Detailstufen** mit den einheitlichen Distanzbändern **`150 m / 500 m / 1.500 m / 3.000 m`** exportieren (Ararat bis `3.000 m` mit reduzierter Baumdichte):
+   - **`LOD0` (Hero-Nahbereich `0–150 m`):** `5.000–14.000 Tris` (`≥ 5×` Detail gegenüber Erstgeneration: tertiäre Zweige, gewölbte 2×2-Segment-Laubkarten, 10–12 Stamm-Facetten).
+   - **`LOD1` (Mittel-Nah `150–500 m`):** `1.800–4.200 Tris` (Sekundäräste, gestaffelte gekreuzte Blattkarten, 6–7 Stamm-Facetten).
+   - **`LOD2` (Mittel-Fern `500–1.500 m`):** `350–850 Tris` (Hauptkrone + vereinfachtes Astgerüst).
+   - **`LOD3` (Horizont `1.500–3.000 m`):** `40–140 Tris` (kompakter 3-Kant-Stamm + gekreuzte Ganzkronen-Proxy-Karten; Ararat mit reduzierter Baumdichte).
+   - **Pflicht-Crossfade & Dither-Verbot (Kein Aufploppen, kein Punkte-Sieb!):** Laubkronen (`Foliage`) überblenden über überlappende Distanzbänder (`±13–18 %` der Schwellendistanz, zzgl. `120–240 m` Horizont-Ausblendung) mittels komplementärem **Screen-Space-Dithering** (`lodInterleavedNoise(gl_FragCoord.xy)`): gerade LODs (`LOD0/LOD2`) behalten `_dither < visibility`, ungerade (`LOD1/LOD3`) behalten `_dither >= (1.0 - visibility)`. **Ausdrückliches Verbot:** Auf **Baumstämmen (`Bark`)** und **Gebäudewänden** darf **niemals** Screen-Space-Dithering angewendet werden (verhindert sichtbares Punkte-Sieb auf soliden Flächen).
 
 ---
 
@@ -119,14 +119,20 @@ Da Browser kein Cycles-Raytracing-SSS ausführen können:
 - Blender backt für Haut (Noah & Familie), Tierohren, Vogelflügel, Blätter und Zeltleinen eine **`Thickness`-Maske** (dünne Bereiche = hell, dicke Bereiche = dunkel) + hinterlegt im Material `sssColor` (z. B. warmes Blutrot/Bernstein `vec3(0.88, 0.24, 0.10)` bei Haut/Ohren, Blattgrün bei Laub).
 - Der Engine-Shader berechnet daraus **Warm-Wrap-Diffuse + Sonnen-Gegenlicht-Translucency** in `< 0,1 ms` (GTX 1070 & iPad-kompatibel!).
 
-### 3.4 Engine-Finishing-Hooks & Realism-Cards
+### 3.4 Engine-Finishing-Hooks, 5 HDR-/AgX-Regeln & Nahbereich-Schärfe
+- **Die 5 verbindlichen HDR-/AgX-Regeln (1:1-Abgleich Blender 4 AgX ↔ Engine):**
+  1. **Physikalischer Albedo-Korridor (`0.04 .. 0.85`):** Niemals tiefschwarz (`< 0.04`) oder klinisch reinweiß (`> 0.85`) baken, damit Blender-4-AgX (`THREE.CustomToneMapping`) weder Schatten absaufen noch Spitzlichter ausbrennen lässt.
+  2. **HDR-Emission (`KHR_materials_emissive_strength`):** Feuer, Glut, Öllampen und Schmiedeherde nutzen physikalische `emissiveStrength`-Werte statt überdrehter Albedo-Farben.
+  3. **0 eingebackene Sonnenschatten:** Albedo-Maps enthalten **keine** gerichteten Sonnenschatten (nur subtile lokale AO/Cavity), da direkte Beleuchtung und 4-Band-Schatten-LOD dynamisch in Echtzeit erfolgen.
+  4. **Farbraum-Disziplin (`sRGB` vs. `Linear/Non-Color`):** `BaseColor` und `Emissive` strikt in **`sRGB`**; `Normal`, `ORM` (`AO/Roughness/Metallic`) und `Thickness` strikt in **`Linear / Non-Color`**.
+  5. **Roughness-Spreizung:** Bewusste Spreizung zwischen mattem Lehm/Stein/Stoff (`0.72–0.95`), verwittertem Holz (`0.55–0.82`) und feuchtem Pech/polierter Bronze (`0.12–0.38`) gegen flachen Plastik-Look.
 - **Haar-/Fell-/Feder-Cards:** Bärte, Löwenmähnen und Flügelspitzen nutzen außen Alpha-Karten mit `alphaToCoverage` statt klobiger Geometrie.
 - **Dynamische Welt-Kopplung in `Arche.Assets` / ARCHE 3.0:**
   - **Ground-Contact Dirt (`zLocal < 0.45 m`):** Automatischer subtiler Staub-/Lehmansatz an Hufen, Säumen, Gebäudesockeln und Altären.
   - **Nässe-Kopplung (`uWetness`):** Poren-Abdunklung und spiegelnde Nässe bei Regen/Flut.
-  - **Mikro-Detail-Normal-Overlay (`camDist < 6 m`):** Hochfrequente Poren-/Web-/Holzkorn-Normalmap im Nahbereich.
-  - **Stochastisches LOD-Crossfading (`uLodFadeBand` / `Arche.Assets.configureSmoothLODGroup`):** Verbindliche weiche Dither-Überblendung zwischen allen LOD-Stufen und zum Horizont ohne Geometrie-Popping (WebGL1-kompatibel über `gl_FragCoord.xy`).
-- **Analyse-Reinheit (PFLICHT!):** Alle Material-, SSS-, Schmutz- und Nässe-Effekte sind **nur im `TEXTURED`-Modus** aktiv. In **EC5-Auslastung** und **Infrarot-Thermografie** bleiben die Farben strikt unverfälscht!
+  - **Nahbereich-Textur-LOD (`0–24 m` + `Anisotropy 8×`):** Hochfrequente Poren-/Web-/Holzkorn-Detail-Normalmap im Nahbereich (`0–24 m`) kombiniert mit **`Anisotropy 8×`** für gestochen scharfe Schrägansichten.
+  - **Stochastisches LOD-Crossfading (`uLodFadeBand` / `Arche.Assets.configureSmoothLODGroup`):** Verbindliche weiche Dither-Überblendung für Laub (`Foliage`) zwischen allen LOD-Stufen (`150 / 500 / 1.500 / 3.000 m`) ohne Geometrie-Popping (WebGL1-kompatibel über `gl_FragCoord.xy`) — **strikt verboten auf Baumstämmen (`Bark`) und Gebäudewänden**.
+- **Analyse-Reinheit (PFLICHT!):** Alle Material-, AgX-, SSS-, SSCS-, Schmutz-, Detail-Normal- und Nässe-Effekte sind **nur im `TEXTURED`-Modus** aktiv. In **EC5-Auslastung** und **Infrarot-Thermografie** (`NoToneMapping`) bleiben die Farben strikt unverfälscht!
 
 ---
 
@@ -152,7 +158,7 @@ Damit High-to-Low-Poly-Bakes in **~10–25 Sekunden** sauber durchlaufen statt M
 - **Max. Bake-Auflösung:** `1024×1024 px` für Hero-Assets / Trim-Sheets, `512×512 px` für Massen-Instanzen (Tiere/Requisiten).
 
 ### 4.2 VRAM- & Mobil-Schutz
-- **Trim-Sheets statt tausender Einzeltexturen:** Gebäude in Ur-Schinar (Lehmziegel, Schilfdach, Ocker-Markise, Zedernbalken) sowie Rumpf-Module teilen sich **gemeinsame 1024er Trim-Sheets**, damit iPads nicht durch zu viele Texturen abstürzen.
+- **Trim-Sheets (`2048×1024`) statt tausender Einzeltexturen:** Gebäude in Ur-Schinar (Lehmziegel, Schilfdach, Ocker-Markise, Zedernbalken), Werft-Module, Rinden (`Bark`) sowie Rumpf-Module teilen sich **gemeinsame `2048×1024`-Trim-Sheets** (inkl. `Anisotropy 8×`), damit iPads und Desktop-GPUs mit minimalen Draw-Calls und Texture-Binds auskommen.
 - **ARCHE 3.0 Zielformat:** Texturen werden zusätzlich nach **KTX2 / Basis Universal (BC7/ASTC)** transkodiert (75–85 % VRAM-Ersparnis).
 
 ---
@@ -163,14 +169,22 @@ Damit High-to-Low-Poly-Bakes in **~10–25 Sekunden** sauber durchlaufen statt M
 /assets/
   /blend/
     /ark/                     ← Arche-Module & Einbauten
-    /botany/                  ← 6 Baumarten, Sträucher, Gräser, Oliven
+    /botany/                  ← 10 Baumarten, Sträucher, Gräser, Oliven
     /world/                   ← Werft-Module, Ur-Schinar-Kits, Ararat-Altar
+    /worlds/                  ← Komplette Welt-Szenen (Werft/Ur-Schinar, Ararat)
     /families/                ← ~30 Tier-Familien mit Shape Keys
     /characters/              ← Noah, Familie & Arbeiter
   /glb/                       ← Exportierte .glb-Dateien (gleiche Unterordner)
-  /textures/                  ← Gemeinsame Trim-Sheets, Detail-Normals, Blatt-Atlas
+  /worlds/                    ← Exportierte Welt-Daten (Heightmap, Splatmap, world_layout_*.json)
+  /textures/                  ← Gemeinsame 2048×1024-Trim-Sheets, Detail-Normals, Blatt-Atlas
   /scripts/                   ← Parametrische Blender-Python-Generatoren (build_*.py)
-  /previews/                  ← Automatische Kontroll-Renderings (PNG)
+  /previews/                  ← Automatische Kontroll-Renderings (PNG, inkl. world_*.png)
   /data/species_dna.json      ← 2.800-Arten-DNA-Tabelle
   export_arche_glb.py         ← Master-Exporter (Apply Transforms, Bake, LODs, Budget-Check)
   manifest.json               ← Slot-Registry für ARCHE 2.0 & 3.0
+```
+
+### 5.1 Verbindlicher 3-Punkte-`bpy`-Workflow für Antigravity
+1. **Parametrisch bauen & verifizieren:** Jedes Asset oder Welt-Kit wird über ein reproduzierbares `assets/scripts/build_*.py` erzeugt (Metric `1.0`, Origin auf `Z = 0`, `Ctrl+A → All Transforms`, 4 LODs `150 / 500 / 1.500 / 3.000 m`, kein Dithering auf `Bark`/Wänden).
+2. **Automatisches Baking, Export & Preview-Render:** `export_arche_glb.py` backt PBR-Maps (`sRGB` BaseColor/Emissive, `Linear` Normal/ORM/Thickness, 5 HDR-/AgX-Regeln), prüft Poly-/Draw-Call-Budgets, exportiert `.glb` (`+Y Up`) sowie bei Welten `Heightmap`, `Splatmap` und `world_layout_*.json` nach `assets/worlds/` und rendert ein AgX-Kontrollbild nach `assets/previews/*.png` (bzw. `world_*.png`).
+3. **Manifest-Registrierung & Visual-Critic-Abnahme:** Asset in `assets/manifest.json` eintragen, `node verify_arche.js` + `node qa_arche.js` ausführen und alle `assets/previews/*.png` sowie `scratch/qa_*.png` streng nach `rules/visual-critic.md` im 1:1-AgX-Vergleich abnehmen.
