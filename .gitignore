@@ -9,8 +9,6 @@ Thumbs.db
 
 # Große Binär-/Media-Assets & Archive (Code, Skripte & Manifest bleiben versioniert)
 assets/blend/
-assets/glb/
-assets/textures/
 assets/previews/
 assets/__pycache__/
 Bilder/

@@ -3,7 +3,7 @@
 > **Automatisch generiert durch `node index_arche.js`**  
 > **Hauptdatei:** [`Arche Simulation 3.0.html`](file:///C:/Users/Daniel Unger/Desktop/KI/Arche Buch/Arche Simulation 3.0.html)  
 > **Umfang:** **52.567 Zeilen** | **3075.9 KB**  
-> **Stand:** 20.11.2026, 16:20:55
+> **Stand:** 20.11.2026, 17:01:26
 
 ---
 
