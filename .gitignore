@@ -13,3 +13,5 @@ assets/previews/
 assets/__pycache__/
 Bilder/
 _ÂRCHIV/
+node_modules/
+scratch/
