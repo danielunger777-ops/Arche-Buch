@@ -967,26 +967,58 @@ def build_ark_hull_zohar(bm, uv_layer, lod):
             px1 = min(+70.0, px + 0.5 * w_post_x)
             add_metric_chamfered_beam(bm, uv_layer, px0, px1, ya, yb, z_bot1, z_top0, ch, mat_idx=0, axis="Z")
 
-            # 3. 2-lagig schraege Wetterlamellen (Z = 13.689 m & 13.844 m) in jedem Feld
+            # 3. Exakt 5 feine, gleichmaessig gestaffelte, schraeg nach aussen abfallende Zedern-Wetterlamellen
+            #    Recessed ~5.5 cm innen vor |Y| = 11.490 m (|Y| in [11.205..11.435 m]) -> 0 Clipping mit Sturmklappen!
             if ib < n_bays and lod <= 2:
                 lx0 = px1 + 0.004
                 lx1 = min(+70.0, (px + dx_bay) - 0.5 * w_post_x - 0.004)
                 if lx1 > lx0 + 0.05:
-                    for z_lam in (13.689, 13.844):
+                    n_lams = 5 if lod <= 1 else 3
+                    z_clear_h = z_top0 - z_bot1
+                    for il in range(n_lams):
+                        z_lam = z_bot1 + ((il + 0.5) / float(n_lams)) * z_clear_h
                         if lod <= 1:
-                            # Geneigte Wetterlamelle (innen hoeher, aussen tiefer gegen Schlagregen, endet bei |Y| = 11.455 m!)
-                            y_l_in = sgn * (11.210)
-                            y_l_out = sgn * (11.450)
-                            z_l_in = z_lam + 0.022
-                            z_l_out = z_lam - 0.022
+                            # Geneigte Wetterlamelle (innen hoeher, aussen tiefer gegen Schlagregen, endet bei |Y| = 11.435 m!)
+                            y_l_in = sgn * 11.205
+                            y_l_out = sgn * 11.435
+                            z_l_in = z_lam + 0.018
+                            z_l_out = z_lam - 0.018
                             add_sloped_quad_prism(
                                 bm, uv_layer,
                                 (lx0, y_l_in, z_l_in), (lx1, y_l_in, z_l_in),
                                 (lx1, y_l_out, z_l_out), (lx0, y_l_out, z_l_out),
-                                (0.0, 0.0, 0.036), mat_idx=0, grain_axis="X"
+                                (0.0, 0.0, 0.018), mat_idx=0, grain_axis="X"
                             )
                         else:
-                            add_metric_box(bm, uv_layer, lx0, lx1, min(sgn * 11.22, sgn * 11.45), max(sgn * 11.22, sgn * 11.45), z_lam - 0.018, z_lam + 0.018, mat_idx=0, grain_axis="X")
+                            add_metric_box(bm, uv_layer, lx0, lx1, min(sgn * 11.21, sgn * 11.435), max(sgn * 11.21, sgn * 11.435), z_lam - 0.010, z_lam + 0.010, mat_idx=0, grain_axis="X")
+
+    # 4. Exakt 5 schraege Zedern-Wetterlamellen in allen 4 Giebel-Lueftungsoeffnungen (Bug & Heck, Y = +-3.25 m, Z = 13.72..14.22 m)
+    #    Ebenfalls ~5.5 cm nach innen in die Laibung zurueckversetzt (|X| in [69.720..69.945 m]) -> 0 Clipping mit den 4 Giebel-Sturmklappen!
+    if lod <= 2:
+        n_g_lams = 5 if lod <= 1 else 3
+        for end_sign in (-1.0, +1.0):
+            x_l_in = end_sign * 69.720
+            x_l_out = end_sign * 69.945
+            for gy0, gy1 in ((-4.530, -1.970), (+1.970, +4.530)):
+                # Rahmen-Laibung (Zeder) oben/unten
+                if lod <= 1:
+                    xa, xb = min(x_l_in, x_l_out), max(x_l_in, x_l_out)
+                    add_metric_box(bm, uv_layer, xa, xb, gy0, gy1, 13.720, 13.748, mat_idx=0, grain_axis="Y")
+                    add_metric_box(bm, uv_layer, xa, xb, gy0, gy1, 14.192, 14.220, mat_idx=0, grain_axis="Y")
+                for il in range(n_g_lams):
+                    z_lam = 13.748 + ((il + 0.5) / float(n_g_lams)) * (14.192 - 13.748)
+                    if lod <= 1:
+                        z_l_in = z_lam + 0.020
+                        z_l_out = z_lam - 0.020
+                        add_sloped_quad_prism(
+                            bm, uv_layer,
+                            (x_l_in, gy0, z_l_in), (x_l_in, gy1, z_l_in),
+                            (x_l_out, gy1, z_l_out), (x_l_out, gy0, z_l_out),
+                            (0.0, 0.0, 0.020), mat_idx=0, grain_axis="Y"
+                        )
+                    else:
+                        xa, xb = min(x_l_in, x_l_out), max(x_l_in, x_l_out)
+                        add_metric_box(bm, uv_layer, xa, xb, gy0, gy1, z_lam - 0.011, z_lam + 0.011, mat_idx=0, grain_axis="Y")
 
 
 # ------------------------------------------------------------------------------
@@ -1571,7 +1603,7 @@ BASE_STRUCTURE_SPECS = [
         build_ark_hull_zohar,
         ["MAT_ARK_ROOF_WOOD"],
         4, [150, 500, 1500, 3000],
-        "1-Elle-Zohar-Lichtgaden (Z=13.533..14.000m an Y=+-11.500m, Traufschwelle, Pfette, 116 profilierte Zohar-Stiele im 5-E.-Raster & 2-lagig schraege Wetterlamellen)",
+        "1-Elle-Zohar-Lichtgaden (Z=13.533..14.000m an Y=+-11.500m, Traufschwelle, Pfette, 116 profilierte Zohar-Stiele im 5-E.-Raster & 5 schraege Zedern-Wetterlamellen inkl. 4 Giebel-Oeffnungen)",
     ),
     (
         "ark_hull_keels",

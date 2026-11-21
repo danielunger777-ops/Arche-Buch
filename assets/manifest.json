@@ -150,11 +150,11 @@
             },
             "ark_storm_shutter": {
               "lods": {
-                "LOD0": 242,
+                "LOD0": 278,
                 "LOD1": 60,
                 "LOD2": 24
               },
-              "description": "Gezimmertes Zohar-/Badgir-Sturmklappen-Blatt (1.0x1.0x1.0 normiert, Pivot Mitte Oberkante Z=0 -> -1.0, 3 Lamellen, Diagonalstrebe & Zugseil-Oese)"
+              "description": "Fugendichte Zohar-/Badgir-Sturmklappe (1.0x1.0x1.0 normiert, Pivot Mitte Oberkante Z=0 -> -1.0, 4 geschlossene Zedernplanken, Diagonalstrebe, 2 Bronze-Scharnierbaender & Zugseil-Oese)"
             },
             "ark_root_knee_01": {
               "lods": {
@@ -222,11 +222,11 @@
             },
             "ark_badgir_cap": {
               "lods": {
-                "LOD0": 1200,
+                "LOD0": 1392,
                 "LOD1": 288,
                 "LOD2": 84
               },
-              "description": "Gezimmerter Badgir-Windturm-Kopf (1.633x1.400m Schachtsitz, Origin Z=0.0 an zTop, +0.45m Kopher-Zedern-Zeltdachhaube, 16 Sparrenkoepfe & Kreuzwand)"
+              "description": "Gezimmerter Badgir-Windturm-Kopf (1.633x1.400m Schachtsitz, Origin Z=0.0 an zTop, +0.45m Kopher-Zedern-Zeltdachhaube, 5 Wetterlamellen je Oeffnung, 16 Sparrenkoepfe & Kreuzwand)"
             }
           },
           "previews": [
@@ -234,8 +234,8 @@
             "assets/previews/ark_wave_a_gate_closeup.png",
             "assets/previews/ark_wave_a_carpentry_closeup.png"
           ],
-          "glbSizeKB": 2189.4,
-          "exportedAt": "2026-11-20 12:44:41"
+          "glbSizeKB": 2204.9,
+          "exportedAt": "2026-11-21 10:51:50"
         },
         "ark_base_structure_kit": {
           "enabled": true,
@@ -368,12 +368,12 @@
                 3000
               ],
               "lods": {
-                "LOD0": 6408,
-                "LOD1": 6408,
-                "LOD2": 4392,
+                "LOD0": 11064,
+                "LOD1": 11064,
+                "LOD2": 5976,
                 "LOD3": 792
               },
-              "description": "1-Elle-Zohar-Lichtgaden (Z=13.533..14.000m an Y=+-11.500m, Traufschwelle, Pfette, 116 profilierte Zohar-Stiele im 5-E.-Raster & 2-lagig schraege Wetterlamellen)"
+              "description": "1-Elle-Zohar-Lichtgaden (Z=13.533..14.000m an Y=+-11.500m, Traufschwelle, Pfette, 116 profilierte Zohar-Stiele im 5-E.-Raster & 5 schraege Zedern-Wetterlamellen inkl. 4 Giebel-Oeffnungen)"
             },
             "ark_hull_keels": {
               "materials": [
@@ -519,8 +519,8 @@
             "assets/previews/ark_base_gate_zohar_closeup.png",
             "assets/previews/ark_base_wood_swatches.png"
           ],
-          "glbSizeKB": 16846.0,
-          "exportedAt": "2026-11-20 12:59:16"
+          "glbSizeKB": 17563.6,
+          "exportedAt": "2026-11-21 10:50:20"
         }
       }
     },

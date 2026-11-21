@@ -702,39 +702,45 @@ def build_ark_gate_zarge_s7(bm, uv_layer, lod):
 
 def build_ark_storm_shutter(bm, uv_layer, lod):
     if lod == 0:
-        # Target: 180 - 260 Tris
-        # 1. Gezimmerter Zedern-Aussenrahmen (X in [-0.50 .. +0.50], Z in [-1.00 .. 0.00])
+        # Target: 180 - 340 Tris — Fugendicht schliessende, bronzezeitliche Verschlussklappe!
+        # +Y = Aussenseite (zeigt nach aussen; bei Oeffnung um +X schwenkt Z=-1 nach +Y/+Z aussen oben!)
+        # -Y = Innenseite (flach bei Y=-0.028, liegt buendig & ohne Clipping vor den 5 Wetterlamellen an!)
+        # 1. Gefaster Zedern-Aussenrahmen (X in [-0.50 .. +0.50], Z in [-1.00 .. 0.00])
         add_box(bm, uv_layer, -0.500, -0.415, -0.028, +0.028, -1.000, 0.000, "cedar_c18", end_region="oak_endgrain", end_axis="Z", rotate_uv=True)  # Linker Fries (12)
         add_box(bm, uv_layer, +0.415, +0.500, -0.028, +0.028, -1.000, 0.000, "cedar_c18", end_region="oak_endgrain", end_axis="Z", rotate_uv=True)  # Rechter Fries (12)
-        add_box(bm, uv_layer, -0.415, +0.415, -0.028, +0.028, -0.110, 0.000, "cedar_c18")  # Oberer Scharnier-Querfries (12)
-        add_box(bm, uv_layer, -0.415, +0.415, -0.032, +0.032, -1.000, -0.880, "cedar_c18")  # Unterer Tropf-Querfries (12)
-        add_box(bm, uv_layer, -0.042, +0.042, -0.024, +0.024, -0.880, -0.110, "cedar_c18", rotate_uv=True)  # Mittelsteg (12)
+        add_box(bm, uv_layer, -0.415, +0.415, -0.028, +0.028, -0.105, 0.000, "cedar_c18")  # Oberer Scharnier-Querfries (12)
+        add_box(bm, uv_layer, -0.415, +0.415, -0.030, +0.034, -1.000, -0.885, "cedar_c18")  # Unterer Tropf-Querfries (12)
 
-        # 2. 3 schraege Zedern-Wetterlamellen-Leisten im Rahmenfeld (3 x 12 = 36)
-        for lz in (-0.30, -0.52, -0.74):
-            add_oriented_prism(
-                bm, uv_layer, (-0.415, -0.005, lz), (+0.415, -0.005, lz),
-                w_perp=0.145, h_cross=0.026, up_hint=(0.0, 0.82, 0.57), region="cedar_c18"
-            )
+        # 2. Fugendichte, geschlossene waagerechte Zedern-Plankenfuellung (4 Nut-und-Feder-Planken, 100% orkanfest!)
+        #    Durchgehende Dichtkern-Platte (-0.022..+0.012) + 4 plastisch abgesetzte waagerechte Plankenbohlen (+0.010..+0.024)
+        add_box(bm, uv_layer, -0.420, +0.420, -0.022, +0.012, -0.890, -0.100, "cedar_c18")
+        plank_z_edges = (-0.885, -0.690, -0.495, -0.300, -0.105)
+        for ip in range(4):
+            pz0 = plank_z_edges[ip] + 0.006
+            pz1 = plank_z_edges[ip + 1] - 0.006
+            add_box(bm, uv_layer, -0.415, +0.415, +0.010, +0.024, pz0, pz1, "cedar_c18")
 
-        # 3. 2 Hainbuchen-Schlagarme + 1 gezapfte Diagonalstrebe auf der Innenseite (+Y) (3 x 12 = 36)
-        add_box(bm, uv_layer, -0.375, -0.305, +0.026, +0.068, -0.960, -0.030, "hornbeam", rotate_uv=True)
-        add_box(bm, uv_layer, +0.305, +0.375, +0.026, +0.068, -0.960, -0.030, "hornbeam", rotate_uv=True)
+        # 3. 2 Hainbuchen-Schlagarme + 1 gezapfte Diagonal-Aussteifungsleiste auf der Aussenseite (+Y)
+        add_box(bm, uv_layer, -0.375, -0.310, +0.024, +0.056, -0.955, -0.030, "hornbeam", rotate_uv=True)
+        add_box(bm, uv_layer, +0.310, +0.375, +0.024, +0.056, -0.955, -0.030, "hornbeam", rotate_uv=True)
         add_oriented_prism(
-            bm, uv_layer, (-0.305, +0.044, -0.880), (+0.305, +0.044, -0.110),
-            w_perp=0.072, h_cross=0.026, up_hint=(0.0, 1.0, 0.0), region="hornbeam"
+            bm, uv_layer, (-0.310, +0.038, -0.885), (+0.310, +0.038, -0.105),
+            w_perp=0.072, h_cross=0.024, up_hint=(0.0, 1.0, 0.0), region="hornbeam"
         )
 
-        # 4. Durchgehender Hainbuchen-Drehzapfen auf der Scharnierachse Z = 0.000 + 2 Bronze-Scharnieroesen
-        add_box(bm, uv_layer, -0.520, +0.520, -0.036, +0.036, -0.036, +0.036, "hornbeam")
+        # 4. Durchgehender Hainbuchen-Drehzapfen auf der Oberkanten-Drehachse Origin=(0,0,0) + 2 gehaemmerte Zinnbronze-Scharnierbaender!
+        add_box(bm, uv_layer, -0.520, +0.520, -0.034, +0.034, -0.034, +0.034, "hornbeam")
         for hx_eye in (-0.340, +0.340):
-            add_cylinder_along_axis(bm, uv_layer, (hx_eye - 0.045, 0.0, 0.0), (hx_eye + 0.045, 0.0, 0.0), radius=0.048, segs=6, region="tin_bronze")
+            # Bronze-Scharnierrolle exakt um Z=0.000
+            add_cylinder_along_axis(bm, uv_layer, (hx_eye - 0.048, 0.0, 0.0), (hx_eye + 0.048, 0.0, 0.0), radius=0.046, segs=6, region="tin_bronze")
+            # Gehaemmertes Bronze-Scharnierband auf dem oberen Klappenblatt (+Y)
+            add_box(bm, uv_layer, hx_eye - 0.042, hx_eye + 0.042, +0.026, +0.046, -0.320, -0.010, "tin_bronze", rotate_uv=True)
 
         # 5. Untere Zugseil-Oese mit Hanfseil-Knoten + 2 Holzduebelkoepfe
-        add_box(bm, uv_layer, -0.045, +0.045, +0.030, +0.075, -0.965, -0.895, "tin_bronze")
-        add_cylinder_along_axis(bm, uv_layer, (0.0, +0.065, -0.985), (0.0, +0.098, -0.935), radius=0.026, segs=6, region="hemp_rope")
+        add_box(bm, uv_layer, -0.045, +0.045, +0.028, +0.074, -0.965, -0.895, "tin_bronze")
+        add_cylinder_along_axis(bm, uv_layer, (0.0, +0.062, -0.985), (0.0, +0.095, -0.935), radius=0.024, segs=6, region="hemp_rope")
         for px in (-0.340, +0.340):
-            add_dowel_peg(bm, uv_layer, (px, +0.068, -0.50), (0, 1, 0), radius=0.022, length=0.018, segs=5)
+            add_dowel_peg(bm, uv_layer, (px, +0.056, -0.50), (0, 1, 0), radius=0.022, length=0.016, segs=5)
 
     elif lod == 1:
         # Target: ~60 Tris (5 boxes = 60 Tris!)
@@ -1212,28 +1218,29 @@ def build_ark_badgir_cap(bm, uv_layer, lod):
             add_chamfered_beam(bm, uv_layer, -0.055, +0.055, sgn * (hy - 0.055) - 0.045, sgn * (hy - 0.055) + 0.045, z_collar_bot, 0.000, 0.010, "oak_d35", axis="Z")
             add_chamfered_beam(bm, uv_layer, sgn * (hx - 0.055) - 0.045, sgn * (hx - 0.055) + 0.045, -0.055, +0.055, z_collar_bot, 0.000, 0.010, "oak_d35", axis="Z")
 
-        # 3. Feine Schräg-Leitlamellen (3 Lagen in allen 4 Windfang-Oeffnungen, Libanon-Zeder C18)
-        louver_zs = [-0.400, -0.270, -0.140]
+        # 3. Exakt 5 feine, gleichmaessig verteilte, schraeg nach aussen abfallende Zedern-Wetterlamellen
+        #    in allen 4 Windfang-Oeffnungen (~5.5 cm nach innen in die Laibung zurueckversetzt -> 0 Clipping mit Klappen!)
+        louver_zs = [-0.425, -0.345, -0.265, -0.185, -0.105]
         for lz in louver_zs:
             # Bb (-Y) & Stb (+Y) openings (split into left & right chambers by central cross wall)
             for sy in (-1.0, +1.0):
-                y_lv = sy * (hy - 0.045)
+                y_lv = sy * (hy - 0.055)
                 for sx_ch in (-1.0, +1.0):
                     x_a = 0.055 if sx_ch > 0 else (-hx + b_post + 0.01)
                     x_b = (+hx - b_post - 0.01) if sx_ch > 0 else -0.055
                     add_oriented_prism(
                         bm, uv_layer, (x_a, y_lv, lz), (x_b, y_lv, lz),
-                        w_perp=0.115, h_cross=0.022, up_hint=(0.0, sy * 0.75, 0.66), region="cedar_c18"
+                        w_perp=0.088, h_cross=0.016, up_hint=(0.0, sy * 0.72, 0.69), region="cedar_c18"
                     )
             # Bow (-X) & Stern (+X) openings
             for sx in (-1.0, +1.0):
-                x_lv = sx * (hx - 0.045)
+                x_lv = sx * (hx - 0.055)
                 for sy_ch in (-1.0, +1.0):
                     y_a = 0.055 if sy_ch > 0 else (-hy + b_post + 0.01)
                     y_b = (+hy - b_post - 0.01) if sy_ch > 0 else -0.055
                     add_oriented_prism(
                         bm, uv_layer, (x_lv, y_a, lz), (x_lv, y_b, lz),
-                        w_perp=0.115, h_cross=0.022, up_hint=(sx * 0.75, 0.0, 0.66), region="cedar_c18"
+                        w_perp=0.088, h_cross=0.016, up_hint=(sx * 0.72, 0.0, 0.69), region="cedar_c18"
                     )
 
         # 4. Sichtbare Zedern-Dachsparren-Koepfe unter der Traufe (12 Sparrenkoepfe ringsum, sauber unterhalb der Dachhaut!)
@@ -1354,7 +1361,7 @@ def build_ark_badgir_cap(bm, uv_layer, lod):
 WAVE_A_SPECS = [
     ("ark_gate_leaf_s7",     build_ark_gate_leaf_s7,     (3500, 5000), (950, 1600), (260, 480), "Hero-Seitentor S7 Torblatt (4.20x3.15m, Pivot an oberer Scharnierachse Z=0 -> -3.15m, Gen 6,14 innen & aussen Kopher-verpicht / 3 Hainbuchen-Sperrbalken & Bronze-Scharniere)"),
     ("ark_gate_zarge_s7",    build_ark_gate_zarge_s7,    (2000, 3000), (600, 1100), (180, 340), "Hero-Seitentor S7 Eichen-Blockzarge (4.20x3.15m lichte Oeffnung ueber 0.583m Flutsuell mit Kopher-Dichtfalzen & Flutsuell-Innenkante, 0.467m Eichenpfosten, 3 Riegeltaschen & 2 Kopfbaender)"),
-    ("ark_storm_shutter",    build_ark_storm_shutter,    (180,  260),  (48,  76),   (20,  32),  "Gezimmertes Zohar-/Badgir-Sturmklappen-Blatt (1.0x1.0x1.0 normiert, Pivot Mitte Oberkante Z=0 -> -1.0, 3 Lamellen, Diagonalstrebe & Zugseil-Oese)"),
+    ("ark_storm_shutter",    build_ark_storm_shutter,    (180,  340),  (48,  76),   (20,  32),  "Fugendichte Zohar-/Badgir-Sturmklappe (1.0x1.0x1.0 normiert, Pivot Mitte Oberkante Z=0 -> -1.0, 4 geschlossene Zedernplanken, Diagonalstrebe, 2 Bronze-Scharnierbaender & Zugseil-Oese)"),
     ("ark_root_knee_01",     build_ark_root_knee_01,     (320,  480),  (85,  135),  (28,  48),  "Organisches Eichen-Wurzelknie Variante 01 (0.187m breit, 0.630m Schenkel, 0.171m dick, 6 Duebel, Origin an rechtwinkliger Aussenecke)"),
     ("ark_root_knee_02",     build_ark_root_knee_02,     (320,  480),  (85,  135),  (28,  48),  "Organisches Eichen-Wurzelknie Variante 02 (0.187m breit, 0.630m Schenkel, Naturwulst-Kehle & 7 versetzte Duebel, Origin an Aussenecke)"),
     ("ark_root_knee_03",     build_ark_root_knee_03,     (320,  480),  (85,  135),  (28,  48),  "Organisches Eichen-Wurzelknie Variante 03 (0.187m breit, 0.630m Schenkel, Stirnklauen & 6 grosse 1-Hand-Duebel, Origin an Aussenecke)"),
@@ -1363,7 +1370,7 @@ WAVE_A_SPECS = [
     ("ark_door_frame_d2",    build_ark_door_frame_d2,    (400,  600),  (110, 175),  (36,  64),  "Plastische Schotttuer-Blockzarge Deck 2 (Lichte Oeffnung exakt 1.867x2.217m ueber 0.233m Suell, 0.0cm T99-Verengung)"),
     ("ark_door_frame_d3",    build_ark_door_frame_d3,    (400,  600),  (110, 175),  (36,  64),  "Plastische Schotttuer-Blockzarge Deck 3 (Lichte Oeffnung exakt 1.400x1.983m ueber 0.233m Suell, 0.0cm T99-Verengung)"),
     ("ark_door_frame_foyer", build_ark_door_frame_foyer, (400,  600),  (110, 175),  (36,  64),  "Plastische Schotttuer-Blockzarge S7-Foyer-Hauptportal (Lichte Oeffnung exakt 3.593x2.917m ueber 0.117m Schwelle, 0.0cm T99-Verengung)"),
-    ("ark_badgir_cap",       build_ark_badgir_cap,       (900,  1300), (230, 370),  (70,  115), "Gezimmerter Badgir-Windturm-Kopf (1.633x1.400m Schachtsitz, Origin Z=0.0 an zTop, +0.45m Kopher-Zedern-Zeltdachhaube, 16 Sparrenkoepfe & Kreuzwand)"),
+    ("ark_badgir_cap",       build_ark_badgir_cap,       (900,  1600), (230, 370),  (70,  115), "Gezimmerter Badgir-Windturm-Kopf (1.633x1.400m Schachtsitz, Origin Z=0.0 an zTop, +0.45m Kopher-Zedern-Zeltdachhaube, 5 Wetterlamellen je Oeffnung, 16 Sparrenkoepfe & Kreuzwand)"),
 ]
 
 

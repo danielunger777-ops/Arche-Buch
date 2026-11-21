@@ -2853,6 +2853,7 @@ MODUL-KASTEN 3: FOURIER-THERMODYNAMIK & VETERINÄR-PHYSIOLOGIE (RINDER-THI)
       badgirHeight: 2.5,     // Exakt 2.5 Ellen (1.167 m) Turmhöhe über Zohar (25 Ellen Gesamtkaminzug ab Deck 1)
       badgirSupportMode: 'Eichen-Schachtstiele + Wechsel (Sicher)',
       badgirHeadMode: 'Luv-Sturmklappen selbstschließend (Automatik)',
+      zoharShutterMode: 'Automatik',
       timeOfDay: 11.5,
       autoDayCycle: false,
       latitude: 32.5,
@@ -8974,6 +8975,7 @@ void archeApplyLodFade(float viewDist) {
           ? options.lodFadeBand
           : { value: new THREE.Vector4(-1000.0, -900.0, 1.0e6, 1.1e6) };
         const lodParityUniform = { value: (options.lodParity !== undefined) ? Number(options.lodParity) : ((options.lodIndex !== undefined) ? (Number(options.lodIndex) % 2) : 0.0) };
+        const isArkInteriorUniform = { value: options.isArkInterior ? 1.0 : 0.0 };
 
         mat.userData._archeModeColUniform = modeColUniform;
         mat.userData._archeClipOnUniform = clipOnUniform;
@@ -8982,6 +8984,7 @@ void archeApplyLodFade(float viewDist) {
         mat.userData._archeDirtStrengthUniform = dirtStrengthUniform;
         mat.userData._archeLodFadeUniform = lodFadeUniform;
         mat.userData._archeLodParityUniform = lodParityUniform;
+        mat.userData._archeIsArkInteriorUniform = isArkInteriorUniform;
 
         const wc = (Arche.Environment && Arche.Environment.waterClipUniforms) ? Arche.Environment.waterClipUniforms : null;
         const sharedWetness = (wc && wc.uWetness) ? wc.uWetness : { value: 0.0 };
@@ -9019,6 +9022,12 @@ void archeApplyLodFade(float viewDist) {
           shader.uniforms.uLodParity = lodParityUniform;
           shader.uniforms.uDetailKind = detailKindUniform;
           shader.uniforms.uAssetWindOn = assetWindOnUniform;
+          shader.uniforms.uArcheIsArkInterior = isArkInteriorUniform;
+          const _ilU = (Arche.Procedural && Arche.Procedural.interiorLightUniforms) ? Arche.Procedural.interiorLightUniforms : null;
+          shader.uniforms.uDayLightFactor = (_ilU && _ilU.uDayLightFactor) ? _ilU.uDayLightFactor : { value: 1.0 };
+          shader.uniforms.uNightLampFactor = (_ilU && _ilU.uNightLampFactor) ? _ilU.uNightLampFactor : { value: 0.0 };
+          shader.uniforms.uShipLightTime = (_ilU && _ilU.uShipLightTime) ? _ilU.uShipLightTime : { value: 0.0 };
+          shader.uniforms.uGateOpenGlow = (_ilU && _ilU.uGateOpenGlow) ? _ilU.uGateOpenGlow : { value: 0.0 };
           if (Arche.Procedural && typeof Arche.Procedural.bindDetailUniforms === 'function') {
             Arche.Procedural.bindDetailUniforms(shader);
           }
@@ -9058,7 +9067,7 @@ if (uAssetWindOn > 0.5) {
           }
 
           if (shader.vertexShader.includes('#include <project_vertex>') && !shader.vertexShader.includes('vArcheSliceZ')) {
-            shader.vertexShader = 'uniform mat4 uShipInvMatrix;\nuniform vec3 uSunDir;\nvarying float vArcheSliceZ;\nvarying float vArcheGroundH;\nvarying vec3 vArcheWorldPos;\nvarying vec3 vArcheWorldNorm;\nvarying vec3 vArcheSunView;\n' +
+            shader.vertexShader = 'uniform mat4 uShipInvMatrix;\nuniform vec3 uSunDir;\nvarying float vArcheSliceZ;\nvarying float vArcheGroundH;\nvarying vec3 vArcheWorldPos;\nvarying vec3 vArcheWorldNorm;\nvarying vec3 vArcheSunView;\nvarying vec3 vShipPos;\n' +
               shader.vertexShader.replace(
                 '#include <project_vertex>',
                 `vec4 _archeLocalV = vec4(transformed, 1.0);
@@ -9071,7 +9080,9 @@ _archeLocalN = (instanceMatrix * vec4(_archeLocalN, 0.0)).xyz;
 #endif
 vec4 _archeWsPos = modelMatrix * _archeLocalV;
 vec4 _archeOriginWs = modelMatrix * _archeOriginL;
-vArcheSliceZ = (uShipInvMatrix * _archeWsPos).z;
+vec3 _archeShipLoc = (uShipInvMatrix * _archeWsPos).xyz;
+vArcheSliceZ = _archeShipLoc.z;
+vShipPos = _archeShipLoc;
 vArcheGroundH = _archeWsPos.z - _archeOriginWs.z;
 vArcheWorldPos = _archeWsPos.xyz;
 vArcheWorldNorm = normalize((modelMatrix * vec4(_archeLocalN, 0.0)).xyz);
@@ -9082,7 +9093,8 @@ vArcheSunView = normalize((viewMatrix * vec4(normalize(uSunDir), 0.0)).xyz);
 
           if (shader.fragmentShader.includes('#include <map_fragment>') && !shader.fragmentShader.includes('uAssetModeCol')) {
             const _detailGLSL = (Arche.Procedural && Arche.Procedural.DETAIL_LOD_GLSL) ? Arche.Procedural.DETAIL_LOD_GLSL : '';
-            shader.fragmentShader = LOD_CROSSFADE_GLSL + _detailGLSL + 'uniform float uAssetMode;\nuniform vec3 uAssetModeCol;\nuniform float uMaxSliceZ;\nuniform float uArcheClipOn;\nuniform float uWetness;\nuniform float uDayFactor;\nuniform vec3 uAssetSssCol;\nuniform float uAssetSssStrength;\nuniform float uAssetDirtStrength;\nuniform float uDetailKind;\nvarying float vArcheSliceZ;\nvarying float vArcheGroundH;\nvarying vec3 vArcheWorldPos;\nvarying vec3 vArcheWorldNorm;\nvarying vec3 vArcheSunView;\n' +
+            const _intLightGLSL = (Arche.Procedural && Arche.Procedural.INTERIOR_LIGHT_FRAG_GLSL) ? Arche.Procedural.INTERIOR_LIGHT_FRAG_GLSL : '';
+            shader.fragmentShader = LOD_CROSSFADE_GLSL + _detailGLSL + _intLightGLSL + 'uniform float uAssetMode;\nuniform vec3 uAssetModeCol;\nuniform float uMaxSliceZ;\nuniform float uArcheClipOn;\nuniform float uArcheIsArkInterior;\nuniform float uWetness;\nuniform float uDayFactor;\nuniform vec3 uAssetSssCol;\nuniform float uAssetSssStrength;\nuniform float uAssetDirtStrength;\nuniform float uDetailKind;\nvarying float vArcheSliceZ;\nvarying float vArcheGroundH;\nvarying vec3 vArcheWorldPos;\nvarying vec3 vArcheWorldNorm;\nvarying vec3 vArcheSunView;\n' +
               shader.fragmentShader.replace(
                 '#include <map_fragment>',
                 `if (uArcheClipOn > 0.5 && vArcheSliceZ > uMaxSliceZ) discard;
@@ -9161,6 +9173,9 @@ if (uAssetMode > 1.5) {
   float _aNoV = max(dot(geometry.normal, geometry.viewDir), 0.0);
   float _aLagardeSO = clamp(pow(_aNoV + _aOccl, exp2(-16.0 * clamp(roughnessFactor, 0.04, 1.0) - 1.0)) - 1.0 + _aOccl, 0.0, 1.0);
   reflectedLight.indirectSpecular *= _aLagardeSO;
+  if (uArcheIsArkInterior > 0.5) {
+    applyArkInteriorLighting(reflectedLight.indirectDiffuse, diffuseColor.rgb, vShipPos, 1.0);
+  }
   if (uAssetSssStrength > 0.005) {
     vec3 _aHBack = normalize(vArcheSunView + geometry.normal * 0.45);
     float _aBackTrans = pow(clamp(dot(geometry.viewDir, -_aHBack), 0.0, 1.0), 3.0);
@@ -12119,6 +12134,9 @@ void main() {
         syncMatTex(Arche.Materials.gatePlug, keelTexIdx);
         syncMatTex(Arche.Materials.mechOak, keelTexIdx);
         syncMatTex(Arche.Materials.mechCypress, tbhTexIdx);
+      }
+      if (Arche.Procedural && typeof Arche.Procedural.syncArkBaseWoodMaterials === 'function') {
+        Arche.Procedural.syncArkBaseWoodMaterials();
       }
       window._texColorsDirty = 8;
       triggerPauseEquilibriumRelax();
@@ -18957,7 +18975,7 @@ diffuseColor.rgb *= kernel;`
       }), 4); // Hainbuche/Zeder-Kontrasttextur (hebt sich im Texturmodus klar von der dunklen Pechwand ab!)
       shutterGpuMat.clippingPlanes = _permClipPlanes;
       Arche.Materials.stormShutter = shutterGpuMat;
-      const MAX_SHUTTERS = 256;
+      const MAX_SHUTTERS = 640;
       const stormShutterInstMesh = new THREE.InstancedMesh(shutterBaseGeo, shutterGpuMat, MAX_SHUTTERS);
       stormShutterInstMesh.castShadow = true;
       stormShutterInstMesh.receiveShadow = true;
@@ -19038,14 +19056,20 @@ diffuseColor.rgb *= kernel;`
         return out;
       };
       const _shutterDirtyCache = {
-        v_roof: -999, mu_wind: -999, precip: -999, headMode: '',
+        v_roof: -999, mu_wind: -999, precip: -999, headMode: '', shutterMode: '',
         showRoof: null, zSliceMax: -999, showBB: null, showSB: null,
         badgVis: null, badgCount: -999, isTherm: null, isTex: null, blink: null,
         lastSimTime: -999
       };
       Arche.Procedural.updateStormShutters3D = function (v_roof_kmh, mu_wind_rad, precip_mmh, ctx) {
-        const im = Arche.Procedural.stormShutterInstMesh;
+        const imProc = Arche.Procedural.stormShutterInstMesh;
+        const arkWA = Arche.Procedural.arkWaveA;
+        const isTexModeNow = Boolean(ctx ? ctx.isTexturedMode : (Arche.State && Arche.State.viewShader === 'TEXTURED'));
+        const useBlenderShutters = Boolean(arkWA && arkWA.waveALoaded && arkWA.stormShutterInstMesh && isTexModeNow && (params.hullOpacity >= 0.80));
+        const im = useBlenderShutters ? arkWA.stormShutterInstMesh : imProc;
         if (!im) return;
+        if (imProc && imProc !== im) imProc.visible = false;
+        if (arkWA && arkWA.stormShutterInstMesh && arkWA.stormShutterInstMesh !== im) arkWA.stormShutterInstMesh.visible = false;
         const zSliceMax = Arche.Environment.zSliceMaxLocal || 100.0;
         if (!params.showRoof || zSliceMax <= 13.45 || gpuStormShutters.length === 0) {
           if (im.visible) {
@@ -19058,26 +19082,31 @@ diffuseColor.rgb *= kernel;`
         const nShutters = Math.min(MAX_SHUTTERS, gpuStormShutters.length);
         im.count = nShutters;
         const headMode = params.badgirHeadMode || 'Luv-Sturmklappen selbstschließend (Automatik)';
+        const shutterMode = params.zoharShutterMode || 'Automatik';
+        const isForceOpen = shutterMode === 'Alle Offen';
+        const isForceClosed = shutterMode === 'Alle Zu';
         const isSelfClosing = headMode.includes('Sturmklappen');
         const isFixedLouver = headMode.includes('Lamellen');
         const aero = Arche.Physics.evaluateShutterAerodynamics(headMode, v_roof_kmh / 3.6, liveState.rho_air || 1.21, precip_mmh);
         const cosW = Math.cos(mu_wind_rad), sinW = Math.sin(mu_wind_rad);
         const windPressNorm = aero.closeFrac;
-        const showBBWallNow = bucketWallBB.mesh ? bucketWallBB.mesh.visible : true;
-        const showSBWallNow = bucketWallSB.mesh ? bucketWallSB.mesh.visible : true;
+        const showBBWallNow = (params.outerWallView === 'Alle Bordwände geschlossen');
+        const showSBWallNow = (params.outerWallView !== 'Alle Außenbordwände ausblenden');
         const isThermNow = Boolean(ctx && ctx.isThermalMode);
-        const isTexNow = Boolean(ctx && ctx.isTexturedMode);
+        const isTexNow = isTexModeNow;
         const blinkNow = Boolean(ctx && ctx.blinkState);
         const badgVisNow = Boolean(badgirGroup && badgirGroup.visible);
         const badgCount = Number(params.badgirCount);
         const showRoofNow = Boolean(params.showRoof);
-        const hasGust = windPressNorm > 0.15 && isSelfClosing;
+        const hasGust = !isForceOpen && !isForceClosed && windPressNorm > 0.15 && isSelfClosing;
 
         const isSteady = !hasGust &&
+          _shutterDirtyCache.useBlender === useBlenderShutters &&
           Math.abs(v_roof_kmh - _shutterDirtyCache.v_roof) < 0.05 &&
           Math.abs(mu_wind_rad - _shutterDirtyCache.mu_wind) < 0.005 &&
           Math.abs(precip_mmh - _shutterDirtyCache.precip) < 0.1 &&
           _shutterDirtyCache.headMode === headMode &&
+          _shutterDirtyCache.shutterMode === shutterMode &&
           _shutterDirtyCache.showRoof === showRoofNow &&
           _shutterDirtyCache.zSliceMax === zSliceMax &&
           _shutterDirtyCache.showBB === showBBWallNow &&
@@ -19088,16 +19117,18 @@ diffuseColor.rgb *= kernel;`
           _shutterDirtyCache.isTex === isTexNow &&
           _shutterDirtyCache.blink === blinkNow;
 
-        if (hasGust && Math.abs(S.simTime - _shutterDirtyCache.lastSimTime) < 0.04 &&
+        if (hasGust && _shutterDirtyCache.useBlender === useBlenderShutters && _shutterDirtyCache.shutterMode === shutterMode && Math.abs(S.simTime - _shutterDirtyCache.lastSimTime) < 0.04 &&
           Math.abs(v_roof_kmh - _shutterDirtyCache.v_roof) < 0.05) {
           return;
         }
         if (isSteady) return;
 
+        _shutterDirtyCache.useBlender = useBlenderShutters;
         _shutterDirtyCache.v_roof = v_roof_kmh;
         _shutterDirtyCache.mu_wind = mu_wind_rad;
         _shutterDirtyCache.precip = precip_mmh;
         _shutterDirtyCache.headMode = headMode;
+        _shutterDirtyCache.shutterMode = shutterMode;
         _shutterDirtyCache.showRoof = showRoofNow;
         _shutterDirtyCache.zSliceMax = zSliceMax;
         _shutterDirtyCache.showBB = showBBWallNow;
@@ -19122,17 +19153,23 @@ diffuseColor.rgb *= kernel;`
             continue;
           }
           const windwardDot = -(sh.nx * cosW + sh.ny * sinW);
-          let openAngleRad = 0.82; // Standard: 47° ausgestellt (volle 1-Elle-Klappe perfekt von außen sichtbar + freier Blick auf Lamellen!)
+          let openAngleRad = 0.82; // Standard: 47° ausgestellt (volle 1-Elle-Klappe perfekt von außen sichtbar + freier Blick auf 5 Lamellen!)
           let isLuvClosed = false;
-          if (isFixedLouver) {
+          if (isForceClosed) {
+            openAngleRad = 0.0;   // 0° fugendicht geschlossen
+            isLuvClosed = true;
+          } else if (isForceOpen) {
+            openAngleRad = 0.92;  // 53° weit offen (Blick frei auf alle 5 Lamellen)
+            isLuvClosed = false;
+          } else if (isFixedLouver) {
             openAngleRad = 0.68;  // 39° starr arretiert
           } else if (!isSelfClosing) {
             openAngleRad = 1.08;  // 62° weit offen (Offene Hutzen)
           } else {
             if (windwardDot > 0.05) {
               const closeFrac = Math.min(1.0, windwardDot * windPressNorm * 1.25);
-              const gustFlutter = (windPressNorm > 0.15) ? (0.038 * Math.sin(S.simTime * 5.2 + sh.phaseSeed)) : 0.0;
-              openAngleRad = 0.82 * (1.0 - 0.88 * closeFrac) + gustFlutter;
+              const gustFlutter = (windPressNorm > 0.15) ? (0.025 * Math.sin(S.simTime * 5.2 + sh.phaseSeed)) : 0.0;
+              openAngleRad = Math.max(0.0, 0.82 * (1.0 - 0.96 * closeFrac) + gustFlutter);
               isLuvClosed = (closeFrac > 0.45);
             } else {
               openAngleRad = Math.min(0.98, 0.82 + 0.14 * Math.abs(windwardDot) * windPressNorm);
@@ -19144,22 +19181,24 @@ diffuseColor.rgb *= kernel;`
           _shutterDummy.scale.set(sh.spanW, sh.chordH, sh.chordH);
           _shutterDummy.updateMatrix();
           im.setMatrixAt(i, _shutterDummy.matrix);
-          if (ctx && ctx.isThermalMode) {
-            const tFlap = isLuvClosed ? (ctx.effTAirDiurnal + 0.5) : (0.65 * ctx.T_exhaust_top + 0.35 * ctx.T_sol_air_C);
-            computeThermalRGB(tFlap, rgbScratch);
-            _shutterColor.setRGB(rgbScratch[0], rgbScratch[1], rgbScratch[2]);
-          } else if (ctx && !ctx.isTexturedMode) {
-            const etaFlap = isLuvClosed ? Math.min(88.0, 18.0 + windPressNorm * 52.0) : 14.0;
-            computeUtilizationRGB(etaFlap, etaFlap * 0.6, ctx.blinkState, rgbScratch);
-            _shutterColor.setRGB(rgbScratch[0], rgbScratch[1], rgbScratch[2]);
-          } else {
-            const wetShade = isLuvClosed ? 0.82 : 1.04;
-            _shutterColor.setRGB(1.06 * wetShade, 0.92 * wetShade, 0.74 * wetShade);
+          if (!useBlenderShutters) {
+            if (ctx && ctx.isThermalMode) {
+              const tFlap = isLuvClosed ? (ctx.effTAirDiurnal + 0.5) : (0.65 * ctx.T_exhaust_top + 0.35 * ctx.T_sol_air_C);
+              computeThermalRGB(tFlap, rgbScratch);
+              _shutterColor.setRGB(rgbScratch[0], rgbScratch[1], rgbScratch[2]);
+            } else if (ctx && !ctx.isTexturedMode) {
+              const etaFlap = isLuvClosed ? Math.min(88.0, 18.0 + windPressNorm * 52.0) : 14.0;
+              computeUtilizationRGB(etaFlap, etaFlap * 0.6, ctx.blinkState, rgbScratch);
+              _shutterColor.setRGB(rgbScratch[0], rgbScratch[1], rgbScratch[2]);
+            } else {
+              const wetShade = isLuvClosed ? 0.82 : 1.04;
+              _shutterColor.setRGB(1.06 * wetShade, 0.92 * wetShade, 0.74 * wetShade);
+            }
+            im.setColorAt(i, _shutterColor);
           }
-          im.setColorAt(i, _shutterColor);
         }
         im.instanceMatrix.needsUpdate = true;
-        if (im.instanceColor) im.instanceColor.needsUpdate = true;
+        if (!useBlenderShutters && im.instanceColor) im.instanceColor.needsUpdate = true;
       };
     }
     const _cachedBarrelMats = Arche.Procedural.barrelInstMesh ? new Float32Array(Arche.Procedural.barrelInstMesh.instanceMatrix.array) : null;
@@ -19245,6 +19284,9 @@ diffuseColor.rgb *= kernel;`
       }
       if (Arche.Environment.airflowUniforms && Arche.Environment.airflowUniforms.uMaxSliceZ) {
         Arche.Environment.airflowUniforms.uMaxSliceZ.value = zSliceMax;
+      }
+      if (Arche.Procedural && typeof Arche.Procedural.syncArkWaveAVisibility === 'function') {
+        Arche.Procedural.syncArkWaveAVisibility();
       }
     }
     const edgePositions = [];
@@ -19810,16 +19852,759 @@ transformed.z = -min(58.0, max(12.0, uWaterDepth * 0.42));
       const isGateOpen = String(mode).toUpperCase().includes('OFFEN') || isChronAutoOpen || isLandScenarioOpen;
       const isReinforced = mode.includes('Eichen-Spundtor') || isGateOpen;
       const isBBWallHidden = (params.outerWallView !== 'Alle Bordwände geschlossen');
-      gateZargeGroup.visible = isReinforced && isBBWallHidden;
+      const isShipyardScene = Boolean(typeof shipyardGroup !== 'undefined' && shipyardGroup && shipyardGroup.visible);
+      const isAraratScene = Boolean(typeof araratGroup !== 'undefined' && araratGroup && araratGroup.visible);
+      const gateSwingAngle = isGateOpen ? (isAraratScene ? 1.38 : (isShipyardScene ? 1.36 : 1.25)) : 0.0;
+      const arkWA = Arche.Procedural && Arche.Procedural.arkWaveA;
+      const useBlenderGate = Boolean(arkWA && arkWA.waveALoaded && arkWA.gateLeafPivot && Arche.State.viewShader === 'TEXTURED' && (params.hullOpacity >= 0.80));
+      gatePlugMesh.visible = !useBlenderGate;
+      gateZargeGroup.visible = !useBlenderGate && isReinforced && isBBWallHidden;
       gateZargeGroup.position.set(-5.0, -11.50 + 0.5 * dZargY - 0.04, deckBase);
       gatePlugMesh.position.set(
         isGateOpen ? (-5.0 + 4.45) : -5.0,
         isGateOpen ? (-11.50 + 0.58) : (-11.50 + 0.5 * gateThick_3d),
         zMid
       );
+      if (arkWA && arkWA.gateLeafPivot) {
+        arkWA.gateLeafPivot.visible = useBlenderGate;
+        arkWA.gateLeafPivot.position.set(-5.000, -11.345, zHigh);
+        arkWA.gateLeafPivot.rotation.set(gateSwingAngle, 0.0, 0.0);
+      }
+      if (arkWA && arkWA.gateZargeObj) {
+        arkWA.gateZargeObj.visible = useBlenderGate && isReinforced;
+        arkWA.gateZargeObj.position.set(-5.000, -11.345, deckBase);
+      }
     }
     shipGroup.add(gateGroup);
     updateGate3D(params.gateMode);
+
+    // =========================================================================
+    // 1B. ARCHE-WELLE A: BLENDER-GRUNDSTRUKTUR + 6 ZIMMERMANNS-HERO-MODULE
+    //     (`ark_base_structure_kit.glb` + `ark_wave_a_kit.glb` + 5 CC0-Holzsets)
+    // =========================================================================
+    (function initArkWaveAPipeline() {
+      const arkState = {
+        baseLoaded: false,
+        waveALoaded: false,
+        hydratePromise: null,
+        baseGroup: null,
+        carpentryGroup: null,
+        baseParts: {},      // name -> { lodGroup, isExterior, meshes: [] }
+        baseMaterials: {},  // slotKey -> THREE.MeshStandardMaterial
+        woodLibrary: {},    // libKey -> { map, normalMap, roughnessMap }
+        gateLeafPivot: null,
+        gateZargeObj: null,
+        stormShutterInstMesh: null,
+        rootKneeInsts: [],
+        kingpostCapInst: null,
+        doorFrameInsts: {}, // d1, d2, d3, foyer
+        badgirCapInst: null,
+        lastCullMode: 'OPEN',
+        lastLodCamPos: new THREE.Vector3(1e9, 1e9, 1e9),
+        lastLodFrame: -999
+      };
+      Arche.Procedural.arkWaveA = arkState;
+
+      const WOOD_KEY_TO_LIB = {
+        EICHE: 'wood_oak_d35',
+        ZYPRESSE: 'wood_cypress_c27',
+        ZEDER: 'wood_cedar_c18',
+        HAINBUCHE: 'wood_hornbeam'
+      };
+
+      const WOOD_LIB_URLS = {
+        kopher_pitch: [
+          'assets/textures/ark/materials/kopher_pitch_basecolor.png',
+          'assets/textures/ark/materials/kopher_pitch_normal.png',
+          'assets/textures/ark/materials/kopher_pitch_roughness.png'
+        ],
+        wood_oak_d35: [
+          'assets/textures/ark/materials/wood_oak_d35_basecolor.png',
+          'assets/textures/ark/materials/wood_oak_d35_normal.png',
+          'assets/textures/ark/materials/wood_oak_d35_roughness.png'
+        ],
+        wood_cypress_c27: [
+          'assets/textures/ark/materials/wood_cypress_c27_basecolor.png',
+          'assets/textures/ark/materials/wood_cypress_c27_normal.png',
+          'assets/textures/ark/materials/wood_cypress_c27_roughness.png'
+        ],
+        wood_cedar_c18: [
+          'assets/textures/ark/materials/wood_cedar_c18_basecolor.png',
+          'assets/textures/ark/materials/wood_cedar_c18_normal.png',
+          'assets/textures/ark/materials/wood_cedar_c18_roughness.png'
+        ],
+        wood_hornbeam: [
+          'assets/textures/ark/materials/wood_hornbeam_basecolor.png',
+          'assets/textures/ark/materials/wood_hornbeam_normal.png',
+          'assets/textures/ark/materials/wood_hornbeam_roughness.png'
+        ]
+      };
+
+      const BASE_EXTERIOR_NAMES = new Set([
+        'ark_hull_wall_bb', 'ark_hull_wall_sb', 'ark_hull_roof',
+        'ark_hull_zohar', 'ark_hull_keels', 'ark_hull_sole'
+      ]);
+      const BASE_SHADOW_NAMES = new Set([
+        'ark_hull_wall_bb', 'ark_hull_wall_sb', 'ark_hull_roof', 'ark_hull_keels'
+      ]);
+      const BASE_TOOLTIP_MAP = {
+        ark_hull_wall_bb: 'ark_hull_wall',
+        ark_hull_wall_sb: 'ark_hull_wall',
+        ark_hull_roof: 'first',
+        ark_hull_zohar: 'first',
+        ark_hull_keels: 'kiel',
+        ark_hull_sole: 'kiel',
+        ark_hull_deck_d1: 'iy',
+        ark_hull_deck_d2: 'iy',
+        ark_hull_deck_d3: 'iy',
+        ark_hull_heavy_timber: 'iy',
+        ark_hull_long_bh: 'ark_hull_bh',
+        ark_hull_trans_bh: 'ark_hull_bh'
+      };
+
+      function _loadTexAsync(loader, url, isColor) {
+        return new Promise((resolve) => {
+          try {
+            loader.load(url, (tex) => {
+              tex.wrapS = THREE.RepeatWrapping;
+              tex.wrapT = THREE.RepeatWrapping;
+              tex.flipY = false;
+              Arche.Assets.applyCleanTextureFiltering(tex, isColor);
+              resolve(tex);
+            }, undefined, () => resolve(null));
+          } catch (_) {
+            resolve(null);
+          }
+        });
+      }
+
+      async function _loadWoodLibraryTextures() {
+        if (typeof window !== 'undefined' && window.location && window.location.protocol === 'file:') {
+          return false;
+        }
+        const texLoader = new THREE.TextureLoader();
+        const keys = Object.keys(WOOD_LIB_URLS);
+        await Promise.all(keys.map(async (libKey) => {
+          const urls = WOOD_LIB_URLS[libKey];
+          const [map, normalMap, roughnessMap] = await Promise.all([
+            _loadTexAsync(texLoader, urls[0], true),
+            _loadTexAsync(texLoader, urls[1], false),
+            _loadTexAsync(texLoader, urls[2], false)
+          ]);
+          if (map && normalMap && roughnessMap) {
+            arkState.woodLibrary[libKey] = { map, normalMap, roughnessMap };
+          }
+        }));
+        return Object.keys(arkState.woodLibrary).length > 0;
+      }
+
+      function _applyWoodSetToMat(mat, libKey) {
+        if (!mat || !arkState.woodLibrary[libKey]) return;
+        const set = arkState.woodLibrary[libKey];
+        // Alle 3 Slots bleiben non-null -> 0 Shader-Neukompilierung (deltaPrograms === 0)!
+        if (mat.map !== set.map) mat.map = set.map;
+        if (mat.normalMap !== set.normalMap) mat.normalMap = set.normalMap;
+        if (mat.roughnessMap !== set.roughnessMap) mat.roughnessMap = set.roughnessMap;
+      }
+
+      function syncArkBaseWoodMaterials() {
+        if (!arkState.baseLoaded) return;
+        const bm = arkState.baseMaterials;
+        // Gen 6,14 Farbschutz: MAT_ARK_KOPHER bleibt stets tiefdunkles Kopher-Erdpech!
+        _applyWoodSetToMat(bm.MAT_ARK_KOPHER, 'kopher_pitch');
+        _applyWoodSetToMat(bm.MAT_ARK_ROOF_WOOD, WOOD_KEY_TO_LIB[params.woodRoof] || 'wood_cedar_c18');
+        _applyWoodSetToMat(bm.MAT_ARK_HEAVY_TIMBER, WOOD_KEY_TO_LIB[params.woodKeelson] || 'wood_oak_d35');
+        _applyWoodSetToMat(bm.MAT_ARK_LONG_BH, WOOD_KEY_TO_LIB[params.woodLongBH] || 'wood_cypress_c27');
+        _applyWoodSetToMat(bm.MAT_ARK_TRANS_BH, WOOD_KEY_TO_LIB[params.woodTransBH] || 'wood_cypress_c27');
+        _applyWoodSetToMat(bm.MAT_ARK_DECK_D1 || bm.MAT_ARK_DECKS, WOOD_KEY_TO_LIB[params.woodDeck1] || 'wood_oak_d35');
+        _applyWoodSetToMat(bm.MAT_ARK_DECK_D2 || bm.MAT_ARK_DECKS, WOOD_KEY_TO_LIB[params.woodDeck2] || 'wood_oak_d35');
+        _applyWoodSetToMat(bm.MAT_ARK_DECK_D3 || bm.MAT_ARK_DECKS, WOOD_KEY_TO_LIB[params.woodDeck3] || 'wood_cypress_c27');
+      }
+      Arche.Procedural.syncArkBaseWoodMaterials = syncArkBaseWoodMaterials;
+
+      function _prepareArkGeometry(rawGeo, bakeZUp) {
+        const geo = rawGeo.clone();
+        if (bakeZUp) geo.rotateX(Math.PI * 0.5);
+        if (geo.attributes && geo.attributes.color) geo.deleteAttribute('color');
+        if (geo.attributes && geo.attributes.uv && !geo.attributes.uv2) {
+          geo.setAttribute('uv2', geo.attributes.uv);
+        }
+        geo.computeBoundingBox();
+        geo.computeBoundingSphere();
+        return geo;
+      }
+
+      function _createArkStandardMaterial(srcMat, slotName) {
+        const mat = srcMat ? srcMat.clone() : new THREE.MeshStandardMaterial({ color: 0xffffff });
+        mat.name = slotName || mat.name || 'MAT_ARK_STD';
+        mat.side = THREE.FrontSide;
+        mat.vertexColors = false;
+        mat.transparent = false;
+        mat.opacity = 1.0;
+        mat.depthWrite = true;
+        const isKopher = (slotName === 'MAT_ARK_KOPHER');
+        mat.color.setHex(0xffffff);
+        mat.roughness = isKopher ? 0.88 : 0.92;
+        mat.metalness = isKopher ? 0.04 : 0.01;
+        mat.envMapIntensity = isKopher ? 0.45 : 0.24;
+        if (mat.normalScale) mat.normalScale.set(isKopher ? 0.72 : 0.58, isKopher ? 0.72 : 0.58);
+        const defaultLib = isKopher ? 'kopher_pitch'
+          : (slotName === 'MAT_ARK_ROOF_WOOD' ? 'wood_cedar_c18'
+            : ((slotName === 'MAT_ARK_LONG_BH' || slotName === 'MAT_ARK_TRANS_BH' || slotName === 'MAT_ARK_DECK_D3') ? 'wood_cypress_c27' : 'wood_oak_d35'));
+        if (arkState.woodLibrary[defaultLib]) {
+          mat.map = arkState.woodLibrary[defaultLib].map;
+          mat.normalMap = arkState.woodLibrary[defaultLib].normalMap;
+          mat.roughnessMap = arkState.woodLibrary[defaultLib].roughnessMap;
+        }
+        Arche.Assets.attachArcheMaterialHooks(mat, {
+          category: 'ark',
+          detailType: 'wood',
+          dirtStrength: 0.0,
+          isArkInterior: true,
+          wind: false,
+          noDeckClip: false,
+          tempC: 22.0,
+          etaEC5: 25.0
+        });
+        return mat;
+      }
+
+      function _collectLodGroupsFromScene(rawScene) {
+        const grouped = new Map();
+        rawScene.traverse((obj) => {
+          if (!obj || !obj.isMesh || !obj.geometry) return;
+          const m = /^(.*)_LOD([0-3])$/i.exec(obj.name || '');
+          if (!m) return;
+          const baseName = m[1];
+          const lodIdx = Number(m[2]);
+          if (!grouped.has(baseName)) grouped.set(baseName, {});
+          grouped.get(baseName)[lodIdx] = obj;
+        });
+        return grouped;
+      }
+
+      function rebuildArkCarpentryInstances() {
+        if (!arkState.waveALoaded) return;
+        const dummy = new THREE.Object3D();
+        const dBot = handsToM(params.thickBottom);
+        const dAW = handsToM(params.thickOuterWall);
+        const dLBH = handsToM(params.thickLongBH);
+        const dTBH = handsToM(params.thickTransBH);
+        const deckThickArr = [dBot, handsToM(params.thickDeck1), handsToM(params.thickDeck2), handsToM(params.thickDeck3), handsToM(params.thickRoof)];
+        const bKeelIn = handsToM(params.thickKeelson);
+        const hKeelIn = 0.72 * bKeelIn;
+
+        // 1. 392 organische Eichen-Wurzelknie (3 InstancedMeshes)
+        if (arkState.rootKneeInsts.length === 3) {
+          const counts = [0, 0, 0];
+          for (let i = 0; i < X_STATIONS.length; i++) {
+            const xK = (i === 0) ? (dAW + 0.26) : (i === 14 ? (140.0 - dAW - 0.26) : (X_STATIONS[i] + 0.5 * dTBH + 0.14));
+            const isSiloSt = (i === 2 || i === 5 || i === 8 || i === 11);
+            for (let j = 0; j < Y_AXES.length; j++) {
+              const yWall = Y_AXES[j];
+              const isOuterJ = (j === 0 || j === 3);
+              if (isOuterJ && isSiloSt) continue;
+              if (j === 0 && i === 6) continue;
+              const dirY = (j === 0) ? 1.0 : (j === 3 ? -1.0 : (j === 1 ? 1.0 : -1.0));
+              const yBase = isOuterJ ? (yWall + dirY * (dAW + 0.008)) : (yWall + dirY * (0.5 * dLBH + 0.008));
+              for (let k = 0; k < 4; k++) {
+                if (!isOuterJ && (i === 6 || i === 7) && k >= 1) continue;
+                const zBotFloor = (k === 0) ? (dBot + 0.006) : (Z_LEVELS[k] + 0.5 * deckThickArr[k] + 0.006);
+                const zTopCeil = (k < 3) ? (Z_LEVELS[k + 1] - 0.5 * deckThickArr[k + 1] - 0.006) : (getDeckZ(4, yBase) - 0.65 * handsToM(params.thickRoof) - 0.02);
+                for (let top = 0; top < 2; top++) {
+                  const vIdx = (i * 7 + j * 3 + k * 5 + top) % 3;
+                  const im = arkState.rootKneeInsts[vIdx];
+                  const idx = counts[vIdx]++;
+                  if (idx >= im.instanceMatrix.count) continue;
+                  dummy.position.set(xK - 70.0, yBase, top === 0 ? zBotFloor : zTopCeil);
+                  dummy.scale.set(1, 1, 1);
+                  if (top === 0 && dirY > 0) dummy.rotation.set(0, 0, 0);
+                  else if (top === 0 && dirY < 0) dummy.rotation.set(0, 0, Math.PI);
+                  else if (top === 1 && dirY > 0) dummy.rotation.set(0, Math.PI, 0);
+                  else dummy.rotation.set(Math.PI, 0, 0);
+                  dummy.updateMatrix();
+                  im.setMatrixAt(idx, dummy.matrix);
+                }
+              }
+            }
+          }
+          for (let v = 0; v < 3; v++) {
+            arkState.rootKneeInsts[v].count = counts[v];
+            arkState.rootKneeInsts[v].instanceMatrix.needsUpdate = true;
+          }
+        }
+
+        // 2. 208 Königsstützen-Sattelholz-Kapitelle (1 InstancedMesh)
+        if (arkState.kingpostCapInst) {
+          const im = arkState.kingpostCapInst;
+          let cnt = 0;
+          const yPostCols = [-17.5 * ELLE_M, -4.5 * ELLE_M, 4.5 * ELLE_M, 17.5 * ELLE_M];
+          for (let i = 0; i < X_STATIONS.length; i++) {
+            const xP = (i === 0) ? (dAW + 0.28) : (i === 14 ? (140.0 - dAW - 0.28) : X_STATIONS[i]);
+            const isSiloSt = (i === 2 || i === 3 || i === 5 || i === 6 || i === 8 || i === 9 || i === 11 || i === 12);
+            for (let c = 0; c < yPostCols.length; c++) {
+              const yP = yPostCols[c];
+              const isSideCol = (Math.abs(yP) > 10.0);
+              for (let k = 0; k < 4; k++) {
+                if (isSideCol && isSiloSt && (k === 1 || k === 2)) continue;
+                const zP1 = (k < 3) ? (Z_LEVELS[k + 1] - 0.5 * deckThickArr[k + 1]) : (getDeckZ(4, yP) - 0.65 * handsToM(params.thickRoof));
+                const isNarrowRamp = ((i === 6 || i === 7) && Math.abs(yP) < 5.0);
+                if (cnt < im.instanceMatrix.count) {
+                  dummy.position.set(xP - 70.0, yP, zP1 - 0.06);
+                  dummy.rotation.set(0, 0, 0);
+                  dummy.scale.set(1.0, isNarrowRamp ? 0.33 : 1.0, 1.0);
+                  dummy.updateMatrix();
+                  im.setMatrixAt(cnt++, dummy.matrix);
+                }
+              }
+            }
+          }
+          im.count = cnt;
+          im.instanceMatrix.needsUpdate = true;
+        }
+
+        // 3. 115 Schotttür-Blockzargen (4 InstancedMeshes: d1, d2, d3, foyer)
+        const df = arkState.doorFrameInsts;
+        if (df.d1 && df.d2 && df.d3 && df.foyer) {
+          const cnts = { d1: 0, d2: 0, d3: 0, foyer: 0 };
+          const pushDoor = (type, xL, yL, zL, rotZ, scaleX) => {
+            const im = df[type];
+            if (!im) return;
+            const idx = cnts[type]++;
+            if (idx >= im.instanceMatrix.count) return;
+            dummy.position.set(xL, yL, zL);
+            dummy.rotation.set(0, 0, rotZ);
+            dummy.scale.set(scaleX, 1.0, 1.0);
+            dummy.updateMatrix();
+            im.setMatrixAt(idx, dummy.matrix);
+          };
+          // 3a. 60 Längsschotttüren (Y = +-5.0 m)
+          if (params.showLongBH) {
+            for (let j = 1; j <= 2; j++) {
+              const y = Y_AXES[j];
+              for (let i = 0; i < X_STATIONS.length - 1; i++) {
+                const isGoepelSec = (i === 3 || i === 10);
+                const isSiloSec = (i === 2 || i === 5 || i === 8 || i === 11);
+                if (isSiloSec) continue;
+                for (let k = 1; k <= 3; k++) {
+                  const isRampWallBlock = (j === 1 && i === 7 && (k === 1 || k === 2)) || (j === 2 && i === 7 && (k === 2 || k === 3));
+                  if (isRampWallBlock) continue;
+                  let xMid = isGoepelSec ? (X_STATIONS[i] + 6.80) : (0.5 * (X_STATIONS[i] + X_STATIONS[i + 1]));
+                  if (i === 1 || i === 4 || i === 9 || i === 12) {
+                    xMid = (k === 1) ? (X_STATIONS[i] + 5.00) : (X_STATIONS[i] + 3.55);
+                  } else if (i === 0 && k === 1) xMid = 5.00;
+                  else if (i === 13 && k === 1) xMid = 135.00;
+                  else if (i === 6 && ((j === 1 && k === 1) || (j === 2 && (k === 2 || k === 3)))) xMid = X_STATIONS[i] + 2.85;
+                  else if (i === 6 && j === 1 && k === 2) xMid = X_STATIONS[i] + 4.45;
+                  const zDeckBot = getDeckZ(k, y) + 0.5 * deckThickArr[k];
+                  const isMainEntryPortal = (j === 1 && i === 6 && k === 2);
+                  if (isMainEntryPortal) {
+                    pushDoor('foyer', xMid - 70.0, y, zDeckBot, 0.0, 1.0);
+                  } else if (k === 1) {
+                    pushDoor('d1', xMid - 70.0, y, zDeckBot, 0.0, 2.380 / 2.800);
+                  } else if (k === 2) {
+                    pushDoor('d2', xMid - 70.0, y, zDeckBot, 0.0, 1.820 / 1.867);
+                  } else {
+                    pushDoor('d3', xMid - 70.0, y, zDeckBot, 0.0, 1.0);
+                  }
+                }
+              }
+            }
+          }
+          // 3b. 39 Mittelschiff- & 16 Seitenschiff-Querschotttüren (QS01..QS13)
+          if (params.showTransBH) {
+            for (let i = 1; i <= 13; i++) {
+              const xL = X_STATIONS[i] - 70.0;
+              for (let k = 1; k <= 3; k++) {
+                const zBase = getDeckZ(k, 0.0) + 0.5 * deckThickArr[k];
+                if (k === 1) {
+                  pushDoor('d1', xL, 0.0, zBase, Math.PI * 0.5, (i === 7) ? (2.613 / 2.800) : 1.0);
+                } else if (k === 2) {
+                  pushDoor('d2', xL, 0.0, zBase, Math.PI * 0.5, 1.0);
+                } else {
+                  pushDoor('d3', xL, 0.0, zBase, Math.PI * 0.5, 1.0);
+                }
+                const allowSideDoor = ((k >= 2) && !(k === 2 && (i === 1 || i === 13))) && (i !== 2 && i !== 3 && i !== 5 && i !== 6 && i !== 8 && i !== 9 && i !== 11 && i !== 12);
+                if (allowSideDoor) {
+                  pushDoor('d3', xL, k === 3 ? -6.55 : -6.20, zBase, Math.PI * 0.5, 1.307 / 1.400);
+                  pushDoor('d3', xL, k === 3 ? 6.65 : 6.20, zBase, Math.PI * 0.5, 1.307 / 1.400);
+                }
+              }
+            }
+          }
+          ['d1', 'd2', 'd3', 'foyer'].forEach((tKey) => {
+            df[tKey].count = cnts[tKey];
+            df[tKey].instanceMatrix.needsUpdate = true;
+          });
+        }
+      }
+      Arche.Procedural.rebuildArkCarpentryInstances = rebuildArkCarpentryInstances;
+
+      function updateArkBadgirCaps(pairStations, zTop, isActiveTowers) {
+        if (!arkState.waveALoaded || !arkState.badgirCapInst) return;
+        const im = arkState.badgirCapInst;
+        const useBlender = Boolean(Arche.State.viewShader === 'TEXTURED' && (params.hullOpacity >= 0.80) && isActiveTowers && Array.isArray(pairStations) && pairStations.length > 0);
+        if (!useBlender) {
+          im.count = 0;
+          im.visible = false;
+          return;
+        }
+        const dummy = new THREE.Object3D();
+        let cnt = 0;
+        for (let i = 0; i < pairStations.length; i++) {
+          const xCh = pairStations[i];
+          for (let s = -1; s <= 1; s += 2) {
+            if (cnt >= im.instanceMatrix.count) break;
+            dummy.position.set(xCh - 70.0, s * 4.180, zTop);
+            dummy.rotation.set(0, 0, 0);
+            dummy.scale.set(1, 1, 1);
+            dummy.updateMatrix();
+            im.setMatrixAt(cnt++, dummy.matrix);
+          }
+        }
+        im.count = cnt;
+        im.instanceMatrix.needsUpdate = true;
+        im.visible = (cnt > 0) && ((Arche.Environment.zSliceMaxLocal || 100.0) > 13.45);
+      }
+      Arche.Procedural.updateArkBadgirCaps = updateArkBadgirCaps;
+
+      function syncArkWaveAVisibility(cullModeOverride) {
+        const cullMode = cullModeOverride || (typeof liveState !== 'undefined' && liveState ? liveState.activeCullMode : null) || arkState.lastCullMode || 'OPEN';
+        arkState.lastCullMode = cullMode;
+        const isExtClosed = (cullMode === 'EXTERIOR_CLOSED');
+        const isPeekPortal = (cullMode === 'PORTAL_PEEK');
+        const isTex = (Arche.State.viewShader === 'TEXTURED');
+        const isOpaque = (params.hullOpacity >= 0.80);
+        const zSliceMax = Arche.Environment.zSliceMaxLocal || 100.0;
+        const showBB = (params.outerWallView === 'Alle Bordwände geschlossen');
+        const showSB = (params.outerWallView !== 'Alle Außenbordwände ausblenden');
+        const useBase = Boolean(arkState.baseLoaded && isTex && isOpaque);
+        const useWaveA = Boolean(arkState.waveALoaded && isTex && isOpaque);
+
+        if (arkState.baseGroup) {
+          arkState.baseGroup.visible = useBase;
+        }
+        if (useBase) {
+          // Alte prozedurale Struktur-Buckets ausblenden (0 Doppel-Geometrie, 0 Z-Fighting!)
+          // ACHTUNG: bucketBadgir & bucketFixtures bleiben unberührt sichtbar!
+          if (bucketWallBB && bucketWallBB.mesh) bucketWallBB.mesh.visible = false;
+          if (bucketWallSB && bucketWallSB.mesh) bucketWallSB.mesh.visible = false;
+          if (bucketRoof && bucketRoof.mesh) bucketRoof.mesh.visible = false;
+          if (bucketDecks && bucketDecks.mesh) bucketDecks.mesh.visible = false;
+          if (bucketLongBH && bucketLongBH.mesh) bucketLongBH.mesh.visible = false;
+          if (bucketTransBH && bucketTransBH.mesh) bucketTransBH.mesh.visible = false;
+
+          const p = arkState.baseParts;
+          if (p.ark_hull_wall_bb) p.ark_hull_wall_bb.lodGroup.visible = showBB;
+          if (p.ark_hull_wall_sb) p.ark_hull_wall_sb.lodGroup.visible = showSB;
+          if (p.ark_hull_roof) p.ark_hull_roof.lodGroup.visible = Boolean(params.showRoof && zSliceMax > 13.45);
+          if (p.ark_hull_zohar) p.ark_hull_zohar.lodGroup.visible = Boolean(params.showRoof && zSliceMax > 13.45);
+          if (p.ark_hull_keels) p.ark_hull_keels.lodGroup.visible = Boolean(params.showDecks);
+          if (p.ark_hull_sole) p.ark_hull_sole.lodGroup.visible = Boolean(params.showDecks);
+          if (p.ark_hull_deck_d1) p.ark_hull_deck_d1.lodGroup.visible = Boolean(params.showDecks && zSliceMax > 1.7 && !isExtClosed);
+          if (p.ark_hull_deck_d2) p.ark_hull_deck_d2.lodGroup.visible = Boolean(params.showDecks && zSliceMax > 5.5 && !isExtClosed);
+          if (p.ark_hull_deck_d3) p.ark_hull_deck_d3.lodGroup.visible = Boolean(params.showDecks && zSliceMax > 9.5 && !isExtClosed);
+          if (p.ark_hull_heavy_timber) p.ark_hull_heavy_timber.lodGroup.visible = Boolean(params.heavyPlanking && !isExtClosed);
+          if (p.ark_hull_long_bh) p.ark_hull_long_bh.lodGroup.visible = Boolean(params.showLongBH && (!isExtClosed || isPeekPortal));
+          if (p.ark_hull_trans_bh) p.ark_hull_trans_bh.lodGroup.visible = Boolean(params.showTransBH && (!isExtClosed || isPeekPortal));
+        } else if (arkState.baseLoaded) {
+          // 0-ms-Rückschalt auf exakte EC5-/Thermo-Vertex-Buffer-Buckets
+          if (bucketWallBB && bucketWallBB.mesh) bucketWallBB.mesh.visible = showBB;
+          if (bucketWallSB && bucketWallSB.mesh) bucketWallSB.mesh.visible = showSB;
+          if (bucketRoof && bucketRoof.mesh) bucketRoof.mesh.visible = Boolean(params.showRoof && zSliceMax > 13.45);
+          if (bucketDecks && bucketDecks.mesh) bucketDecks.mesh.visible = Boolean(params.showDecks);
+          if (bucketLongBH && bucketLongBH.mesh) bucketLongBH.mesh.visible = Boolean(params.showLongBH && (!isExtClosed || isPeekPortal));
+          if (bucketTransBH && bucketTransBH.mesh) bucketTransBH.mesh.visible = Boolean(params.showTransBH && (!isExtClosed || isPeekPortal));
+        }
+
+        if (arkState.carpentryGroup) {
+          arkState.carpentryGroup.visible = useWaveA;
+        }
+        if (useWaveA) {
+          const showKnees = Boolean(params.crossBracing && !isExtClosed);
+          for (let i = 0; i < arkState.rootKneeInsts.length; i++) {
+            arkState.rootKneeInsts[i].visible = showKnees && arkState.rootKneeInsts[i].count > 0;
+          }
+          if (arkState.kingpostCapInst) {
+            arkState.kingpostCapInst.visible = Boolean(params.heavyPlanking && !isExtClosed && arkState.kingpostCapInst.count > 0);
+          }
+          const hasBHDoors = Boolean(params.bulkheadDoorMode && !params.bulkheadDoorMode.includes('Geschlossen'));
+          const hasBHFrames = Boolean(hasBHDoors && !params.bulkheadDoorMode.includes('Ohne Zarge'));
+          const bhVisSig = `${params.showLongBH ? 1 : 0}_${params.showTransBH ? 1 : 0}`;
+          if (arkState._lastBhVisSig !== bhVisSig) {
+            arkState._lastBhVisSig = bhVisSig;
+            rebuildArkCarpentryInstances();
+          }
+          const showDoors = Boolean(hasBHFrames && (params.showLongBH || params.showTransBH) && (!isExtClosed || isPeekPortal));
+          const df = arkState.doorFrameInsts;
+          ['d1', 'd2', 'd3', 'foyer'].forEach((k) => {
+            if (df[k]) df[k].visible = showDoors && df[k].count > 0;
+          });
+          if (arkState.badgirCapInst) {
+            const badgActive = Boolean(badgirGroup && badgirGroup.visible && Number(params.badgirCount) > 0 && zSliceMax > 13.45);
+            arkState.badgirCapInst.visible = badgActive && arkState.badgirCapInst.count > 0;
+          }
+        }
+      }
+      Arche.Procedural.syncArkWaveAVisibility = syncArkWaveAVisibility;
+
+      const _lodCamLocal = new THREE.Vector3();
+      function updateArkWaveALODs(cam, force) {
+        if (!arkState.baseLoaded || !arkState.baseGroup || !arkState.baseGroup.visible || !cam) return;
+        const frameNow = (typeof S !== 'undefined' && S) ? S.frameCounter : 0;
+        if (!force && (frameNow - arkState.lastLodFrame) < 4 && cam.position.distanceToSquared(arkState.lastLodCamPos) < 1.0) {
+          return;
+        }
+        arkState.lastLodFrame = frameNow;
+        arkState.lastLodCamPos.copy(cam.position);
+        _lodCamLocal.copy(cam.position);
+        shipGroup.worldToLocal(_lodCamLocal);
+        // Abstand zur 140x23x15m-Hüllbox statt nur zum Schiffsmittelpunkt (verhindert vorzeitiges LOD-Umschalten im Bug/Heck!)
+        const dx = Math.max(0.0, Math.abs(_lodCamLocal.x) - 70.0);
+        const dy = Math.max(0.0, Math.abs(_lodCamLocal.y) - 11.5);
+        const dz = Math.max(0.0, _lodCamLocal.z < 0.0 ? -_lodCamLocal.z : (_lodCamLocal.z > 15.0 ? (_lodCamLocal.z - 15.0) : 0.0));
+        const hullDist = Math.hypot(dx, dy, dz);
+        const parts = arkState.baseParts;
+        for (const key in parts) {
+          const entry = parts[key];
+          if (!entry || !entry.lodGroup || !entry.lodGroup.visible) continue;
+          const lvls = entry.lodGroup.levels;
+          if (!lvls || lvls.length === 0) continue;
+          let activeIdx = 0;
+          if (entry.isExterior) {
+            // Außen-LOD-Staffelung: 150 / 500 / 1500 / 3000 m
+            if (hullDist >= 1500.0 && lvls.length > 3) activeIdx = 3;
+            else if (hullDist >= 500.0 && lvls.length > 2) activeIdx = 2;
+            else if (hullDist >= 150.0 && lvls.length > 1) activeIdx = 1;
+            else activeIdx = 0;
+          } else {
+            // Kurze Innenraum-LODs: d01 ~ 27.5m, d12 ~ 75m, maxVisibleDist 145m
+            if (hullDist >= 145.0) {
+              for (let i = 0; i < lvls.length; i++) lvls[i].object.visible = false;
+              continue;
+            }
+            if (hullDist >= 75.0 && lvls.length > 2) activeIdx = 2;
+            else if (hullDist >= 27.5 && lvls.length > 1) activeIdx = 1;
+            else activeIdx = 0;
+          }
+          for (let i = 0; i < lvls.length; i++) {
+            lvls[i].object.visible = (i === activeIdx);
+          }
+        }
+      }
+      Arche.Procedural.updateArkWaveALODs = updateArkWaveALODs;
+
+      async function hydrateArkWaveAKits3D() {
+        if (arkState.hydratePromise) return arkState.hydratePromise;
+        arkState.hydratePromise = (async () => {
+          if (typeof window !== 'undefined' && window.location && window.location.protocol === 'file:') {
+            return { ok: false, reason: 'file_protocol_fallback' };
+          }
+          if (!Arche.Assets || typeof Arche.Assets.loadRawGLB !== 'function') {
+            return { ok: false, reason: 'no_asset_loader' };
+          }
+          const [woodOk, baseScene, waveAScene] = await Promise.all([
+            _loadWoodLibraryTextures(),
+            Arche.Assets.loadRawGLB('ark_base_structure_kit', 'assets/glb/ark/ark_base_structure_kit.glb'),
+            Arche.Assets.loadRawGLB('ark_wave_a_kit', 'assets/glb/ark/ark_wave_a_kit.glb')
+          ]);
+
+          // --- A) 12 Grundstruktur-Objekte aus ark_base_structure_kit.glb ---
+          if (baseScene) {
+            const baseGroup = new THREE.Group();
+            baseGroup.name = 'ark_base_structure_kit_root';
+            const srcMatByName = {};
+            baseScene.traverse((o) => {
+              if (!o || !o.isMesh || !o.material) return;
+              const arr = Array.isArray(o.material) ? o.material : [o.material];
+              arr.forEach((m) => { if (m && m.name && !srcMatByName[m.name]) srcMatByName[m.name] = m; });
+            });
+            ['MAT_ARK_KOPHER', 'MAT_ARK_ROOF_WOOD', 'MAT_ARK_DECKS', 'MAT_ARK_HEAVY_TIMBER', 'MAT_ARK_LONG_BH', 'MAT_ARK_TRANS_BH'].forEach((sName) => {
+              arkState.baseMaterials[sName] = _createArkStandardMaterial(srcMatByName[sName], sName);
+            });
+            // Individuelle Deck-Material-Instanzen (teilen exakt denselben Shader, erlauben Deck 1/2/3 einzeln live umzuschalten!)
+            arkState.baseMaterials.MAT_ARK_DECK_D1 = _createArkStandardMaterial(srcMatByName.MAT_ARK_DECKS, 'MAT_ARK_DECK_D1');
+            arkState.baseMaterials.MAT_ARK_DECK_D2 = _createArkStandardMaterial(srcMatByName.MAT_ARK_DECKS, 'MAT_ARK_DECK_D2');
+            arkState.baseMaterials.MAT_ARK_DECK_D3 = _createArkStandardMaterial(srcMatByName.MAT_ARK_DECKS, 'MAT_ARK_DECK_D3');
+
+            const grouped = _collectLodGroupsFromScene(baseScene);
+            grouped.forEach((lodMap, baseName) => {
+              const isExt = BASE_EXTERIOR_NAMES.has(baseName);
+              const canCastShadow = BASE_SHADOW_NAMES.has(baseName);
+              const lodGroup = new THREE.LOD();
+              lodGroup.name = baseName;
+              const dists = isExt ? [0, 150, 500, 1500] : [0, 27.5, 75.0];
+              const meshes = [];
+              const ttKey = BASE_TOOLTIP_MAP[baseName] || 'qs';
+              [0, 1, 2, 3].forEach((lodIdx) => {
+                const srcObj = lodMap[lodIdx];
+                if (!srcObj) return;
+                const geo = _prepareArkGeometry(srcObj.geometry, true);
+                const mapMat = (m) => {
+                  const nm = (m && m.name) ? m.name : 'MAT_ARK_KOPHER';
+                  if (nm === 'MAT_ARK_DECKS') {
+                    if (baseName === 'ark_hull_deck_d1') return arkState.baseMaterials.MAT_ARK_DECK_D1;
+                    if (baseName === 'ark_hull_deck_d2') return arkState.baseMaterials.MAT_ARK_DECK_D2;
+                    if (baseName === 'ark_hull_deck_d3') return arkState.baseMaterials.MAT_ARK_DECK_D3;
+                  }
+                  return arkState.baseMaterials[nm] || arkState.baseMaterials.MAT_ARK_KOPHER;
+                };
+                const matUse = Array.isArray(srcObj.material) ? srcObj.material.map(mapMat) : mapMat(srcObj.material);
+                const mesh = new THREE.Mesh(geo, matUse);
+                mesh.name = `${baseName}_LOD${lodIdx}`;
+                mesh.castShadow = canCastShadow && (lodIdx <= 1);
+                mesh.receiveShadow = true;
+                mesh.userData.arkTooltipKey = ttKey;
+                mesh.userData.arkBasePartName = baseName;
+                lodGroup.addLevel(mesh, dists[Math.min(lodIdx, dists.length - 1)]);
+                meshes.push(mesh);
+              });
+              if (lodGroup.levels.length >= 2) {
+                Arche.Assets.configureSmoothLODGroup(lodGroup, isExt
+                  ? { blendRatio: 0.15, margin: 12.0, maxDist: 3000.0 }
+                  : { blendRatio: 0.15, margin: 6.0, maxDist: 145.0 });
+                // Für 140-m-Schiffsmodule kein Pixel-Dither-Loch im Bug/Heck; LOD-Wechsel erfolgt sauber über updateArkWaveALODs
+                meshes.forEach((mObj) => {
+                  const mArr = Array.isArray(mObj.material) ? mObj.material : [mObj.material];
+                  mArr.forEach((mt) => {
+                    if (mt && mt.userData && mt.userData._archeLodFadeUniform) {
+                      mt.userData._archeLodFadeUniform.value.set(-1000.0, -900.0, 1.0e6, 1.1e6);
+                    }
+                  });
+                });
+              }
+              baseGroup.add(lodGroup);
+              arkState.baseParts[baseName] = { lodGroup, isExterior: isExt, meshes };
+            });
+            shipGroup.add(baseGroup);
+            arkState.baseGroup = baseGroup;
+            arkState.baseLoaded = true;
+            syncArkBaseWoodMaterials();
+          }
+
+          // --- B) 6 Zimmermanns-Hero-Module aus ark_wave_a_kit.glb ---
+          if (waveAScene) {
+            const groupedWA = _collectLodGroupsFromScene(waveAScene);
+            let trimMat = null;
+            waveAScene.traverse((o) => {
+              if (!trimMat && o && o.isMesh && o.material) {
+                const srcM = Array.isArray(o.material) ? o.material[0] : o.material;
+                if (srcM) {
+                  trimMat = srcM.clone();
+                  trimMat.name = 'Mat_Ark_Master_Trim';
+                  trimMat.side = THREE.FrontSide;
+                  trimMat.vertexColors = false;
+                  trimMat.transparent = false;
+                  trimMat.depthWrite = true;
+                  trimMat.color.setHex(0xffffff);
+                  trimMat.roughness = 0.86;
+                  trimMat.metalness = 0.04;
+                  trimMat.envMapIntensity = 0.34;
+                  Arche.Assets.attachArcheMaterialHooks(trimMat, {
+                    category: 'ark',
+                    detailType: 'wood',
+                    dirtStrength: 0.0,
+                    isArkInterior: true,
+                    wind: false,
+                    noDeckClip: false,
+                    tempC: 22.0,
+                    etaEC5: 25.0
+                  });
+                }
+              }
+            });
+
+            if (trimMat) {
+              const carpGroup = new THREE.Group();
+              carpGroup.name = 'ark_wave_a_carpentry_root';
+              const makeInst = (baseName, maxCount, ttKey) => {
+                const lodMap = groupedWA.get(baseName);
+                const srcObj = lodMap && (lodMap[0] || lodMap[1] || lodMap[2]);
+                if (!srcObj) return null;
+                const geo = _prepareArkGeometry(srcObj.geometry, true);
+                const im = new THREE.InstancedMesh(geo, trimMat, maxCount);
+                im.name = `${baseName}_inst`;
+                im.castShadow = false;
+                im.receiveShadow = true;
+                im.frustumCulled = false;
+                im.count = 0;
+                im.visible = false;
+                im.userData.arkTooltipKey = ttKey;
+                carpGroup.add(im);
+                return im;
+              };
+
+              // 1. Hero-Seitentor S7 (ark_gate_leaf_s7 & ark_gate_zarge_s7) in gateGroup
+              const leafMap = groupedWA.get('ark_gate_leaf_s7');
+              if (leafMap && leafMap[0]) {
+                const leafPivot = new THREE.Group();
+                leafPivot.name = 'ark_gate_leaf_s7_pivot';
+                const leafMesh = new THREE.Mesh(_prepareArkGeometry(leafMap[0].geometry, true), trimMat);
+                leafMesh.name = 'ark_gate_leaf_s7_mesh';
+                leafMesh.castShadow = true;
+                leafMesh.receiveShadow = true;
+                leafMesh.userData.arkTooltipKey = 'gate';
+                leafPivot.add(leafMesh);
+                gateGroup.add(leafPivot);
+                arkState.gateLeafPivot = leafPivot;
+              }
+              const zargeMap = groupedWA.get('ark_gate_zarge_s7');
+              if (zargeMap && zargeMap[0]) {
+                const zargeMesh = new THREE.Mesh(_prepareArkGeometry(zargeMap[0].geometry, true), trimMat);
+                zargeMesh.name = 'ark_gate_zarge_s7_mesh';
+                zargeMesh.castShadow = false;
+                zargeMesh.receiveShadow = true;
+                zargeMesh.userData.arkTooltipKey = 'gate';
+                gateGroup.add(zargeMesh);
+                arkState.gateZargeObj = zargeMesh;
+              }
+
+              // 2. 484 animierte Zôhar-/Bâdgir-Sturmklappen (1 InstancedMesh)
+              const _maxArkShutters = (Arche.Procedural.stormShutterInstMesh && Arche.Procedural.stormShutterInstMesh.instanceMatrix)
+                ? Arche.Procedural.stormShutterInstMesh.instanceMatrix.count
+                : 640;
+              arkState.stormShutterInstMesh = makeInst('ark_storm_shutter', _maxArkShutters, 'badgirHeadMode');
+
+              // 3. 392 organische Eichen-Wurzelknie (3 InstancedMeshes)
+              const k1 = makeInst('ark_root_knee_01', 160, 'woodKeelson');
+              const k2 = makeInst('ark_root_knee_02', 160, 'woodKeelson');
+              const k3 = makeInst('ark_root_knee_03', 160, 'woodKeelson');
+              if (k1 && k2 && k3) arkState.rootKneeInsts = [k1, k2, k3];
+
+              // 4. 208 Königsstützen-Sattelholz-Kapitelle (1 InstancedMesh)
+              arkState.kingpostCapInst = makeInst('ark_kingpost_capital', 240, 'woodKeelson');
+
+              // 5. 115 Schotttür-Blockzargen (4 InstancedMeshes)
+              arkState.doorFrameInsts = {
+                d1: makeInst('ark_door_frame_d1', 48, 'bulkheadDoorMode'),
+                d2: makeInst('ark_door_frame_d2', 48, 'bulkheadDoorMode'),
+                d3: makeInst('ark_door_frame_d3', 64, 'bulkheadDoorMode'),
+                foyer: makeInst('ark_door_frame_foyer', 4, 'bulkheadDoorMode')
+              };
+
+              // 6. 8 (0/4/8/10) Bâdgir-Windturm-Köpfe (1 InstancedMesh)
+              arkState.badgirCapInst = makeInst('ark_badgir_cap', 12, 'badgirSupportMode');
+
+              shipGroup.add(carpGroup);
+              arkState.carpentryGroup = carpGroup;
+              arkState.waveALoaded = true;
+              rebuildArkCarpentryInstances();
+            }
+          }
+
+          if (arkState.baseLoaded || arkState.waveALoaded) {
+            if (typeof updateGate3D === 'function') updateGate3D(params.gateMode);
+            if (typeof updateZoharAndBadgirGeometry === 'function') updateZoharAndBadgirGeometry();
+            syncArkWaveAVisibility();
+            if (typeof camera !== 'undefined' && camera) updateArkWaveALODs(camera, true);
+            if (typeof _precomputeHoverBounds === 'function') _precomputeHoverBounds();
+          }
+          return { ok: arkState.baseLoaded && arkState.waveALoaded, woodOk, baseLoaded: arkState.baseLoaded, waveALoaded: arkState.waveALoaded };
+        })();
+        return arkState.hydratePromise;
+      }
+      Arche.Procedural.hydrateArkWaveAKits3D = hydrateArkWaveAKits3D;
+    })();
 
     // =========================================================================
     // 2. Z-Up-Geometrie-Helfer (Z ist OBEN!) & Ausrichtungs-Funktionen
@@ -39372,6 +40157,9 @@ diffuseColor.rgb = mix(diffuseColor.rgb, mix(vec3(0.24, 0.17, 0.11), vec3(0.38, 
         if (typeof zoharOpticsGroup !== 'undefined' && zoharOpticsGroup) zoharOpticsGroup.visible = (zSliceVal > 13.50);
         if (typeof zoharLightBeamGroup !== 'undefined' && zoharLightBeamGroup) zoharLightBeamGroup.visible = showF && (zSliceVal > 13.50);
         if (typeof beddingVolumeMesh !== 'undefined' && beddingVolumeMesh) beddingVolumeMesh.visible = true;
+        if (Arche.Procedural && typeof Arche.Procedural.syncArkWaveAVisibility === 'function') {
+          Arche.Procedural.syncArkWaveAVisibility('OPEN');
+        }
       }
 
       function updateExteriorPortalCulling(cam) {
@@ -39505,6 +40293,9 @@ diffuseColor.rgb = mix(diffuseColor.rgb, mix(vec3(0.24, 0.17, 0.11), vec3(0.38, 
         if (typeof liveState !== 'undefined' && liveState) {
           liveState.activeCullMode = cullState;
         }
+        if (Arche.Procedural && typeof Arche.Procedural.syncArkWaveAVisibility === 'function') {
+          Arche.Procedural.syncArkWaveAVisibility(cullState);
+        }
       }
 
       return {
@@ -39534,6 +40325,15 @@ diffuseColor.rgb = mix(diffuseColor.rgb, mix(vec3(0.24, 0.17, 0.11), vec3(0.38, 
       }
       if (Arche.Assets && Arche.Assets.syncViewShader) {
         Arche.Assets.syncViewShader(Arche.State.viewShader, params.tAir);
+      }
+      if (Arche.Procedural && typeof Arche.Procedural.syncArkWaveAVisibility === 'function') {
+        Arche.Procedural.syncArkWaveAVisibility();
+      }
+      if (typeof updateGate3D === 'function') {
+        updateGate3D(params.gateMode);
+      }
+      if (typeof updateZoharAndBadgirGeometry === 'function' && Arche.Procedural && Arche.Procedural.arkWaveA && Arche.Procedural.arkWaveA.waveALoaded) {
+        updateZoharAndBadgirGeometry();
       }
       if (Arche.Procedural.uUseTexMap) {
         Arche.Procedural.uUseTexMap.value = isTex ? 1.0 : 0.0;
@@ -41071,17 +41871,20 @@ diffuseColor.rgb = mix(diffuseColor.rgb, mix(vec3(0.24, 0.17, 0.11), vec3(0.38, 
           addBoxToBucket(bucketBadgir, x1 - bPost3D, x1, y1 - bPost3D, y1, zRoofSockel, zTop, 1, 0, 0, 1);
           addBoxToBucket(bucketBadgir, xCh - 0.05, xCh + 0.05, y0, y1, zRoofSockel, zTop, 1, 0, 0, 1);
           addBoxToBucket(bucketBadgir, x0, x1, 0.5 * (y0 + y1) - 0.04, 0.5 * (y0 + y1) + 0.04, zRoofSockel, zTop, 1, 0, 0, 1);
-          addBoxToBucket(bucketBadgir, x0 - 0.16, x1 + 0.16, y0 - 0.16, y1 + 0.16, zTop, zTop + 0.18, 0, 0, 0, 1);
+          const _hideProcBadgirCap = Boolean(Arche.Procedural && Arche.Procedural.arkWaveA && Arche.Procedural.arkWaveA.waveALoaded && Arche.State.viewShader === 'TEXTURED' && (params.hullOpacity >= 0.80));
+          if (!_hideProcBadgirCap) {
+            addBoxToBucket(bucketBadgir, x0 - 0.16, x1 + 0.16, y0 - 0.16, y1 + 0.16, zTop, zTop + 0.18, 0, 0, 0, 1);
+          }
           const openSpanZ = Math.max(0.10, zOpenTop - zOpenBot);
           if (openSpanZ >= 0.28) {
             const flapH_B = Math.min(0.42, 0.44 * openSpanZ);
             const spanX_B = (x1 - x0) - 2.2 * bPost3D;
             const spanY_B = (y1 - y0) - 2.2 * bPost3D;
-            [zOpenBot + 0.48 * openSpanZ, zOpenTop - 0.02].forEach((zHngB) => {
-              addStormShutterInstance(xCh, y0 - 0.02, zHngB, spanX_B, flapH_B, 'BB', true);
-              addStormShutterInstance(xCh, y1 + 0.02, zHngB, spanX_B, flapH_B, 'SB', true);
-              addStormShutterInstance(x0 - 0.02, 0.5 * (y0 + y1), zHngB, spanY_B, flapH_B, 'BOW', true);
-              addStormShutterInstance(x1 + 0.02, 0.5 * (y0 + y1), zHngB, spanY_B, flapH_B, 'STERN', true);
+            [zOpenBot + 0.48 * openSpanZ, zTop - 0.04].forEach((zHngB) => {
+              addStormShutterInstance(xCh, y0 - 0.028, zHngB, spanX_B, flapH_B, 'BB', true);
+              addStormShutterInstance(xCh, y1 + 0.028, zHngB, spanX_B, flapH_B, 'SB', true);
+              addStormShutterInstance(x0 - 0.028, 0.5 * (y0 + y1), zHngB, spanY_B, flapH_B, 'BOW', true);
+              addStormShutterInstance(x1 + 0.028, 0.5 * (y0 + y1), zHngB, spanY_B, flapH_B, 'STERN', true);
             });
           }
           const nLouversB = Math.max(2, Math.min(7, Math.floor(openSpanZ / HANDBREITE_M)));
@@ -41169,6 +41972,9 @@ diffuseColor.rgb = mix(diffuseColor.rgb, mix(vec3(0.24, 0.17, 0.11), vec3(0.38, 
       const showWiresBadgir = params.wireframe && (Arche.State.viewShader !== 'TEXTURED');
       badgirGroup.visible = isActiveTowers;
       badgirTowerEdges.visible = isActiveTowers && showWiresBadgir;
+      if (Arche.Procedural && typeof Arche.Procedural.updateArkBadgirCaps === 'function') {
+        Arche.Procedural.updateArkBadgirCaps(pairStations, zTop, isActiveTowers);
+      }
       if (typeof Arche.Procedural.rebuildAirflow3DGeometry === 'function') {
         Arche.Procedural.rebuildAirflow3DGeometry();
       }
@@ -41983,6 +42789,11 @@ diffuseColor.rgb = mix(diffuseColor.rgb, mix(vec3(0.24, 0.17, 0.11), vec3(0.38, 
       'Feste Zedern-Lamellen (Starr 39°)',
       'Offene Windhutzen (Ungeschützt)'
     ]).name('Bâdgir-Kopfklappen').onChange(triggerVentEquilibrium);
+    folderZoharBadgir.add(params, 'zoharShutterMode', [
+      'Automatik',
+      'Alle Offen',
+      'Alle Zu'
+    ]).name('Sturmklappen-Steuerung').onChange(triggerVentEquilibrium);
     folderZoharBadgir.add(params, 'gateMode', [
       'Tor Deck 2 (9×8 Ellen, Eichen-Spundtor)',
       'Tor Deck 2 OFFEN (9×8 Ellen Querlüftung!)',
@@ -43752,6 +44563,20 @@ diffuseColor.rgb = mix(diffuseColor.rgb, mix(vec3(0.24, 0.17, 0.11), vec3(0.38, 
       if (hitObj === Arche.Procedural.barrelInstMesh) return 'fix_barrels';
       if (hitObj === Arche.Procedural.amphoraInstMesh) return 'fix_svalbard';
       if (hitObj === Arche.Procedural.stormShutterInstMesh) return 'badgirHeadMode';
+      if (hitObj && hitObj.userData && hitObj.userData.arkTooltipKey) {
+        const ak = hitObj.userData.arkTooltipKey;
+        if (ak === 'ark_hull_wall') {
+          if (yShip < -10.5 && xShip >= 60.0 && xShip <= 70.0 && zShip >= 5.8 && zShip <= 10.2) return 'gate';
+          return (zShip < 2.2) ? 'kiel' : 'qs';
+        }
+        if (ak === 'ark_hull_bh') {
+          const inSilo = (xShip >= 19.8 && xShip <= 30.2) || (xShip >= 49.8 && xShip <= 60.2) ||
+            (xShip >= 79.8 && xShip <= 90.2) || (xShip >= 109.8 && xShip <= 120.2);
+          if (inSilo && Math.abs(yShip) > 4.8 && zShip >= 3.2 && zShip <= 11.5) return 'fix_silos';
+          return 'qs';
+        }
+        return ak;
+      }
       if (hitObj === Arche.Procedural.beddingVolumePoints) {
         return (zShip < 5.8) ? 'fix_mega_karn' : ((zShip < 9.8) ? 'fix_oxen_pens' : 'fix_aviary_rodent');
       }
@@ -44046,6 +44871,23 @@ diffuseColor.rgb = mix(diffuseColor.rgb, mix(vec3(0.24, 0.17, 0.11), vec3(0.38, 
       if (Arche.Procedural.stormShutterInstMesh && Arche.Procedural.stormShutterInstMesh.visible && Arche.Procedural.stormShutterInstMesh.count > 0) {
         targets.push(Arche.Procedural.stormShutterInstMesh);
       }
+      const _arkWA = Arche.Procedural && Arche.Procedural.arkWaveA;
+      if (_arkWA && _arkWA.baseLoaded && _arkWA.baseGroup && _arkWA.baseGroup.visible) {
+        const bp = _arkWA.baseParts;
+        const baseKeys = isExtClosed
+          ? ['ark_hull_roof', 'ark_hull_zohar', 'ark_hull_wall_bb', 'ark_hull_wall_sb', 'ark_hull_keels', 'ark_hull_sole']
+          : Object.keys(bp);
+        for (let ki = 0; ki < baseKeys.length; ki++) {
+          const entry = bp[baseKeys[ki]];
+          if (!entry || !entry.lodGroup || !entry.lodGroup.visible) continue;
+          for (let mi = 0; mi < entry.meshes.length; mi++) {
+            if (entry.meshes[mi] && entry.meshes[mi].visible) targets.push(entry.meshes[mi]);
+          }
+        }
+      }
+      if (_arkWA && _arkWA.waveALoaded && _arkWA.carpentryGroup && _arkWA.carpentryGroup.visible) {
+        _collectHoverTargets(_arkWA.carpentryGroup, targets);
+      }
       const hullBuckets = isExtClosed
         ? [bucketRoof, bucketWallBB, bucketWallSB]
         : [bucketRoof, bucketDecks, bucketLongBH, bucketTransBH, bucketWallBB, bucketWallSB];
@@ -44089,10 +44931,14 @@ diffuseColor.rgb = mix(diffuseColor.rgb, mix(vec3(0.24, 0.17, 0.11), vec3(0.38, 
             minDist = _rcWorldHitPt.distanceTo(ray.origin);
           }
           // Geschlossene Außenhaut-Flächen (WallBB/WallSB/Roof): AABB ist deckungsgleich mit Plankenebene -> 0,005 ms statt 7,6 ms Dreiecks-Scan!
+          const _bpName = obj.userData ? obj.userData.arkBasePartName : '';
           const isFlatOuterHull = isHullBoxFast && !isInsideBox && (
             (bucketWallBB && obj === bucketWallBB.mesh) ||
             (bucketWallSB && obj === bucketWallSB.mesh) ||
-            (bucketRoof && obj === bucketRoof.mesh)
+            (bucketRoof && obj === bucketRoof.mesh) ||
+            _bpName === 'ark_hull_wall_bb' ||
+            _bpName === 'ark_hull_wall_sb' ||
+            _bpName === 'ark_hull_roof'
           );
           _rcCandidates.push({
             obj,
@@ -49412,6 +50258,9 @@ void main() {
         Arche.Procedural.interiorLightUniforms.uShipInvMatrix.value.copy(shipGroup.matrixWorld).invert();
       }
       Arche.Environment.updateLandmarksAndTerrain3D(depth, T_mean, dynHeaveZ, isThermalMode, isTexturedMode);
+      if (Arche.Procedural && typeof Arche.Procedural.updateArkWaveALODs === 'function') {
+        Arche.Procedural.updateArkWaveALODs(camera);
+      }
       const shouldUpdateDOM = (S.frameCounter % 3 === 0 || !params.autoPlay || window._scrubRelaxFrames > 0);
       if (shouldUpdateDOM && domDayTime) {
         const hrs = Math.floor(params.timeOfDay);
@@ -52086,6 +52935,9 @@ void main() {
         if (Arche.Environment && typeof Arche.Environment.updateCharactersLOD === 'function') {
           Arche.Environment.updateCharactersLOD(camera, true);
         }
+        if (Arche.Procedural && typeof Arche.Procedural.updateArkWaveALODs === 'function') {
+          Arche.Procedural.updateArkWaveALODs(camera, true);
+        }
       } catch (_) { }
 
       // 2. Sammle alle aktuell sichtbaren Meshes (geschlossener Innenraum, tote prozedurale Fallbacks & Ararat werden NICHT kompiliert!)
@@ -52486,6 +53338,9 @@ void main() {
         if (Arche.Environment && typeof Arche.Environment.loadBlenderWorldMaps === 'function') {
           // Nur Werft-Heightmap beim Start laden; Ararat bleibt Lazy-Loaded bis Tag > 140!
           kitJobs.push(_withTimeout(Arche.Environment.loadBlenderWorldMaps({ shipyardOnly: true }), kitTimeoutMs).then(() => bumpKit('Werft-Heightmap synchronisiert', 'Shipyard heightmap synced')));
+        }
+        if (Arche.Procedural && typeof Arche.Procedural.hydrateArkWaveAKits3D === 'function') {
+          kitJobs.push(_withTimeout(Arche.Procedural.hydrateArkWaveAKits3D(), kitTimeoutMs).then(() => bumpKit('Arche Welle-A Kits hydriert', 'Ark Wave-A kits hydrated')));
         }
         if (Arche.Environment && typeof Arche.Environment.hydrateMesopotamiaCityKit3D === 'function') {
           kitJobs.push(_withTimeout(Arche.Environment.hydrateMesopotamiaCityKit3D(), kitTimeoutMs).then(() => bumpKit('Ur-Schinar City-Kit hydriert', 'Ur-Shinar city kit hydrated')));
