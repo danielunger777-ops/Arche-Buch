@@ -54,11 +54,19 @@ ARK_TRIM_REGIONS = {
     "oak_endgrain":       (0.006, 0.776, 0.326, 0.884),
     "oak_dowel_heads":    (0.340, 0.776, 0.660, 0.884),
     "volcanic_basalt":    (0.674, 0.776, 0.994, 0.884),
-    # Band 6 (V 0.890..1.000): Zinnbronze CuSn12 | Hanfseil/Werg | Terrakotta/Zeer | Leder/Bienenwachs-Talg
+    # Band 6 (V 0.890..1.000): Zinnbronze CuSn12 | Hanfseil/Werg | Terrakotta/Zeer | Glut/Suppe | Leder/Asche | Leinen | Alabaster/Glimmer
     "tin_bronze":         (0.006, 0.896, 0.244, 0.994),
     "hemp_rope":          (0.256, 0.896, 0.504, 0.994),
-    "terracotta":         (0.516, 0.896, 0.754, 0.994),
-    "leather_wax":        (0.766, 0.896, 0.994, 0.994),
+    "terracotta":         (0.516, 0.896, 0.674, 0.994),
+    "galley_ember":       (0.684, 0.895, 0.756, 0.941),
+    "lentil_soup":        (0.684, 0.949, 0.756, 0.995),
+    "leather_wax":        (0.765, 0.895, 0.850, 0.941),
+    "wood_ash":           (0.765, 0.949, 0.850, 0.995),
+    "linen_unbleached":   (0.859, 0.896, 0.926, 0.994),
+    "alabaster_mica":     (0.934, 0.895, 0.995, 0.941),
+    "mica_glow":          (0.934, 0.949, 0.995, 0.995),
+    # Echte CC0-Heu-/Stroh-Kachel (ThatchedRoof001A, goldgelbe Halme, Roughness 0.88..0.96, ohne andere Kacheln zu verschieben!)
+    "hay_straw":          (0.934, 0.949, 0.995, 0.995),
 }
 
 # Physische Streifen-Rechtecke auf der 1x1-m-Bake-Plane (lückenlos von 0..1)
@@ -672,5 +680,175 @@ def build_ark_master_trim_sheet(project_root):
     print(f"[ARK ATLAS] FERTIG in {time.time() - t0:.1f}s!", flush=True)
 
 
+def patch_hay_straw_tile_from_cc0(project_root):
+    """Aktualisiert gezielt NUR die Heu-/Stroh-Kachel (u: 0.930..1.000, v: 0.945..1.000)
+    in den bestehenden 2048x2048 Master-Trim-Maps aus dem echten CC0-Scan ThatchedRoof001A_1K-JPG,
+    ohne irgendeine andere Kachel im Atlas zu verschieben oder zu veraendern."""
+    t0 = time.time()
+    tex_dir = os.path.join(project_root, "assets", "textures", "ark")
+    cc0_hay_dir = os.path.join(project_root, "assets", "textures", "cc0", "ThatchedRoof001A_1K-JPG")
+    p_col = os.path.join(tex_dir, "ark_master_basecolor.png")
+    p_nrm = os.path.join(tex_dir, "ark_master_normal.png")
+    p_rgh = os.path.join(tex_dir, "ark_master_roughness.png")
+
+    c_col_p = os.path.join(cc0_hay_dir, "ThatchedRoof001A_1K-JPG_Color.jpg")
+    c_nrm_p = os.path.join(cc0_hay_dir, "ThatchedRoof001A_1K-JPG_NormalGL.jpg")
+    c_rgh_p = os.path.join(cc0_hay_dir, "ThatchedRoof001A_1K-JPG_Roughness.jpg")
+    c_ao_p  = os.path.join(cc0_hay_dir, "ThatchedRoof001A_1K-JPG_AmbientOcclusion.jpg")
+
+    for p in (p_col, p_nrm, p_rgh, c_col_p, c_nrm_p, c_rgh_p):
+        if not os.path.exists(p):
+            raise FileNotFoundError(f"Fehlende Textur fuer Hay-Patch: {p}")
+
+    def _load_np(path, is_srgb):
+        img = bpy.data.images.load(path, check_existing=False)
+        img.colorspace_settings.name = "sRGB" if is_srgb else "Non-Color"
+        w, h = img.size[0], img.size[1]
+        arr = read_img_np(img, w, h)
+        bpy.data.images.remove(img)
+        return arr, w, h
+
+    print("[ARK ATLAS] Lade bestehende 2048x2048 Master-Trim-Maps (Non-Color Raw-Byte-Modus -> 0 Gamma-Drift)...", flush=True)
+    m_col_srgb, mw, mh = _load_np(p_col, False)
+    m_nrm, _, _        = _load_np(p_nrm, False)
+    m_rgh, _, _        = _load_np(p_rgh, False)
+
+    print("[ARK ATLAS] Lade CC0-Scan ThatchedRoof001A_1K-JPG (Color, NormalGL, Roughness, AO)...", flush=True)
+    h_col_srgb, hw, hh = _load_np(c_col_p, False)
+    h_nrm, _, _        = _load_np(c_nrm_p, False)
+    h_rgh, _, _        = _load_np(c_rgh_p, False)
+    h_ao_arr = None
+    if os.path.exists(c_ao_p):
+        h_ao_arr, _, _ = _load_np(c_ao_p, False)
+
+    # Ziel-Rechteck im Atlas (v=0 unten, v=1 oben -> Blender-Pixel-Layout!)
+    ix0, ix1 = int(round(0.930 * mw)), mw
+    iy0, iy1 = int(round(0.945 * mh)), mh
+    tw, th = ix1 - ix0, iy1 - iy0
+
+    # Sample CC0 ThatchedRoof001A um 90 deg gedreht (Halme laufen ueberwiegend horizontal entlang U)
+    # plus leicht geschraegte 2. Schicht fuer wirres, organisches Heu/Stroh (keine parallele Dach-Tapete!)
+    yy, xx = np.meshgrid(np.linspace(0.0, 1.0, th, dtype=np.float32),
+                         np.linspace(0.0, 1.0, tw, dtype=np.float32), indexing="ij")
+
+    def _sample_rot(arr, angle_rad, scale_u, scale_v, off_u=0.0, off_v=0.0):
+        ca, sa = math.cos(angle_rad), math.sin(angle_rad)
+        su = (xx * scale_u * ca - yy * scale_v * sa + off_u) % 1.0
+        sv = (xx * scale_u * sa + yy * scale_v * ca + off_v) % 1.0
+        px = np.clip((su * (hw - 1)).astype(np.int32), 0, hw - 1)
+        py = np.clip((sv * (hh - 1)).astype(np.int32), 0, hh - 1)
+        return arr[py, px, :3]
+
+    # Schicht 1: 90 deg gedreht (horizontaler Hauptverlauf), Schicht 2: 72 deg (leicht gekreuzte Halme)
+    c1 = _sample_rot(h_col_srgb, math.pi * 0.50, 0.85, 0.65, 0.12, 0.08)
+    c2 = _sample_rot(h_col_srgb, math.pi * 0.40, 0.95, 0.75, 0.57, 0.31)
+    c3 = _sample_rot(h_col_srgb, math.pi * 0.58, 0.90, 0.70, 0.29, 0.64)
+
+    # Waehle pro Pixel den helleren/markanteren Halm (Max-Weighted Blend -> scharfe einzelne Strohhalme!)
+    lum1 = c1.mean(axis=-1, keepdims=True)
+    lum2 = c2.mean(axis=-1, keepdims=True)
+    lum3 = c3.mean(axis=-1, keepdims=True)
+    w1 = np.exp((lum1 - 0.5) * 6.0)
+    w2 = np.exp((lum2 - 0.5) * 6.0) * 0.72
+    w3 = np.exp((lum3 - 0.5) * 6.0) * 0.55
+    w_sum = w1 + w2 + w3 + 1e-5
+    hay_srgb = (c1 * w1 + c2 * w2 + c3 * w3) / w_sum
+
+    if h_ao_arr is not None:
+        ao1 = _sample_rot(h_ao_arr, math.pi * 0.50, 0.85, 0.65, 0.12, 0.08)[:, :, 0:1]
+        ao2 = _sample_rot(h_ao_arr, math.pi * 0.40, 0.95, 0.75, 0.57, 0.31)[:, :, 0:1]
+        hay_srgb *= (0.72 + 0.28 * (0.6 * ao1 + 0.4 * ao2))
+
+    # Goldgelbe / strohfarbene Kalibrierung (sRGB ~ (206, 172, 96), warmes helles Stroh, 0 Plastik-Orange!)
+    cur_m = np.maximum(1e-4, hay_srgb.mean(axis=(0, 1)))
+    tgt = np.array([206.0 / 255.0, 172.0 / 255.0, 96.0 / 255.0], dtype=np.float32)
+    centered = (hay_srgb - cur_m) * 1.45
+    hay_srgb = np.clip(tgt + centered * (tgt / cur_m), 0.16, 0.85)
+
+    # Normalmap aus CC0 NormalGL (mit korrekter Vektor-Rotation & tiefer Halm-Tiefe!)
+    def _rot_nrm(n_rgb, angle_rad):
+        nx = n_rgb[:, :, 0] * 2.0 - 1.0
+        ny = n_rgb[:, :, 1] * 2.0 - 1.0
+        nz = np.maximum(0.2, n_rgb[:, :, 2] * 2.0 - 1.0)
+        ca, sa = math.cos(angle_rad), math.sin(angle_rad)
+        rx = nx * ca - ny * sa
+        ry = nx * sa + ny * ca
+        return rx, ry, nz
+
+    n1x, n1y, n1z = _rot_nrm(_sample_rot(h_nrm, math.pi * 0.50, 0.85, 0.65, 0.12, 0.08), -math.pi * 0.50)
+    n2x, n2y, n2z = _rot_nrm(_sample_rot(h_nrm, math.pi * 0.40, 0.95, 0.75, 0.57, 0.31), -math.pi * 0.40)
+    hnx = (n1x * 0.65 + n2x * 0.50) * 1.65
+    hny = (n1y * 0.65 + n2y * 0.50) * 1.65
+    hnz = np.maximum(0.25, n1z * 0.6 + n2z * 0.4)
+    hlen = np.sqrt(hnx * hnx + hny * hny + hnz * hnz)
+    hay_nrm = np.stack([(hnx / hlen) * 0.5 + 0.5, (hny / hlen) * 0.5 + 0.5, (hnz / hlen) * 0.5 + 0.5], axis=-1)
+
+    # Roughness strikt im super-matten Stroh-Korridor [0.88 .. 0.96]
+    r1 = _sample_rot(h_rgh, math.pi * 0.50, 0.85, 0.65, 0.12, 0.08)[:, :, 0]
+    r2 = _sample_rot(h_rgh, math.pi * 0.40, 0.95, 0.75, 0.57, 0.31)[:, :, 0]
+    hr = 0.6 * r1 + 0.4 * r2
+    r_lo, r_hi = float(np.percentile(hr, 5)), float(np.percentile(hr, 95))
+    hr_norm = np.clip((hr - r_lo) / max(1e-4, r_hi - r_lo), 0.0, 1.0)
+    hay_rgh = 0.88 + hr_norm * 0.08  # exakt [0.88 .. 0.96]!
+
+    # Patch NUR die Heu-/Stroh-Kachel + Band-6-Subkacheln (galley_ember, lentil_soup, wood_ash, linen_unbleached, alabaster_mica)
+    # Alle anderen 12 Haupt-Kacheln (Bands 0..5 + tin_bronze, hemp_rope, terracotta, leather_wax) bleiben 100% bit-identisch!
+    m_col_srgb[iy0:iy1, ix0:ix1, :3] = hay_srgb
+    m_nrm[iy0:iy1, ix0:ix1, :3]      = hay_nrm
+    m_rgh[iy0:iy1, ix0:ix1, 0]       = hay_rgh
+    m_rgh[iy0:iy1, ix0:ix1, 1]       = hay_rgh
+    m_rgh[iy0:iy1, ix0:ix1, 2]       = hay_rgh
+
+    # Band-6-Subkacheln sauber wiederherstellen (damit linen_unbleached = echtes mattes Creme-Leinen/Mehl,
+    # alabaster_mica = heller Alabaster, wood_ash = graue Holzasche, galley_ember = Glut, lentil_soup = Linsensuppe!)
+    def _fill_subtile(u0, v0, u1, v1, rgb_255, rgh_lo, rgh_hi, grain_amp=0.06, stripe_freq=0.0):
+        x0, x1 = int(round(u0 * mw)), int(round(u1 * mw))
+        y0, y1 = int(round(v0 * mh)), int(round(v1 * mh))
+        sh, sw = y1 - y0, x1 - x0
+        gy, gx = np.meshgrid(np.linspace(0.0, 1.0, sh, dtype=np.float32),
+                             np.linspace(0.0, 1.0, sw, dtype=np.float32), indexing="ij")
+        # Feine Web-/Kornstruktur (deterministischer Multi-Sinus + sanfte Normal-Mikrostruktur)
+        tex = (
+            np.sin(gx * 62.0 + gy * 11.0) * np.cos(gy * 58.0 - gx * 9.0) * 0.5
+            + np.sin(gx * 131.0) * np.sin(gy * 127.0) * 0.5
+        )
+        if stripe_freq > 0.0:
+            tex = 0.65 * tex + 0.35 * np.sin(gy * stripe_freq * math.pi + np.sin(gx * 10.0) * 1.4)
+        base = np.array(rgb_255, dtype=np.float32) / 255.0
+        col = np.clip(base[None, None, :] * (1.0 + grain_amp * tex[..., None]), 0.05, 0.85)
+        rgh = np.clip(0.5 * (rgh_lo + rgh_hi) + 0.5 * (rgh_hi - rgh_lo) * tex, rgh_lo, rgh_hi)
+        nx = np.clip(0.5 + 0.14 * np.cos(gx * 62.0), 0.25, 0.75)
+        ny = np.clip(0.5 + 0.14 * np.sin(gy * 58.0), 0.25, 0.75)
+        nz = np.full((sh, sw), 0.96, dtype=np.float32)
+        m_col_srgb[y0:y1, x0:x1, :3] = col
+        m_nrm[y0:y1, x0:x1, 0] = nx
+        m_nrm[y0:y1, x0:x1, 1] = ny
+        m_nrm[y0:y1, x0:x1, 2] = nz
+        m_rgh[y0:y1, x0:x1, 0] = rgh
+        m_rgh[y0:y1, x0:x1, 1] = rgh
+        m_rgh[y0:y1, x0:x1, 2] = rgh
+
+    _fill_subtile(0.680, 0.890, 0.760, 0.945, (192.0,  62.0,  22.0), 0.65, 0.80, grain_amp=0.14)  # galley_ember
+    _fill_subtile(0.680, 0.945, 0.760, 1.000, (148.0,  68.0,  28.0), 0.32, 0.48, grain_amp=0.10)  # lentil_soup
+    _fill_subtile(0.760, 0.945, 0.855, 1.000, (146.0, 140.0, 132.0), 0.88, 0.96, grain_amp=0.12)  # wood_ash
+    _fill_subtile(0.855, 0.890, 0.930, 1.000, (214.0, 198.0, 166.0), 0.86, 0.94, grain_amp=0.09)  # linen_unbleached (mattes ungebleichtes Leinen & Emmermehl!)
+    _fill_subtile(0.930, 0.890, 1.000, 0.945, (212.0, 200.0, 178.0), 0.28, 0.42, grain_amp=0.09, stripe_freq=10.0)  # alabaster_mica
+
+    save_np_png(m_col_srgb[:, :, :3], p_col, is_srgb=False)
+    save_np_png(m_nrm[:, :, :3],      p_nrm, is_srgb=False)
+    save_np_png(m_rgh[:, :, :3],      p_rgh, is_srgb=False)
+
+    m_rgb = hay_srgb.mean(axis=(0, 1)) * 255.0
+    print(
+        f"[ARK ATLAS] CC0-Heu-Kachel aktualisiert ({tw}x{th} px): "
+        f"sRGB=({m_rgb[0]:.1f},{m_rgb[1]:.1f},{m_rgb[2]:.1f}), "
+        f"Roughness=[{hay_rgh.min():.3f}..{hay_rgh.max():.3f}] in {time.time() - t0:.1f}s!",
+        flush=True,
+    )
+
+
 if __name__ == "__main__":
-    build_ark_master_trim_sheet(get_project_root())
+    if "--patch-hay-only" in sys.argv:
+        patch_hay_straw_tile_from_cc0(get_project_root())
+    else:
+        build_ark_master_trim_sheet(get_project_root())

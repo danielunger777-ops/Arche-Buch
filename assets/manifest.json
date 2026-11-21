@@ -521,6 +521,547 @@
           ],
           "glbSizeKB": 17563.6,
           "exportedAt": "2026-11-21 10:50:20"
+        },
+        "ark_wave_b1_machines_rooms_kit": {
+          "enabled": true,
+          "url": "assets/glb/ark/ark_wave_b1_machines_rooms_kit.glb",
+          "blend": "assets/blend/ark/ark_wave_b1_machines_rooms_kit.blend",
+          "category": "ark",
+          "shaderKey": "arche_asset_v1_std",
+          "lods": [
+            "LOD0",
+            "LOD1",
+            "LOD2"
+          ],
+          "lodDistances": [
+            28,
+            75,
+            145
+          ],
+          "sharedTextures": {
+            "arkMasterTrim": [
+              "assets/textures/ark/ark_master_basecolor.png",
+              "assets/textures/ark/ark_master_normal.png",
+              "assets/textures/ark/ark_master_roughness.png"
+            ]
+          },
+          "modules": {
+            "ark_goepel_base_bearing": {
+              "lods": {
+                "LOD0": 1544,
+                "LOD1": 464,
+                "LOD2": 200
+              },
+              "description": "Statisch (Origin Z=0 D2): 1.70m Eichen-Fundament, Basalt-Spurlager + Bronze-Pfanne, Wachsring & Huf-Rundgang"
+            },
+            "ark_goepel_rotor_crown": {
+              "lods": {
+                "LOD0": 5480,
+                "LOD1": 1640,
+                "LOD2": 536
+              },
+              "description": "Animiert (Dreh-Origin Z-Achse): Koenigswelle, 48-Zahn-Kammrad (Extra Mesh Gears), 3 Zugarme & 3 Hainbuchen-Dreierjoche"
+            },
+            "ark_goepel_lantern_pinion": {
+              "lods": {
+                "LOD0": 1532,
+                "LOD1": 660,
+                "LOD2": 380
+              },
+              "description": "Animiert (Dreh-Origin Y-Achse): 8-Stab-Hainbuchen-Stockritzel (R=0.194m, 6:1 Eingriff zum 48er Kammrad) mit Bronze-Reifen"
+            },
+            "ark_goepel_dog_clutch_fixed": {
+              "lods": {
+                "LOD0": 368,
+                "LOD1": 240,
+                "LOD2": 176
+              },
+              "description": "Animiert (Origin X-Achse): Feste Hainbuchen-Klauenkupplungs-Haelfte mit 4 gefasten Klauenzaehnen"
+            },
+            "ark_goepel_dog_clutch_slider": {
+              "lods": {
+                "LOD0": 744,
+                "LOD1": 488,
+                "LOD2": 240
+              },
+              "description": "Animiert (Origin X-Achse, +0.17m Hub): Gleitende Hainbuchen-Klauenkupplung mit Gabelnut & Einrueckhebel"
+            },
+            "ark_mill_table_base": {
+              "lods": {
+                "LOD0": 2480,
+                "LOD1": 1684,
+                "LOD2": 588
+              },
+              "description": "Statisch (Origin Tischzentrum Z=0): 2.147x1.587m Eichen-Muehlentisch, 2 Basalt-Bodensteine, 2 Korntrichter & Mehltroege"
+            },
+            "ark_mill_runner_stone": {
+              "lods": {
+                "LOD0": 696,
+                "LOD1": 184,
+                "LOD2": 120
+              },
+              "description": "Animiert (Dreh-Origin Z-Achse): Basalt-Laeuferstein D=0.859m mit Hauschlags-Furchen, Korn-Auge & Bronze-Muehleisen"
+            },
+            "ark_archimedes_screw_tube": {
+              "lods": {
+                "LOD0": 1852,
+                "LOD1": 1264,
+                "LOD2": 536
+              },
+              "description": "Statisch (Origin Zentrum, Achse Y): Kopher-Zypressen-Daubenrohr D=0.467m, L=8.838m, 9 Bronze-Reifen & Sicht-Ausschnitt"
+            },
+            "ark_archimedes_screw_helix": {
+              "lods": {
+                "LOD0": 1532,
+                "LOD1": 956,
+                "LOD2": 580
+              },
+              "description": "Animiert (Dreh-Origin Y-Achse): Eichen-Kernwelle R=0.075m mit 2-gaengiger Zedern-Schneckenwendel R=0.205m, Pitch 1.167m"
+            },
+            "ark_paternoster_drum": {
+              "lods": {
+                "LOD0": 1080,
+                "LOD1": 624,
+                "LOD2": 184
+              },
+              "description": "Animiert (Dreh-Origin X-Achse): Eichen-Seiltrommel R=0.467m, B=0.980m mit 2 Hanfseil-Spurrillen & Mitnehmernocken"
+            },
+            "ark_paternoster_bucket": {
+              "lods": {
+                "LOD0": 220,
+                "LOD1": 188,
+                "LOD2": 56
+              },
+              "description": "Animiert (Origin Seil-Aufhaengepunkt Z=0): Zedern-Schoepftrog 0.723x0.300x0.240m mit Bronze-Eckbaendern & Hanfseil-Laschen"
+            },
+            "ark_paternoster_frame_trough": {
+              "lods": {
+                "LOD0": 464,
+                "LOD1": 352,
+                "LOD2": 256
+              },
+              "description": "Statisch (Origin DB-Boden Z=0): Kopher-gedichteter DB-Schoepftrog 2.333x2.450x1.167m + D3-Auswurf-Holzrutsche & Trichter"
+            },
+            "ark_barrel_hero": {
+              "lods": {
+                "LOD0": 246,
+                "LOD1": 76,
+                "LOD2": 32
+              },
+              "description": "Instanz-Template 7.920 Faesser (Origin Zentrum, Achse Y, L=0.933m, R=0.311m): Dauben, Kimme, 4 Bronze-Reifen, Spund (LOD0<=260, LOD1<=88, LOD2<=36)"
+            },
+            "ark_svalbard_amphora": {
+              "lods": {
+                "LOD0": 572,
+                "LOD1": 220,
+                "LOD2": 44
+              },
+              "description": "Instanz-Template 40 Amphoren (Origin Z=0 Standfuss, H=0.80m): Gerippte Ton-Amphore, 2 Henkel, Deckel & Kopher-Wachs-Siegel"
+            },
+            "ark_svalbard_vault_set": {
+              "lods": {
+                "LOD0": 7512,
+                "LOD1": 2904,
+                "LOD2": 1176
+              },
+              "description": "Statisch S8 D3-Bb (3.700x5.840m, Origin Z=0): 2-etagiges Pithos-Lochgestell, Holzasche-Trockentisch & 12 Doppelwand-Zeer-Kuehltoepfe"
+            },
+            "ark_galley_stove_set": {
+              "lods": {
+                "LOD0": 2566,
+                "LOD1": 1790,
+                "LOD2": 770
+              },
+              "description": "Statisch S7 D3-Stb (9.100x5.760m, Origin Z=0): Ziegelpflaster, Basalt-Herd, 3 Bronze-Kessel (exakte steamClouds-Coords), Lehmofen, Rauchhaube"
+            },
+            "ark_workshop_set": {
+              "lods": {
+                "LOD0": 2040,
+                "LOD1": 1168,
+                "LOD2": 752
+              },
+              "description": "Statisch S8 D3-Stb (8.800x5.770m, Origin Z=0): 3-Etagen-Holzregal, Saegeboecke+Stamm, Hobelbank+Bronze-Werkzeuge, Pech-/Wergbottich"
+            },
+            "ark_refectory_quarters_set": {
+              "lods": {
+                "LOD0": 1892,
+                "LOD1": 1260,
+                "LOD2": 508
+              },
+              "description": "Statisch S7 D3 (Origin Z=0): 4.80m Refektoriumstisch+2 Baenke, Noahs Schreibpult+Tontafeln, Schriftrollenschrank, Leinen-Doppelkoje & Truhe"
+            },
+            "ark_zohar_heliostat": {
+              "lods": {
+                "LOD0": 324,
+                "LOD1": 212,
+                "LOD2": 152
+              },
+              "description": "Optik (Origin Drehzentrum): 1.400x0.933m Zinnbronze-Heliostat im schwenkbaren Eichen-Gabelrahmen mit Holz-Rastbogen"
+            },
+            "ark_alabaster_lens": {
+              "lods": {
+                "LOD0": 844,
+                "LOD1": 508,
+                "LOD2": 196
+              },
+              "description": "Optik (Origin Linsenzentrum): D=1.300m geschliffene Alabaster-Streulinse im kreisrunden Zedern-Speichenring"
+            },
+            "ark_mica_lantern": {
+              "lods": {
+                "LOD0": 620,
+                "LOD1": 380,
+                "LOD2": 208
+              },
+              "description": "Optik (Origin oberer Aufhaengepunkt Z=0): D=0.36m, H=0.42m Bronze-Schutzgitter-Oellaterne mit warmem Glimmer-Zylinder"
+            }
+          },
+          "previews": [
+            "assets/previews/ark_wave_b1_drivetrain_closeup.png",
+            "assets/previews/ark_wave_b1_galley_svalbard.png",
+            "assets/previews/ark_wave_b1_workshop_living_barrel.png",
+            "assets/previews/ark_wave_b1_overview.png",
+            "assets/previews/ark_wave_b1_mill_fix_closeup.png"
+          ],
+          "glbSizeKB": 4795.0,
+          "exportedAt": "2026-11-21 13:45:26"
+        },
+        "ark_wave_b2_habitats_kit": {
+          "enabled": true,
+          "url": "assets/glb/ark/ark_wave_b2_habitats_kit.glb",
+          "blend": "assets/blend/ark/ark_wave_b2_habitats_kit.blend",
+          "category": "ark",
+          "shaderKey": "arche_asset_v1_std",
+          "lods": [
+            "LOD0",
+            "LOD1",
+            "LOD2"
+          ],
+          "lodDistances": [
+            28,
+            75,
+            145
+          ],
+          "t99CorridorSafe": true,
+          "sharedTextures": {
+            "arkMasterTrim": [
+              "assets/textures/ark/ark_master_basecolor.png",
+              "assets/textures/ark/ark_master_normal.png",
+              "assets/textures/ark/ark_master_roughness.png"
+            ],
+            "hayStraw1K": [
+              "assets/textures/ark/materials/hay_straw_basecolor.png",
+              "assets/textures/ark/materials/hay_straw_normal.png",
+              "assets/textures/ark/materials/hay_straw_roughness.png"
+            ]
+          },
+          "modules": {
+            "ark_pen_d1_megafauna_bay": {
+              "lods": {
+                "LOD0": 980,
+                "LOD1": 486,
+                "LOD2": 252
+              },
+              "description": "Deck 1 Megafauna-Gatter mit Eichen-Rundriegeln, Basalt-Doppeltrog, Spaltenrost & Torfmoos-Einstreu"
+            },
+            "ark_pen_d1_carnivore_bay": {
+              "lods": {
+                "LOD0": 1028,
+                "LOD1": 512,
+                "LOD2": 368
+              },
+              "description": "Deck 1 Raubtier-Doppelgitter (Hainbuche), Futter-Durchreicheklappe, Basalt-Napf & Schalldaemmwand"
+            },
+            "ark_d1_drain_bridge": {
+              "lods": {
+                "LOD0": 164,
+                "LOD1": 60,
+                "LOD2": 36
+              },
+              "description": "Eichen-Bohlen-Stegbruecke ueber die 0.467 m D1-/D2-Spuelrinne"
+            },
+            "ark_pen_d2_ungulate_bay": {
+              "lods": {
+                "LOD0": 852,
+                "LOD1": 546,
+                "LOD2": 264
+              },
+              "description": "Deck 2 Huftier-Gatter mit voller Heuraufe, Kopher-Traenkrinne, Korntrog & Stroh-Einstreu"
+            },
+            "ark_pen_d2_mezzanine_bay": {
+              "lods": {
+                "LOD0": 926,
+                "LOD1": 540,
+                "LOD2": 372
+              },
+              "description": "Deck 2 Zweigeschoss-Mezzanin-Galerie (Z=1.930 m) mit Heuraufe & rutschfester Ziegenrampe"
+            },
+            "ark_pen_d2_ox_stall": {
+              "lods": {
+                "LOD0": 696,
+                "LOD1": 364,
+                "LOD2": 316
+              },
+              "description": "Deck 2 Reserve-Zugochsenstand mit Eichen-Futterkrippe, Anbinde-Holzring, Hanfstrick & Strohbett"
+            },
+            "ark_hay_bale_stack": {
+              "lods": {
+                "LOD0": 6668,
+                "LOD1": 984,
+                "LOD2": 444
+              },
+              "description": "Abgetreppter Stapel aus 27 gebundenen, bauchigen Heuballen mit Hanfseilen & 5 Eichen-Sturmstangen"
+            },
+            "ark_aviary_d3_bay": {
+              "lods": {
+                "LOD0": 1452,
+                "LOD1": 806,
+                "LOD2": 578
+              },
+              "description": "Deck 3 Zedern-Korb-Voliere mit Weiden-Stabgitter, 3 Etagen Nistkaesten, Ton-Naepfen & Natur-Sitzaesten"
+            },
+            "ark_rodent_honeycomb_d3": {
+              "lods": {
+                "LOD0": 1364,
+                "LOD1": 624,
+                "LOD2": 144
+              },
+              "description": "Deck 3 4x5=20 Terrakotta- & Zedern-Nagerwaben mit Belueftungstuerchen, Nestpolstern & Mini-Naepfen"
+            },
+            "ark_bat_roost_box_d3": {
+              "lods": {
+                "LOD0": 264,
+                "LOD1": 144,
+                "LOD2": 96
+              },
+              "description": "Deck 3 Zedern-Fledermauskasten mit 5 Hang-Lamellen, Einflugschlitz & Sparren-Aufhaengebuegeln"
+            },
+            "ark_plaque_megafauna": {
+              "lods": {
+                "LOD0": 150,
+                "LOD1": 112,
+                "LOD2": 60
+              },
+              "description": "Fruehsumerische Terrakotta-Piktogramm-Plakette: Elefant / Grosstier im Zedernrahmen"
+            },
+            "ark_plaque_carnivore": {
+              "lods": {
+                "LOD0": 150,
+                "LOD1": 106,
+                "LOD2": 60
+              },
+              "description": "Fruehsumerische Terrakotta-Piktogramm-Plakette: Loewe / Raubtier im Zedernrahmen"
+            },
+            "ark_plaque_ungulate": {
+              "lods": {
+                "LOD0": 156,
+                "LOD1": 118,
+                "LOD2": 60
+              },
+              "description": "Fruehsumerische Terrakotta-Piktogramm-Plakette: Stier / Hirsch im Zedernrahmen"
+            },
+            "ark_plaque_bird": {
+              "lods": {
+                "LOD0": 150,
+                "LOD1": 112,
+                "LOD2": 60
+              },
+              "description": "Fruehsumerische Terrakotta-Piktogramm-Plakette: Taube / Vogel im Zedernrahmen"
+            },
+            "ark_plaque_rodent": {
+              "lods": {
+                "LOD0": 162,
+                "LOD1": 118,
+                "LOD2": 60
+              },
+              "description": "Fruehsumerische Terrakotta-Piktogramm-Plakette: Kleinsaeuger / Getreideaehre im Zedernrahmen"
+            }
+          },
+          "previews": [
+            "assets/previews/ark_wave_b2_d1_pens_closeup.png",
+            "assets/previews/ark_wave_b2_d2_pens_hay.png",
+            "assets/previews/ark_wave_b2_d3_aviary_plaques.png",
+            "assets/previews/ark_wave_b2_overview.png",
+            "assets/previews/ark_hay_straw_1k_closeup.png"
+          ],
+          "glbSizeKB": 3370.6,
+          "exportedAt": "2026-11-21 14:05:33"
+        },
+        "ark_crew_quarters_kit": {
+          "enabled": true,
+          "url": "assets/glb/ark/ark_crew_quarters_kit.glb",
+          "blend": "assets/blend/ark/ark_crew_quarters_kit.blend",
+          "category": "ark",
+          "shaderKey": "arche_asset_v1_std",
+          "lods": [
+            "LOD0",
+            "LOD1",
+            "LOD2"
+          ],
+          "lodDistances": [
+            28,
+            75,
+            145
+          ],
+          "glbSizeKB": 3675.3,
+          "exportedAt": "2026-11-21 14:08:32",
+          "sharedTextures": {
+            "arkMasterTrim": [
+              "assets/textures/ark/ark_master_basecolor.png",
+              "assets/textures/ark/ark_master_normal.png",
+              "assets/textures/ark/ark_master_roughness.png"
+            ]
+          },
+          "modules": {
+            "ark_crew_hammock_frame": {
+              "lods": {
+                "LOD0": 4508,
+                "LOD1": 1216,
+                "LOD2": 392
+              },
+              "dims_m": [
+                2.28,
+                0.95,
+                1.65
+              ],
+              "description": "Seegangs-Haengematte im Eichen-Traggestell mit gedrechselten Spreizstaeben, 7 Hanfseilen, Wolldecke & Kissen (High-Detail Smooth)"
+            },
+            "ark_crew_dining_feast_table": {
+              "lods": {
+                "LOD0": 11212,
+                "LOD1": 3704,
+                "LOD2": 832
+              },
+              "dims_m": [
+                4.8,
+                2.35,
+                1.087
+              ],
+              "description": "Gedeckter 8er-Refektoriumstisch mit ueberhaengendem Tischlaeufer, rundem Bronze-Suppentopf, Henkelkruegen, Schalen & Fladenbroten"
+            },
+            "ark_crew_sideboard_cupboard": {
+              "lods": {
+                "LOD0": 6976,
+                "LOD1": 2736,
+                "LOD2": 192
+              },
+              "dims_m": [
+                2.26,
+                0.696,
+                1.75
+              ],
+              "description": "Zypressen-Geschirr- & Vorratsschrank mit Schlingerleisten, runden Schalen, Henkelkruegen & gefaltetem Leinen"
+            },
+            "ark_crew_cabin_partition": {
+              "lods": {
+                "LOD0": 4664,
+                "LOD1": 1160,
+                "LOD2": 336
+              },
+              "dims_m": [
+                2.3,
+                0.264,
+                2.65
+              ],
+              "description": "Zedern-Wohnkammer-Trennwand mit Zohar-Lueftungsgitter, 10 Holzringen & weich in 10 Wellen gerafftem Vorhang"
+            },
+            "ark_crew_family_bed": {
+              "lods": {
+                "LOD0": 3700,
+                "LOD1": 796,
+                "LOD2": 260
+              },
+              "dims_m": [
+                2.05,
+                1.51,
+                0.9
+              ],
+              "description": "Doppelkoje mit Seegangs-Schlingerleiste, bauchiger Matratze, asymmetrisch drapierter Wolldecke & 2 Kissen mit Mittelmulde"
+            },
+            "ark_crew_storage_chest": {
+              "lods": {
+                "LOD0": 362,
+                "LOD1": 190,
+                "LOD2": 94
+              },
+              "dims_m": [
+                1.278,
+                0.588,
+                0.6
+              ],
+              "description": "Beschlagene Familien-Seetruhe mit gewoelbtem Deckel, Zinnbronze-Eckbaendern & Hanfseil-Griffen"
+            },
+            "ark_crew_washstand_basin": {
+              "lods": {
+                "LOD0": 2398,
+                "LOD1": 808,
+                "LOD2": 368
+              },
+              "dims_m": [
+                0.842,
+                0.55,
+                1.124
+              ],
+              "description": "Zedern-Waschtisch mit runder Zinnbronze-Waschschuessel, Henkel-Giesskrug & in Falten uebergehaengtem Handtuch"
+            },
+            "ark_crew_weaving_loom": {
+              "lods": {
+                "LOD0": 3184,
+                "LOD1": 856,
+                "LOD2": 324
+              },
+              "dims_m": [
+                1.39,
+                0.45,
+                1.953
+              ],
+              "description": "Bronzezeitlicher Gewichtswebstuhl mit glattem Tuchbaum, sumerischer Borte, Schiffchen & runden birnenfoermigen Tongewichten"
+            },
+            "ark_crew_study_desk_set": {
+              "lods": {
+                "LOD0": 10592,
+                "LOD1": 2300,
+                "LOD2": 252
+              },
+              "dims_m": [
+                2.19,
+                1.17,
+                1.85
+              ],
+              "description": "Noahs Kapitaens-/Logbuch-Pult mit Tontafeln, Oellampe, Schriftrollenschrank mit runden Spiral-Rollen & Hocker"
+            },
+            "ark_crew_carpet": {
+              "lods": {
+                "LOD0": 432,
+                "LOD1": 240,
+                "LOD2": 120
+              },
+              "dims_m": [
+                2.8,
+                1.8,
+                0.016
+              ],
+              "description": "Gewebter mesopotamischer Teppich mit Borte & Fransen"
+            },
+            "ark_crew_wall_shelf": {
+              "lods": {
+                "LOD0": 2422,
+                "LOD1": 1260,
+                "LOD2": 584
+              },
+              "dims_m": [
+                1.2,
+                0.3,
+                0.608
+              ],
+              "description": "Zedern-Wandregal mit Schlingerleiste, runder Oellampe, Henkelkruegen & Kraeuterbuendeln"
+            }
+          },
+          "previews": [
+            "assets/previews/ark_wave_b_mill_hay_final.png",
+            "assets/previews/ark_wave_b3_crew_hero_closeup.png",
+            "assets/previews/ark_wave_b3_crew_diorama_v2.png",
+            "assets/previews/ark_crew_tablecloth_fix.png"
+          ]
         }
       }
     },

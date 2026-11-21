@@ -12002,6 +12002,14 @@ void main() {
     const bucketTransBH = createLayerBucket(); // 13 Innere Querschotten (QS01..13)
     const bucketBadgir = createLayerBucket(); // Modulare Bâdgir-Türme
     const bucketFixtures = createLayerBucket(); // Feste Einbauten (2 Göpel, Paternoster, Janssen-Silos, Zylinder-Fässer, Rampen)
+    let _curFixReplaceWave = 0; // 0 = immer aktiv, 1 = Welle B1, 2 = Welle B2, 3 = Welle B3 (im TEXTURED-Modus durch Blender-Kits ersetzt)
+    const waveBSpecs = {
+      d1Mega: [], d1Carn: [], d1Drain: [],
+      d2Pens: [], d2Ox: [],
+      d3Aviary: [], d3Rodent: [], d3Bat: [],
+      hayStacks: []
+    };
+    Arche.Procedural.waveBSpecs = waveBSpecs;
     function woodKeyToTexIdx(woodKey) {
       if (woodKey === 'EICHE') return 1;
       if (woodKey === 'ZYPRESSE') return 2;
@@ -12098,7 +12106,8 @@ void main() {
         bucket.meta.push({
           x: p[0], y: p[1], z: p[2], nx: nx, ny: ny, nz: nz, forceTexIdx: forceTexIdx,
           stIdx: stIdx, wallIdx: wallIdx, lvlIdx: lvlIdx,
-          icdKN: icdNodeKN, elemType: elemType, matType: matType, fixTag: fixTag, texIdx: texIdx
+          icdKN: icdNodeKN, elemType: elemType, matType: matType, fixTag: fixTag, texIdx: texIdx,
+          waveBReplace: (bucket === bucketFixtures) ? _curFixReplaceWave : 0
         });
       }
     }
@@ -12114,7 +12123,7 @@ void main() {
             }
           }
           if (b.mesh && b.mesh.geometry) {
-            buildGeometryMaterialGroups(b.mesh.geometry, mList);
+            buildGeometryMaterialGroups(b.mesh.geometry, mList, (b === bucketFixtures) ? (b._activeWaveBMask || 0) : 0);
           }
         });
       }
@@ -12191,7 +12200,8 @@ void main() {
       gpuBoneTimberInstances.push({
         x0: x0 - 70.0, y0, z0, x1: x1 - 70.0, y1, z1,
         cx: 0.5 * (x0 + x1) - 70.0, cy: 0.5 * (y0 + y1), cz: 0.5 * (z0 + z1),
-        xShip: 0.5 * (x0 + x1), len, rad: radius
+        xShip: 0.5 * (x0 + x1), len, rad: radius,
+        waveBReplace: _curFixReplaceWave
       });
     }
     function addVolumetricBeddingZone(x0, x1, y0, y1, zBase, thicknessZ, moundPeakZ = 0.0, densityWeight = 1.0) {
@@ -12199,7 +12209,8 @@ void main() {
         x0: Math.min(x0, x1) - 70.0, x1: Math.max(x0, x1) - 70.0,
         y0: Math.min(y0, y1), y1: Math.max(y0, y1),
         zBase, thicknessZ, moundPeakZ,
-        weight: Math.abs((x1 - x0) * (y1 - y0)) * densityWeight
+        weight: Math.abs((x1 - x0) * (y1 - y0)) * densityWeight,
+        waveBReplace: _curFixReplaceWave
       });
     }
     const bhDoorFramePositions = [];
@@ -12922,6 +12933,8 @@ void main() {
         const yH0 = (sideSign < 0) ? -11.12 : (11.12 - B_hay_y);
         const yH1 = (sideSign < 0) ? (-11.12 + B_hay_y) : 11.12;
         const yStake = (sideSign < 0) ? (yH1 - 0.08) : (yH0 + 0.08);
+        waveBSpecs.hayStacks.push({ x0: xHay, x1: xHay + L_hay_x, y0: yH0, y1: yH1, sideSign });
+        _curFixReplaceWave = 2;
         for (let t = 0; t < 4; t++) {
           const z0_t = 6.08 + t * 0.78;
           const z1_t = z0_t + 0.78;
@@ -12942,6 +12955,7 @@ void main() {
           const xP = xHay + p * (L_hay_x / 4.0);
           addBoxToBucket(bucketFixtures, xP - 0.08, xP + 0.08, yStake - 0.08, yStake + 0.08, 6.08, 9.25, 1, 0, 4);
         }
+        _curFixReplaceWave = 0;
       });
       const L_stre_x = 6.0 * ELLE_M;
       const xStre0 = (xHay < 50.0) ? (4.5 * HANDBREITE_M) : (140.0 - 4.5 * HANDBREITE_M - L_stre_x);
@@ -13179,8 +13193,13 @@ void main() {
         addBoxToBucket(bucketFixtures, xBarEnd + 5.55, xBarEnd + 5.75, yWalk0, yWalk1, zFloorMag, zFloorMag + 0.04, 0, 0, 4);
       });
     });
-    function addDeck1MegafaunaStallRow(xM0, xM1, yBack, yFront, nStalls) {
+    function addDeck1MegafaunaStallRow(xM0, xM1, yBack, yFront, nStalls, skipWaveBSpec = false) {
       if (xM1 - xM0 < 0.85) return;
+      if (!skipWaveBSpec) {
+        waveBSpecs.d1Mega.push({ x0: xM0, x1: xM1, yBack, yFront, nStalls });
+      }
+      const _prevWaveM = _curFixReplaceWave;
+      _curFixReplaceWave = 2;
       const yMin = Math.min(yBack, yFront), yMax = Math.max(yBack, yFront);
       const zDeckTop = 2.00 + 1.5 * HANDBREITE_M + 0.005;
       const zBed = zDeckTop + 1.5 * HANDBREITE_M;
@@ -13233,6 +13252,7 @@ void main() {
           }
         }
       }
+      _curFixReplaceWave = _prevWaveM;
     }
     // zTopD1Floor bereits oben definiert (2.122 m)
     [20.0, 50.0, 80.0, 110.0].forEach((xSilSec) => {
@@ -13423,6 +13443,9 @@ void main() {
           addChineWallBarrelRack(xCh0, xCh1, yCh0, yCh1, 2.00, (sideSign < 0), 5, 2);
         }
         if (xBar === 120.0) {
+          waveBSpecs.d1Carn.push({ x0: xBar + 3.18, x1: xBar + 6.82, yBack: ySideBack, yFront: ySideFront });
+          const _prevWaveK = _curFixReplaceWave;
+          _curFixReplaceWave = 2;
           const dSandw = 0.55 * ELLE_M;
           const xK0 = xBar + 3.18, xK1 = xBar + 6.82;
           const zBedK = zTopD1Floor + 1.5 * HANDBREITE_M;
@@ -13465,8 +13488,13 @@ void main() {
               addBoneTimberInstance(xGateSplit, yFrontK, zBedK + 0.18, xC1, yFrontK, zCageTop - 0.18, 0.82 * HANDBREITE_M);
             }
           }
+          _curFixReplaceWave = _prevWaveK;
         } else {
-          addDeck1MegafaunaStallRow(xBar + 3.18, xBar + 6.82, ySideBack, ySideFront, 2);
+          const isCarnPromptSec = (xBar === 40.0 || xBar === 90.0);
+          if (isCarnPromptSec) {
+            waveBSpecs.d1Carn.push({ x0: xBar + 3.18, x1: xBar + 6.82, yBack: ySideBack, yFront: ySideFront });
+          }
+          addDeck1MegafaunaStallRow(xBar + 3.18, xBar + 6.82, ySideBack, ySideFront, 2, isCarnPromptSec);
         }
         const yRackD2_0 = (sideSign < 0) ? -11.14 : 7.08;
         const yRackD2_1 = (sideSign < 0) ? -7.08 : 11.14;
@@ -13486,8 +13514,11 @@ void main() {
         });
       });
     });
-    function addDeck2AnimalPenRow(xP0, xP1, yBack, yFront, nPens) {
+    function addDeck2AnimalPenRow(xP0, xP1, yBack, yFront, nPens, hasMezz = true) {
       if (xP1 - xP0 < 1.20) return;
+      waveBSpecs.d2Pens.push({ x0: xP0, x1: xP1, yBack, yFront, nPens, hasMezz: Boolean(hasMezz) });
+      const _prevWaveD2 = _curFixReplaceWave;
+      _curFixReplaceWave = 2;
       const yMin = Math.min(yBack, yFront), yMax = Math.max(yBack, yFront);
       const zHigh = 6.00 + 4.2 * HANDBREITE_M;
       const zLow = 6.00 + 2.2 * HANDBREITE_M;
@@ -13542,6 +13573,7 @@ void main() {
           addBoneTimberInstance(xp, yBack, zMezzBed + dzM, xp, yMezzIn, zMezzBed + dzM, 0.65 * HANDBREITE_M);
         });
       }
+      _curFixReplaceWave = _prevWaveD2;
     }
     const yCorridorHalf = 2.5 * ELLE_M;
     const wChuteEllen = 1.0 * ELLE_M;
@@ -13646,8 +13678,8 @@ void main() {
       });
     });
     // Rampen-Hub Deck 2 Tierbuchten (S7 Steuerbord vor Leichtrampe & S8 Backbord hinter Rampenschacht)
-    addDeck2AnimalPenRow(60.45, 64.20, 4.90, 1.63, 2);
-    addDeck2AnimalPenRow(76.85, 79.55, -4.90, -1.63, 1);
+    addDeck2AnimalPenRow(60.45, 64.20, 4.90, 1.63, 2, false);
+    addDeck2AnimalPenRow(76.85, 79.55, -4.90, -1.63, 1, false);
     for (let iSec = 0; iSec < 14; iSec++) {
       const isSiloSec = (iSec === 2 || iSec === 5 || iSec === 8 || iSec === 11);
       const xS0 = X_STATIONS[iSec];
@@ -13656,11 +13688,11 @@ void main() {
         if (isSiloSec) return;
         if (iSec === 6 && sideSign < 0) return; // S7 Backbord bleibt für das 9×8-Ellen-Haupttor komplett frei!
         if (iSec === 0 || iSec === 13) {
-          addDeck2AnimalPenRow(xS0 + 0.80, xS0 + 3.80, sideSign * 5.20, sideSign * 7.65, 2);
-          addDeck2AnimalPenRow(xS0 + 6.20, xS0 + 9.20, sideSign * 5.20, sideSign * 7.65, 2);
+          addDeck2AnimalPenRow(xS0 + 0.80, xS0 + 3.80, sideSign * 5.20, sideSign * 7.65, 2, false);
+          addDeck2AnimalPenRow(xS0 + 6.20, xS0 + 9.20, sideSign * 5.20, sideSign * 7.65, 2, false);
         } else if (iSec === 3 || iSec === 10) {
         } else {
-          addDeck2AnimalPenRow(xS0 + 3.18, xS0 + 6.82, sideSign * 11.10, ySideWalkEdge, 3);
+          addDeck2AnimalPenRow(xS0 + 3.18, xS0 + 6.82, sideSign * 11.10, ySideWalkEdge, 3, false);
         }
       });
     }
@@ -13699,6 +13731,9 @@ void main() {
       const yMin = Math.min(y0, y1), yMax = Math.max(y0, y1);
       const sSign = (y0 + y1 < 0) ? -1 : 1;
       Arche.Fauna.d3AviarySpecs.push([xA0, xA1, yMin, yMax, sSign, nCages]);
+      waveBSpecs.d3Aviary.push({ x0: xA0, x1: xA1, yMin, yMax, sSign, nCages });
+      const _prevWaveAv = _curFixReplaceWave;
+      _curFixReplaceWave = 2;
       const zSand = zFloorD3 + 1.4 * HANDBREITE_M;
       const zMidA = 10.00 + 3.2 * ELLE_M;
       const zTopA = 10.00 + 6.0 * ELLE_M;
@@ -13744,6 +13779,7 @@ void main() {
           addBoneTimberInstance(xBranchM, yMin + 0.20, zSand + 2.1 * ELLE_M, xBranchM, yMax - 0.20, zSand + 4.8 * ELLE_M, 0.48 * HANDBREITE_M);
         }
       }
+      _curFixReplaceWave = _prevWaveAv;
     }
     [0, 1, 2, 3, 4, 5, 8, 9, 10, 11, 12, 13].forEach((iSec) => {
       const xS0 = X_STATIONS[iSec];
@@ -13783,6 +13819,9 @@ void main() {
       if (xR1 - xR0 < 0.85) return;
       const sSign = (yShelf < 0) ? -1 : 1;
       Arche.Fauna.d3ShelfSpecs.push([xR0 + 0.06, xR1 - 0.06, yShelf, sSign, Math.max(0.24, halfDepthY - 0.10), nCols]);
+      waveBSpecs.d3Rodent.push({ x0: xR0, x1: xR1, yShelf, nCols, halfDepthY, sSign });
+      const _prevWaveRd = _curFixReplaceWave;
+      _curFixReplaceWave = 2;
       addVolumetricBeddingZone(xR0 + 0.06, xR1 - 0.06, yShelf - (halfDepthY - 0.08), yShelf + (halfDepthY - 0.08), zFloorD3 + 0.02, 0.14, 0.04, 0.8);
       for (let tier = 1; tier <= 5; tier++) {
         const zSh = zFloorD3 + tier * (1.12 * ELLE_M);
@@ -13795,6 +13834,7 @@ void main() {
         addBoxToBucket(bucketFixtures, xd - 0.038, xd + 0.038, yShelf - (halfDepthY + 0.015), yShelf + (halfDepthY + 0.015), zFloorD3, zFloorD3 + 5.6 * ELLE_M, 2, 2, 4);
       }
       addWireBox(xR0, xR1, yShelf - halfDepthY, yShelf + halfDepthY, zFloorD3, zFloorD3 + 5.6 * ELLE_M);
+      _curFixReplaceWave = _prevWaveRd;
     }
     [3, 4, 9, 10].forEach((iSec) => {
       const xS0 = X_STATIONS[iSec];
@@ -13811,18 +13851,22 @@ void main() {
         addDeck3RodentHoneycombBlock(xDoorMid + 0.95, xIsl1, sideSign * 8.25, 2, 0.52);
         const nBatBoxes = isPatSide ? 3 : 4;
         const yBatWall = sideSign * 10.75;
+        _curFixReplaceWave = 2;
         for (let b = 0; b < nBatBoxes; b++) {
           const xBat = xShStart + (b + 0.5) * ((xShEnd - xShStart) / nBatBoxes);
           Arche.Fauna.d3TorporSpecs.push([xBat, yBatWall]);
+          waveBSpecs.d3Bat.push({ xBat, yBatWall, sideSign });
           addBoxToBucket(bucketFixtures, xBat - 0.48, xBat + 0.48, yBatWall - 0.36, yBatWall + 0.36, 12.68, 13.05, 0, 0, 4, 0);
           [-0.14, 0.0, 0.14].forEach((dyL) => {
             addBoneTimberInstance(xBat - 0.44, yBatWall + dyL, 12.70, xBat + 0.44, yBatWall + dyL, 12.70, 0.34 * HANDBREITE_M);
           });
           addWireBox(xBat - 0.48, xBat + 0.48, yBatWall - 0.36, yBatWall + 0.36, 12.68, 13.05);
         }
+        _curFixReplaceWave = 0;
       });
     });
     {
+      _curFixReplaceWave = 1;
       const zeerClayMat = Arche.Materials.zeerPorousClay;
       const woodAshMat = Arche.Materials.woodAshPowder;
       const waxSealMat = Arche.Materials.pithosWaxSeal;
@@ -13885,11 +13929,13 @@ void main() {
           addBoneTimberInstance(xz + 0.03, yz + 0.02, zZeerBot + 0.08, xz - 0.03, yz - 0.02, zZeerBot + 0.68, 0.26 * HANDBREITE_M);
         });
       }
+      _curFixReplaceWave = 0;
       addDeck3AviaryBlock(73.85, 79.25, -11.15, -7.85, 4);
       addDeck3RodentHoneycombBlock(75.95, 79.25, -5.55, 3, 0.38);
     }
     {
       const linenMat = Arche.Materials.linenBedding;
+      _curFixReplaceWave = 3;
       const xRef0 = 61.40, xRef1 = 66.20, yRef0 = -3.85, yRef1 = -2.35, zRefTop = zFloorD3 + 1.65 * ELLE_M;
       addBoxToBucket(bucketFixtures, xRef0, xRef1, yRef0, yRef1, zRefTop - 0.09, zRefTop, 0, 0, 4, 1);
       [xRef0 + 0.18, 0.5 * (xRef0 + xRef1), xRef1 - 0.18].forEach((xRL) => {
@@ -13901,6 +13947,7 @@ void main() {
       addBoxToBucket(bucketFixtures, xRef0 + 0.15, xRef1 - 0.15, yRef1 + 0.12, yRef1 + 0.52, zFloorD3 + 0.88 * ELLE_M, zFloorD3 + 0.98 * ELLE_M, 0, 2, 4, 3);
       addBoxToBucket(bucketFixtures, 66.65, 68.85, -4.55, -3.55, zFloorD3, zFloorD3 + 1.75 * ELLE_M, 0, 0, 4, 1);
       addWireBox(xRef0, xRef1, yRef0 - 0.52, yRef1 + 0.52, zFloorD3, zRefTop);
+      _curFixReplaceWave = 0;
       [
         [70.85, 74.65, -4.55, -3.15],
         [70.85, 74.65, -2.65, -1.35],
@@ -13921,6 +13968,7 @@ void main() {
       void linenMat;
     }
     {
+      _curFixReplaceWave = 3;
       const linenMat = Arche.Materials.linenBedding;
       const xC0 = 60.65, xC1 = 69.35;
       const yC0 = -11.10, yC1 = -6.55;
@@ -13956,12 +14004,14 @@ void main() {
       addBoxToBucket(bucketFixtures, 65.90, 66.10, -6.28, -5.52, zFloorD3, zFloorD3 + 1.55 * ELLE_M, 1, 0, 4, 1);
       addBoxToBucket(bucketFixtures, 66.45, 69.15, -6.35, -5.55, zFloorD3, zFloorD3 + 2.15 * ELLE_M, 0, 0, 4, 1);
       addWireBox(xC0, xC1, yC0, yC1, zFloorD3, zCabTop);
+      _curFixReplaceWave = 0;
     }
     const galleyBasaltMat = Arche.Materials.masonryBasalt;
     const galleyClayMat = Arche.Materials.terracottaBrickBed;
     const galleyBronzeMat = Arche.Materials.galleyBronze;
     const galleyEmberMat = Arche.Materials.galleyEmber;
     const galleySoupMat = Arche.Materials.mechSoup;
+    _curFixReplaceWave = 1;
     [60.0].forEach((xGalSec) => {
       const xGal0 = xGalSec + 0.65, xGal1 = xGalSec + 9.35;
       const yGal0 = 7.35, yGal1 = 11.15;
@@ -14056,6 +14106,31 @@ void main() {
       addBoxToBucket(bucketFixtures, 60.65, 61.55, 5.25, 6.10, zFloorD3, zFloorD3 + 1.70 * ELLE_M, 0, 1, 4, 2);
       addBoxToBucket(bucketFixtures, xGalSec + 6.35, xGalSec + 9.15, 5.25, 6.10, zFloorD3, zFloorD3 + 1.70 * ELLE_M, 0, 1, 4, 2);
       addWireBox(xHerd0, xHerd1, yHerd0, yHerd1, zFloorD3, zHerdTop);
+      // 3 animierte Kochdampf-Wolken exakt über den 3 Zinnbronze-Kesseln der Basalt-Kombüse (xShip = 65.060, 65.917, 66.773 / Y = +9.337 m)
+      // 1 InstancedMesh für alle 9 Dampf-Puffs = nur 1 Draw-Call (0 neue Shader-Programme)!
+      const steamClouds = [];
+      const steamMat = new THREE.MeshBasicMaterial({
+        color: 0xF5EFE6, transparent: true, opacity: 0.22, depthWrite: false, side: THREE.DoubleSide
+      });
+      const steamPuffGeo = new THREE.SphereGeometry(0.16, 8, 6);
+      const steamInstMesh = new THREE.InstancedMesh(steamPuffGeo, steamMat, 9);
+      steamInstMesh.name = 'galley_steam_clouds_inst';
+      steamInstMesh.castShadow = false;
+      steamInstMesh.receiveShadow = false;
+      steamInstMesh.frustumCulled = false;
+      steamInstMesh.userData.isSteamCloud = true;
+      galley3DGroup.add(steamInstMesh);
+      [65.060, 65.917, 66.773].forEach((xKet, kIdx) => {
+        const clGrp = new THREE.Group();
+        clGrp.name = `galley_steam_cloud_${kIdx}`;
+        clGrp.position.set(xKet - 70.0, 9.337, zFloorD3 + 1.38);
+        clGrp.userData.isSteamCloud = true;
+        clGrp.userData.kettleIdx = kIdx;
+        galley3DGroup.add(clGrp);
+        steamClouds.push(clGrp);
+      });
+      galley3DGroup.userData.steamClouds = steamClouds;
+      galley3DGroup.userData.steamInstMesh = steamInstMesh;
     });
     {
       const xWk0 = 70.85, xWk1 = 79.15;
@@ -14098,13 +14173,16 @@ void main() {
       addBoxToBucket(bucketFixtures, xPt0 + 1.45, xPt1 - 0.12, yWb0 + 0.12, yWb1 - 0.12, zFloorD3 + 1.50 * ELLE_M, zFloorD3 + 1.68 * ELLE_M, 0, 2, 3, 6);
       addWireBox(xPt0, xPt1, yWb0, yWb1, zFloorD3, zFloorD3 + 1.62 * ELLE_M);
     }
+    _curFixReplaceWave = 0;
     [35.0, 105.0].forEach((xG) => {
       const xSec0 = xG - 5.0;
       const xPat = xSec0 + 5.0 * ELLE_M; // Glatte 5.0 Ellen (2.333 m) ab Querschott!
       const zFloorG2 = 6.00 + 1.5 * HANDBREITE_M + 0.005;
       // Kompakter Eichen-Spurlagersockel auf Deck 2 (6.00 .. 6.32 m)
+      _curFixReplaceWave = 1;
       addBoxToBucket(bucketFixtures, xG - 0.85 * ELLE_M, xG + 0.85 * ELLE_M, -0.85 * ELLE_M, 0.85 * ELLE_M, 6.00, 6.32, 0, 0, 1);
       addWireBox(xG - 0.85 * ELLE_M, xG + 0.85 * ELLE_M, -0.85 * ELLE_M, 0.85 * ELLE_M, 6.00, 6.32);
+      _curFixReplaceWave = 0;
       // Unterzug-Sattelblock unter der Decke von Deck 1 (5.62 .. 5.88 m) - voller Durchgang 2.12 .. 5.62 m frei!
       addBoxToBucket(bucketFixtures, xG - 0.85 * ELLE_M, xG + 0.85 * ELLE_M, -0.85 * ELLE_M, 0.85 * ELLE_M, 5.62, 5.88, 0, 0, 1);
       addBoxToBucket(bucketFixtures, xG - 1.75 * HANDBREITE_M, xG + 1.75 * HANDBREITE_M, -4.85, 4.85, 6.00 + 6.6 * ELLE_M, 6.00 + 7.2 * ELLE_M, 0, 0, 1);
@@ -14112,6 +14190,7 @@ void main() {
       [-11.0 * ELLE_M, -6.5 * ELLE_M, -3.2 * ELLE_M, 3.2 * ELLE_M, 11.2 * ELLE_M, 22.85 * ELLE_M].forEach((yBrg) => {
         addBoxToBucket(bucketFixtures, xG - bHng, xG + bHng, yBrg - bHng, yBrg + bHng, 6.00 + 5.35 * ELLE_M, 10.00 - 1.5 * HANDBREITE_M, 1, 0, 1);
       });
+      _curFixReplaceWave = 1;
       for (let cl = 0; cl < 16; cl++) {
         const angC = (cl / 16.0) * Math.PI * 2.0;
         const rInC = 4.2 * ELLE_M, rOutC = 8.2 * ELLE_M;
@@ -14133,6 +14212,7 @@ void main() {
       });
       addBoxToBucket(bucketFixtures, xMillOpt - 2.0 * ELLE_M, xMillOpt + 2.0 * ELLE_M, yMill0 - 0.30, yMill0, zFloorG2, zFloorG2 + 0.44, 0, 0, 4);
       addWireBox(xMillOpt - 2.3 * ELLE_M, xMillOpt + 2.3 * ELLE_M, yMill0, yMill1, zFloorG2, zMillTop);
+      _curFixReplaceWave = 0;
       const pX0 = xPat - 1.75 * ELLE_M, pX1 = xPat + 1.75 * ELLE_M, pY0 = -14.75 * ELLE_M, pY1 = -11.5 * ELLE_M, bSt = 2.0 * HANDBREITE_M;
       const zPatFoot = 1.0 * ELLE_M;  // 0.467 m (im Doppelboden-Trog PFU1/2)
       const zPatAxle = 1.00 + 23.0 * ELLE_M; // 11.733 m (exakte Achshöhe der oberen Antriebstrommel auf Deck 3!)
@@ -14149,6 +14229,7 @@ void main() {
         addBoxToBucket(bucketFixtures, pX0 - 0.05, pX0 + bSt, pY0, pY1, zW, zW + 0.20, 0, 0, 1);
         addBoxToBucket(bucketFixtures, pX1 - bSt, pX1 + 0.05, pY0, pY1, zW, zW + 0.20, 0, 0, 1);
       });
+      _curFixReplaceWave = 1;
       addThickQuadToBucket(bucketFixtures,
         [pX0 + 0.16, pY1, 11.45], [pX1 - 0.16, pY1, 11.45],
         [pX1 - 0.16, pY1 + 0.72, 10.68], [pX0 + 0.16, pY1 + 0.72, 10.68],
@@ -14156,6 +14237,7 @@ void main() {
       addBoxToBucket(bucketFixtures, pX0 + 0.10, pX1 - 0.10, pY1 + 0.55, pY1 + 1.15, 10.125, 10.72, 0, 0, 4);
       addBoxToBucket(bucketFixtures, pX0 + 0.18, pX1 - 0.18, pY1 + 0.62, pY1 + 1.08, 10.62, 10.74, 0, 2, 3, 6);
       addWireBox(pX0, pX1, pY0, pY1, zPatFoot, zPatPost);
+      _curFixReplaceWave = 0;
       const gX0 = pX0 - 0.10, gX1 = pX1 + 0.10, gY0 = -8.10, gY1 = pY0;
       addBoxToBucket(bucketFixtures, gX0, gX1, gY0, gY1, 1.92, 2.06, 0, 0, 1);
       addThickQuadToBucket(bucketFixtures,
@@ -14174,6 +14256,8 @@ void main() {
         const dxStall = (xBoxEnd - xBoxStart) / nStallsO;
         const yWall = sideSign * (24.0 * ELLE_M);
         const yFront = sideSign * (17.5 * ELLE_M);
+        waveBSpecs.d2Ox.push({ x0: xBoxStart, x1: xBoxEnd, yWall, yFront, nStalls: nStallsO, sideSign });
+        _curFixReplaceWave = 2;
         const yMinB = Math.min(yWall, yFront), yMaxB = Math.max(yWall, yFront);
         const yMidB = 0.5 * (yMinB + yMaxB);
         const zFloorO = 6.00 + 1.5 * HANDBREITE_M + 0.005;
@@ -14202,6 +14286,7 @@ void main() {
             addBoneTimberInstance(xs + 0.08, yFront, zStallTop - 0.08, xs + dxStall - 0.08, yFront, zStallTop - 0.08, 0.95 * HANDBREITE_M);
           }
         }
+        _curFixReplaceWave = 0;
       });
       [-3.85, 3.85].forEach((dxScrew) => {
         const xS = xG + dxScrew, rTube = 0.5 * ELLE_M, yBot = 5.65, zBot = 0.28, yTop = 10.66, zTop = 8.43;
@@ -14325,14 +14410,16 @@ void main() {
     });
     [3, 10].forEach((iSec) => {
       const xPat = X_STATIONS[iSec] + 5.0 * ELLE_M; // Glatte 5.0 Ellen ab Querschott
+      _curFixReplaceWave = 1;
       addBoxToBucket(bucketFixtures, xPat - 2.5 * ELLE_M, xPat + 2.5 * ELLE_M, -15.25 * ELLE_M, -10.0 * ELLE_M, zDBFloor, zDBFloor + 2.5 * ELLE_M, 1, 0, 1);
       addWireBox(xPat - 2.5 * ELLE_M, xPat + 2.5 * ELLE_M, -15.25 * ELLE_M, -10.0 * ELLE_M, zDBFloor, zDBFloor + 2.5 * ELLE_M);
+      _curFixReplaceWave = 0;
     });
     const allStructuralBuckets = [
       bucketDecks, bucketRoof, bucketWallBB, bucketWallSB,
       bucketLongBH, bucketTransBH, bucketBadgir, bucketFixtures
     ];
-    function buildGeometryMaterialGroups(geo, metaList) {
+    function buildGeometryMaterialGroups(geo, metaList, excludeWaveMask = 0) {
       geo.clearGroups();
       const nVerts = metaList.length;
       if (nVerts === 0) {
@@ -14343,11 +14430,19 @@ void main() {
       // während pos/norm/col/uv & metaList 1:1 indexsynchron bleiben (EC5, Thermo, UV & Hover unverändert!).
       let maxMat = 0;
       for (let v = 0; v + 2 < nVerts; v += 3) {
+        if (excludeWaveMask) {
+          const w = metaList[v].waveBReplace || 0;
+          if (w > 0 && (excludeWaveMask & (1 << (w - 1)))) continue;
+        }
         const m = metaList[v].texIdx || 0;
         if (m > maxMat) maxMat = m;
       }
       const counts = new Int32Array(maxMat + 1);
       for (let v = 0; v + 2 < nVerts; v += 3) {
+        if (excludeWaveMask) {
+          const w = metaList[v].waveBReplace || 0;
+          if (w > 0 && (excludeWaveMask & (1 << (w - 1)))) continue;
+        }
         const m = metaList[v].texIdx || 0;
         counts[m >= 0 ? m : 0] += 3;
       }
@@ -14362,6 +14457,10 @@ void main() {
       }
       const idxArr = (nVerts > 65535) ? new Uint32Array(cursor) : new Uint16Array(cursor);
       for (let v = 0; v + 2 < nVerts; v += 3) {
+        if (excludeWaveMask) {
+          const w = metaList[v].waveBReplace || 0;
+          if (w > 0 && (excludeWaveMask & (1 << (w - 1)))) continue;
+        }
         const mRaw = metaList[v].texIdx || 0;
         const m = mRaw >= 0 ? mRaw : 0;
         const p = writePos[m];
@@ -14498,6 +14597,8 @@ void main() {
       }
       boneInstMesh.instanceMatrix.needsUpdate = true;
       if (boneInstMesh.instanceColor) boneInstMesh.instanceColor.needsUpdate = true;
+      boneInstMesh.userData.origMatrices = new Float32Array(boneInstMesh.instanceMatrix.array);
+      boneInstMesh.userData.activeWaveBMask = 0;
       fixturesGroup.add(boneInstMesh);
       Arche.Procedural.boneInstMesh = boneInstMesh;
       const amphoraPts = [
@@ -14536,6 +14637,8 @@ void main() {
       const bedShellPos = [];
       const bedShellUV = [];
       const bedShellLayer = [];
+      const bedShellWave = [];
+      let _curBedWave = 0;
       function pushBedShellQuad(p1, p2, p3, p4, u0, v0, u1, v1, hLay0, hLay1 = hLay0) {
         bedShellPos.push(
           p1[0], p1[1], p1[2], p2[0], p2[1], p2[2], p3[0], p3[1], p3[2],
@@ -14546,6 +14649,7 @@ void main() {
           u0, v0, u1, v1, u0, v1
         );
         bedShellLayer.push(hLay0, hLay0, hLay1, hLay0, hLay1, hLay1);
+        bedShellWave.push(_curBedWave, _curBedWave, _curBedWave, _curBedWave, _curBedWave, _curBedWave);
       }
       let finRng = 753159852 >>> 0;
       const finRand = () => {
@@ -14554,6 +14658,7 @@ void main() {
       };
       for (let z = 0; z < gpuBeddingZones.length; z++) {
         const zn = gpuBeddingZones[z];
+        _curBedWave = zn.waveBReplace || 0;
         const x0 = zn.x0, x1 = zn.x1;
         const y0 = zn.y0, y1 = zn.y1;
         const spanX = Math.abs(x1 - x0), spanY = Math.abs(y1 - y0);
@@ -14627,6 +14732,52 @@ void main() {
       const beddingVolumeMesh = new THREE.Mesh(beddingShellGeo, beddingShellMat);
       fixturesGroup.add(beddingVolumeMesh);
       Arche.Procedural.beddingVolumePoints = beddingVolumeMesh;
+      // 0-ms Wave-B-Masken-Switch für bucketFixtures, boneInstMesh und beddingVolumeMesh (0 Z-Fighting im TEXTURED-Modus, 100 % unverfälschtes EC5/THERMO!)
+      const _beddingIndexCache = new Map();
+      Arche.Procedural.setBucketFixturesWaveBMask = function (mask) {
+        const m = mask | 0;
+        if (bucketFixtures && bucketFixtures.mesh && bucketFixtures.mesh.geometry && bucketFixtures._activeWaveBMask !== m) {
+          bucketFixtures._activeWaveBMask = m;
+          buildGeometryMaterialGroups(bucketFixtures.mesh.geometry, bucketFixtures.meta, m);
+        }
+        if (boneInstMesh && boneInstMesh.userData && boneInstMesh.userData.origMatrices && boneInstMesh.userData.activeWaveBMask !== m) {
+          boneInstMesh.userData.activeWaveBMask = m;
+          const orig = boneInstMesh.userData.origMatrices;
+          const dst = boneInstMesh.instanceMatrix.array;
+          for (let i = 0, n = gpuBoneTimberInstances.length; i < n; i++) {
+            const w = gpuBoneTimberInstances[i].waveBReplace || 0;
+            const hide = (m !== 0 && w > 0 && (m & (1 << (w - 1))) !== 0);
+            const o16 = i * 16;
+            if (hide) {
+              for (let k = 0; k < 16; k++) dst[o16 + k] = 0.0;
+              dst[o16 + 15] = 1.0;
+            } else {
+              for (let k = 0; k < 16; k++) dst[o16 + k] = orig[o16 + k];
+            }
+          }
+          boneInstMesh.instanceMatrix.needsUpdate = true;
+        }
+        if (beddingVolumeMesh && beddingVolumeMesh.geometry && beddingVolumeMesh.userData.activeWaveBMask !== m) {
+          beddingVolumeMesh.userData.activeWaveBMask = m;
+          if (m === 0) {
+            beddingVolumeMesh.geometry.setIndex(null);
+          } else {
+            let cachedIdx = _beddingIndexCache.get(m);
+            if (!cachedIdx) {
+              const kept = [];
+              for (let v = 0, n = bedShellWave.length; v + 2 < n; v += 3) {
+                const w = bedShellWave[v] || 0;
+                if (w > 0 && (m & (1 << (w - 1)))) continue;
+                kept.push(v, v + 1, v + 2);
+              }
+              const arr = (bedShellWave.length > 65535) ? new Uint32Array(kept) : new Uint16Array(kept);
+              cachedIdx = new THREE.BufferAttribute(arr, 1);
+              _beddingIndexCache.set(m, cachedIdx);
+            }
+            beddingVolumeMesh.geometry.setIndex(cachedIdx);
+          }
+        }
+      };
       const _barrelLutRGB = new Float32Array(60 * 3);
       const _barrelLutMeta = { x: 0, y: -9.5, z: 3.0, stIdx: 0, wallIdx: 0, lvlIdx: 1, icdKN: 650.0, elemType: 0, matType: 0, fixTag: 3, texIdx: 7 };
       Arche.Procedural.updateInstancedBarrelsShader = function (ctx) {
@@ -14763,40 +14914,44 @@ void main() {
       const waxLubeMat = Arche.Procedural.bindMechPomShader(0xE2C88A, 6); // Talg-/Wachsschmierung & Korn
       const rotorGroup = new THREE.Group();
       masterGroup.add(rotorGroup);
+      const procBaseGroup = new THREE.Group();
+      masterGroup.add(procBaseGroup);
       const spurStoneGeo = new THREE.CylinderGeometry(1.0 * ELLE_M, 1.1 * ELLE_M, 4.0 * HANDBREITE_M, 28);
       spurStoneGeo.rotateX(Math.PI * 0.5);
       const spurStoneMesh = new THREE.Mesh(spurStoneGeo, basaltMat);
       spurStoneMesh.position.set(0, 0, 0.22);
-      masterGroup.add(spurStoneMesh);
+      procBaseGroup.add(spurStoneMesh);
       [0.38, 3.02].forEach((zBas) => {
         const bCupGeo = new THREE.CylinderGeometry(R_shaft + 1.0 * HANDBREITE_M, R_shaft + 1.2 * HANDBREITE_M, 2.5 * HANDBREITE_M, 28);
         bCupGeo.rotateX(Math.PI * 0.5);
         const bCupM = new THREE.Mesh(bCupGeo, basaltMat);
         bCupM.position.set(0, 0, zBas);
-        masterGroup.add(bCupM);
+        procBaseGroup.add(bCupM);
         const waxGeo = new THREE.CylinderGeometry(R_shaft + 0.3 * HANDBREITE_M, R_shaft + 0.5 * HANDBREITE_M, 0.8 * HANDBREITE_M, 24);
         waxGeo.rotateX(Math.PI * 0.5);
         const waxM = new THREE.Mesh(waxGeo, waxLubeMat);
         waxM.position.set(0, 0, zBas + 0.08);
-        masterGroup.add(waxM);
+        procBaseGroup.add(waxM);
       });
+      const procRotorGroup = new THREE.Group();
+      rotorGroup.add(procRotorGroup);
       const L_kingShaft = 8.2 * ELLE_M;
       const shaftGeo = orientCylinderUVsAlongAxis(new THREE.CylinderGeometry(R_shaft, R_shaft, L_kingShaft, 28), L_kingShaft, R_shaft);
       shaftGeo.rotateX(Math.PI * 0.5);
       const shaftMesh = new THREE.Mesh(shaftGeo, oakMat);
       shaftMesh.position.set(0, 0, 1.95);
-      rotorGroup.add(shaftMesh);
+      procRotorGroup.add(shaftMesh);
       const hubLower = new THREE.Mesh(new THREE.BoxGeometry(1.5 * ELLE_M, 1.5 * ELLE_M, 4.5 * HANDBREITE_M), oakMat);
       const hubUpper = new THREE.Mesh(new THREE.BoxGeometry(1.4 * ELLE_M, 1.4 * ELLE_M, 4.0 * HANDBREITE_M), oakMat);
       hubLower.position.z = 2.6 * ELLE_M;
       hubUpper.position.z = 4.7 * ELLE_M;
-      rotorGroup.add(hubLower, hubUpper);
+      procRotorGroup.add(hubLower, hubUpper);
       [-0.25, 0.55, 1.65, 2.65].forEach((zBand) => {
         const bandGeo = orientCylinderUVsAlongAxis(new THREE.CylinderGeometry(R_shaft + 1.0 * FINGER_M, R_shaft + 1.0 * FINGER_M, 1.2 * HANDBREITE_M, 28), 0.10, R_shaft);
         bandGeo.rotateX(Math.PI * 0.5);
         const bandM = new THREE.Mesh(bandGeo, hornbeamMat);
         bandM.position.set(0, 0, zBand);
-        rotorGroup.add(bandM);
+        procRotorGroup.add(bandM);
       });
       const zRimCenter = 4.7 * ELLE_M;
       const wRim = 3.0 * HANDBREITE_M;
@@ -14824,8 +14979,8 @@ void main() {
         _gPos.set(cx, cy, zRimCenter - 0.55 * hRim);
         oakEntries.push({ geo: wedgeGeo, matrix: new THREE.Matrix4().compose(_gPos, _gQuat, _gScl) });
       }
-      rotorGroup.add(new THREE.Mesh(mergeTransformedGeos(oakEntries), oakMat));
-      rotorGroup.add(new THREE.Mesh(mergeTransformedGeos(toothEntries), hornbeamMat));
+      procRotorGroup.add(new THREE.Mesh(mergeTransformedGeos(oakEntries), oakMat));
+      procRotorGroup.add(new THREE.Mesh(mergeTransformedGeos(toothEntries), hornbeamMat));
       rimSegGeo.dispose(); toothGeo.dispose(); wedgeGeo.dispose();
       for (let b = 0; b < 8; b++) {
         const armGroup = new THREE.Group();
@@ -14867,7 +15022,7 @@ void main() {
           kneeStrut.rotation.y = -0.55;
           armGroup.add(kneeStrut);
         }
-        rotorGroup.add(armGroup);
+        procRotorGroup.add(armGroup);
       }
       const zTopTeeth = zRimCenter + 2.2 * HANDBREITE_M;
       const zShaft = zTopTeeth + R_pinion;
@@ -14956,6 +15111,10 @@ void main() {
       masterGroup.add(underMillShaft);
       const millRotors = [];
       millRotors.push(dropSpRotor);
+      const procMillStaticGroup = new THREE.Group();
+      masterGroup.add(procMillStaticGroup);
+      const procMillRunnerGroups = [];
+      const zRunnerBot = zTableRel + 2.4 * HANDBREITE_M + 0.025;
       [-1.15 * ELLE_M, 1.15 * ELLE_M].forEach((dxM) => {
         const xm = xMillRel + dxM;
         const uCrown = createCrownWheelMesh(2.4 * HANDBREITE_M, 0.08, 12, 'X', 1, oakMat, hornbeamMat);
@@ -14963,29 +15122,31 @@ void main() {
         underMillShaft.add(uCrown);
         const footSt = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.24, 0.14), basaltMat);
         footSt.position.set(xm, yMillRel, 0.15);
-        masterGroup.add(footSt);
+        procMillStaticGroup.add(footSt);
         const hBedStone = 2.4 * HANDBREITE_M;
         const bedStoneGeo = new THREE.CylinderGeometry(rMillStone, rMillStone * 1.02, hBedStone, 28);
         bedStoneGeo.rotateX(Math.PI * 0.5);
         const bedStoneM = new THREE.Mesh(bedStoneGeo, mStoneMat);
         bedStoneM.position.set(xm, yMillRel, zTableRel + 0.5 * hBedStone);
-        masterGroup.add(bedStoneM);
+        procMillStaticGroup.add(bedStoneM);
         const spoutM = new THREE.Mesh(new THREE.BoxGeometry(1.8 * HANDBREITE_M, 3.2 * HANDBREITE_M, 1.4 * HANDBREITE_M), oakMat);
         spoutM.position.set(xm, yMillRel - 1.02 * ELLE_M, zTableRel + 0.7 * HANDBREITE_M);
         spoutM.rotation.x = 0.25;
-        masterGroup.add(spoutM);
-        const zRunnerBot = zTableRel + hBedStone + 0.025;
+        procMillStaticGroup.add(spoutM);
         const hRunStone = 2.2 * HANDBREITE_M;
         const mRotor = new THREE.Group();
         mRotor.position.set(xm, yMillRel, zRunnerBot);
+        const procRunGrp = new THREE.Group();
         const runStoneGeo = new THREE.CylinderGeometry(rMillStone * 0.96, rMillStone * 0.96, hRunStone, 28);
         runStoneGeo.rotateX(Math.PI * 0.5);
         const runStoneM = new THREE.Mesh(runStoneGeo, mStoneMat);
         runStoneM.position.z = 0.5 * hRunStone;
-        mRotor.add(runStoneM);
+        procRunGrp.add(runStoneM);
         const rhyndM = new THREE.Mesh(new THREE.BoxGeometry(0.75 * ELLE_M, 1.2 * HANDBREITE_M, 0.55 * HANDBREITE_M), hornbeamMat);
         rhyndM.position.z = hRunStone - 0.02;
-        mRotor.add(rhyndM);
+        procRunGrp.add(rhyndM);
+        mRotor.add(procRunGrp);
+        procMillRunnerGroups.push(procRunGrp);
         const spUnderLen = zRunnerBot - 0.16;
         const spGeo = orientCylinderUVsAlongAxis(new THREE.CylinderGeometry(0.70 * HANDBREITE_M, 0.70 * HANDBREITE_M, spUnderLen, 16), spUnderLen, 0.055);
         spGeo.rotateX(Math.PI * 0.5);
@@ -15000,22 +15161,22 @@ void main() {
         [-1.02 * ELLE_M, 1.02 * ELLE_M].forEach((dyP) => {
           const postM = new THREE.Mesh(new THREE.BoxGeometry(0.9 * HANDBREITE_M, 0.9 * HANDBREITE_M, 1.85 * ELLE_M), oakMat);
           postM.position.set(xm, yMillRel + dyP, zTableRel + 0.92 * ELLE_M);
-          masterGroup.add(postM);
+          procMillStaticGroup.add(postM);
         });
         const topBridgeM = new THREE.Mesh(new THREE.BoxGeometry(1.1 * HANDBREITE_M, 2.2 * ELLE_M, 0.8 * HANDBREITE_M), oakMat);
         topBridgeM.position.set(xm, yMillRel, zTableRel + 1.85 * ELLE_M);
-        masterGroup.add(topBridgeM);
+        procMillStaticGroup.add(topBridgeM);
         const hopGeo = new THREE.CylinderGeometry(3.8 * HANDBREITE_M, 1.1 * HANDBREITE_M, 4.2 * HANDBREITE_M, 4);
         hopGeo.rotateX(Math.PI * 0.5);
         hopGeo.rotateZ(Math.PI * 0.25);
         const hopM = new THREE.Mesh(hopGeo, cypressMat);
         hopM.position.set(xm, yMillRel, zTableRel + 1.48 * ELLE_M);
-        masterGroup.add(hopM);
+        procMillStaticGroup.add(hopM);
         const grainTopGeo = new THREE.CylinderGeometry(3.2 * HANDBREITE_M, 3.2 * HANDBREITE_M, 0.4 * HANDBREITE_M, 16);
         grainTopGeo.rotateX(Math.PI * 0.5);
         const grainTopM = new THREE.Mesh(grainTopGeo, waxLubeMat);
         grainTopM.position.set(xm, yMillRel, zTableRel + 1.76 * ELLE_M);
-        masterGroup.add(grainTopM);
+        procMillStaticGroup.add(grainTopM);
       });
       const ySBIn = 2.5 * ELLE_M - 1.5 * HANDBREITE_M;
       const ySBOut = 22.85 * ELLE_M;
@@ -15058,6 +15219,9 @@ void main() {
       );
       const hoopRingGeo = new THREE.TorusGeometry(rTube + 1.0 * FINGER_M, 1.2 * FINGER_M, 10, 28);
       hoopRingGeo.rotateX(Math.PI * 0.5);
+      const procScrewTubeGroups = [];
+      const procScrewHelixGroups = [];
+      const screwUnits = [];
       [-3.85, 3.85].forEach((dxScrew) => {
         const signT = (dxScrew < 0) ? 1 : -1;
         const sDriveCrown = createCrownWheelMesh(2.9 * HANDBREITE_M, 0.085, 12, 'X', signT, oakMat, hornbeamMat);
@@ -15069,25 +15233,30 @@ void main() {
         const screwUnit = new THREE.Group();
         screwUnit.position.set(dxScrew, 0.5 * (yBotS + yTopS), 0.5 * (zBotS + zTopS));
         screwUnit.rotation.x = tiltRx;
+        const procTubeGrp = new THREE.Group();
         const shellMesh = new THREE.Mesh(barrelShellGeo, cypressMat);
         shellMesh.position.y = -0.36;
-        screwUnit.add(shellMesh);
+        procTubeGrp.add(shellMesh);
         for (let h = 0; h <= 8; h++) {
           const yH = -0.36 + ((h / 8.0) - 0.5) * (lenTube - 0.20);
           const hM = new THREE.Mesh(hoopRingGeo, hornbeamMat);
           hM.position.y = yH;
-          screwUnit.add(hM);
+          procTubeGrp.add(hM);
         }
         const footBearing = new THREE.Mesh(new THREE.CylinderGeometry(3.5 * HANDBREITE_M, 4.0 * HANDBREITE_M, 2.5 * HANDBREITE_M, 20), basaltMat);
         footBearing.position.y = -0.5 * lenS - 0.06;
-        screwUnit.add(footBearing);
+        procTubeGrp.add(footBearing);
+        screwUnit.add(procTubeGrp);
+        procScrewTubeGroups.push(procTubeGrp);
         const sRotor = new THREE.Group();
         const coreShaftGeo = orientCylinderUVsAlongAxis(new THREE.CylinderGeometry(1.0 * HANDBREITE_M, 1.0 * HANDBREITE_M, lenS + 0.18, 20), lenS, 0.078);
-        sRotor.add(new THREE.Mesh(coreShaftGeo, oakMat));
+        const coreShaftM = new THREE.Mesh(coreShaftGeo, branchPumpMat);
+        sRotor.add(coreShaftM);
         const helixMesh = new THREE.Mesh(_sharedHelixGeo, hornbeamMat);
         helixMesh.scale.set(1.0, lenTube - 0.10, 1.0);
         helixMesh.position.y = -0.36;
         sRotor.add(helixMesh);
+        procScrewHelixGroups.push(coreShaftM, helixMesh);
         const screwWaterMat = new THREE.MeshPhongMaterial({
           color: 0x1CA8B8, emissive: 0x052C36, specular: 0xD8FAFF, shininess: 120,
           transparent: true, opacity: 0.78, side: THREE.DoubleSide,
@@ -15098,11 +15267,13 @@ void main() {
         waterHelixMesh.position.y = -0.36;
         waterHelixMesh.rotation.y = Math.PI * 0.35;
         sRotor.add(waterHelixMesh);
+        sRotor.userData.waterHelixMesh = waterHelixMesh;
         const topPinion = createLanternPinionMesh(2.5 * HANDBREITE_M, 3.2 * HANDBREITE_M, 8, 'Y', oakMat, hornbeamMat);
         topPinion.position.y = 0.5 * lenS - 0.02;
         sRotor.add(topPinion);
         screwUnit.add(sRotor);
         masterGroup.add(screwUnit);
+        screwUnits.push(screwUnit);
         screwRotors.push(sRotor);
       });
       const forceFlowGroup = new THREE.Group();
@@ -15191,41 +15362,41 @@ void main() {
       masterGroup.add(forceFlowGroup);
       transShaftSB.children[0].material = branchPumpMat;
       pumpLineShaftX.children[0].material = branchPumpMat;
-      screwRotors.forEach((sR) => { if (sR.children[0]) sR.children[0].material = branchPumpMat; });
-      const _screwUnitParents = [];
-      screwRotors.forEach((sR) => {
-        if (sR.children[3]) mergeRigidChildrenByMaterial(sR.children[3]);
-        if (sR.parent) {
-          _screwUnitParents.push(sR.parent);
-          mergeRigidChildrenByMaterial(sR.parent, new Set([sR]));
-        }
-      });
-      const _rotorExclude = new Set([flowLinesMain, ...oxPullArrows]);
-      rotorGroup.children.forEach((ch) => {
-        if (ch && ch.isGroup && ch.userData && ch.userData.oxMat) _rotorExclude.add(ch);
-      });
-      mergeRigidChildrenByMaterial(rotorGroup, _rotorExclude);
-      mergeRigidChildrenByMaterial(transShaftBB);
+      procScrewTubeGroups.forEach((tg) => mergeRigidChildrenByMaterial(tg));
+      screwRotors.forEach((sR) => { if (sR.children[3]) mergeRigidChildrenByMaterial(sR.children[3]); });
+      mergeRigidChildrenByMaterial(procBaseGroup);
+      mergeRigidChildrenByMaterial(procRotorGroup);
+      mergeRigidChildrenByMaterial(procMillStaticGroup);
+      procMillRunnerGroups.forEach((rg) => mergeRigidChildrenByMaterial(rg));
+      mergeRigidChildrenByMaterial(transShaftBB, new Set([bbMainPinion]));
       mergeRigidChildrenByMaterial(counterShaftX);
       mergeRigidChildrenByMaterial(underMillShaft);
       mergeRigidChildrenByMaterial(patPulleyRotor);
-      mergeRigidChildrenByMaterial(transShaftSB);
+      mergeRigidChildrenByMaterial(transShaftSB, new Set([sbMainPinion]));
       mergeRigidChildrenByMaterial(pumpLineShaftX);
-      millRotors.forEach((mR) => mergeRigidChildrenByMaterial(mR));
+      mergeRigidChildrenByMaterial(dropSpRotor);
+      [millRotors[1], millRotors[2]].forEach((mR, idx) => mergeRigidChildrenByMaterial(mR, new Set([procMillRunnerGroups[idx]])));
       const _masterExclude = new Set([
-        rotorGroup, transShaftBB, counterShaftX, underMillShaft, patPulleyRotor,
+        rotorGroup, procBaseGroup, procMillStaticGroup, transShaftBB, counterShaftX, underMillShaft, patPulleyRotor,
         transShaftSB, pumpLineShaftX, clutchPat, clutchMill, clutchPump, forceFlowGroup,
-        ...millRotors, ...screwRotors, ..._screwUnitParents
+        ...millRotors, ...screwRotors, ...screwUnits
       ]);
       mergeRigidChildrenByMaterial(masterGroup, _masterExclude);
+      [clutchPat, clutchMill, clutchPump].forEach((cl) => {
+        if (cl && cl.userData) cl.userData.sliderGroup = cl.userData.slideJaw;
+      });
       masterGroup.userData = {
-        rotorGroup, transShaftBB, counterShaftX, underMillShaft, patPulleyRotor, millRotors,
-        transShaftSB, pumpLineShaftX, screwRotors,
+        rotorGroup, transShaftBB, bbInShaft: transShaftBB, counterShaftX, underMillShaft, patPulleyRotor,
+        millRotors, millRunners: [millRotors[1], millRotors[2]],
+        transShaftSB, sbInShaft: transShaftSB, pumpLineShaftX, screwRotors, screwUnits,
         clutchPat, clutchMill, clutchPump,
+        procBaseGroup, procRotorGroup, bbMainPinion, sbMainPinion,
+        procMillStaticGroup, procMillRunnerGroups, procScrewTubeGroups, procScrewHelixGroups,
         oakMat, branchPatMat, branchMillMat, branchPumpMat, cypressMat, hornbeamMat, basaltMat, waxLubeMat,
         forceFlowGroup, oxPullArrows, flowLinesMain, flowLinesPat, flowLinesMill, flowLinesPump,
         pulseMeshBB, pulseMeshSB, pulseMeshPat, pulseMeshMill, pulseMeshPump,
-        yDriveLine, zShaft, zPatTopRel, xDropSp, zUnderMill, xMillRel, yMillRel, yTopS, zTopS, yBotS, zBotS
+        yDriveLine, zShaft, zPatTopRel, xDropSp, zUnderMill, xMillRel, yMillRel, zRunnerBot,
+        yBBIn, yBBOut, ySBIn, ySBOut, yTopS, zTopS, yBotS, zBotS, lenS, lenTube
       };
       return masterGroup;
     }
@@ -15233,9 +15404,9 @@ void main() {
       const pGroup = new THREE.Group();
       pGroup.position.set(xCenter - 70.0, -13.0 * ELLE_M, 0.0);
       const R_drum = 1.0 * ELLE_M;               // 1.0 Elle (46.7 cm) Trommelradius
-      const zBot = 1.00;                       // Untere Umlenktrommel im Doppelboden |PFU1/2|
+      const zBot = 1.0 * ELLE_M;                 // 0.467 m: Untere Umlenktrommel im Doppelboden |PFU1/2|
       const zD2Drv = 6.00 + 5.48 * ELLE_M;       // 8.557 m: Deck-2-Antriebs- & Spannwalzenstation exakt auf Höhe der Vorgelegewelle!
-      const zTop = 1.00 + 23.0 * ELLE_M;       // 11.733 m: Obere Auswurftrommel auf Deck 3 |PAT1/2|
+      const zTop = 1.00 + 23.0 * ELLE_M;         // 11.733 m: Obere Auswurftrommel auf Deck 3 |PAT1/2|
       const oakMat = Arche.Materials.mechOak;
       const cypressMat = Arche.Materials.mechCypress;
       const hornbeamMat = Arche.Materials.mechHornbeam;
@@ -15251,33 +15422,44 @@ void main() {
       drumCoreGeo.rotateZ(Math.PI * 0.5);
       drumFlangeGeo.rotateZ(Math.PI * 0.5);
       drumAxleGeo.rotateZ(Math.PI * 0.5);
-      [zBot, zTop].forEach((zD, idxD) => {
+      [zBot, zD2Drv, zTop].forEach((zD, idxD) => {
         const dRot = new THREE.Group();
         dRot.position.set(0, 0, zD);
-        dRot.add(new THREE.Mesh(drumCoreGeo, hornbeamMat));
-        for (let sl = 0; sl < 12; sl++) {
-          const aSl = (sl / 12.0) * Math.PI * 2.0;
-          const sM = new THREE.Mesh(slatGeo, oakMat);
-          sM.position.set(0, Math.cos(aSl) * R_drum, Math.sin(aSl) * R_drum);
-          sM.rotation.x = aSl;
-          dRot.add(sM);
+        const procDrum = new THREE.Group();
+        const rScale = (idxD === 1) ? 0.62 : 1.0;
+        if (idxD === 1) {
+          const midCore = new THREE.Mesh(drumCoreGeo, hornbeamMat);
+          midCore.scale.set(1.0, rScale, rScale);
+          procDrum.add(midCore);
+          procDrum.add(new THREE.Mesh(drumAxleGeo, oakMat));
+        } else {
+          procDrum.add(new THREE.Mesh(drumCoreGeo, hornbeamMat));
+          for (let sl = 0; sl < 12; sl++) {
+            const aSl = (sl / 12.0) * Math.PI * 2.0;
+            const sM = new THREE.Mesh(slatGeo, oakMat);
+            sM.position.set(0, Math.cos(aSl) * R_drum, Math.sin(aSl) * R_drum);
+            sM.rotation.x = aSl;
+            procDrum.add(sM);
+          }
+          [-1.02 * ELLE_M, 1.02 * ELLE_M].forEach((dxF) => {
+            const flM = new THREE.Mesh(drumFlangeGeo, oakMat);
+            flM.position.x = dxF;
+            procDrum.add(flM);
+          });
+          procDrum.add(new THREE.Mesh(drumAxleGeo, oakMat));
         }
-        [-1.02 * ELLE_M, 1.02 * ELLE_M].forEach((dxF) => {
-          const flM = new THREE.Mesh(drumFlangeGeo, oakMat);
-          flM.position.x = dxF;
-          dRot.add(flM);
-        });
-        dRot.add(new THREE.Mesh(drumAxleGeo, oakMat));
+        if (idxD === 2) {
+          const topCrown = createCrownWheelMesh(R_drum + 1.2 * HANDBREITE_M, 0.09, 16, 'X', 1, oakMat, hornbeamMat);
+          topCrown.position.x = 1.65 * ELLE_M;
+          dRot.add(topCrown);
+        }
+        dRot.add(procDrum);
+        dRot.userData.procGroup = procDrum;
         [-1.55 * ELLE_M, 1.55 * ELLE_M].forEach((dxBrg) => {
           const bStone = new THREE.Mesh(new THREE.BoxGeometry(2.8 * HANDBREITE_M, 3.2 * HANDBREITE_M, 2.8 * HANDBREITE_M), basaltMat);
           bStone.position.set(dxBrg, 0, zD);
           pGroup.add(bStone);
         });
-        if (idxD === 1) {
-          const topCrown = createCrownWheelMesh(R_drum + 1.2 * HANDBREITE_M, 0.09, 16, 'X', 1, oakMat, hornbeamMat);
-          topCrown.position.x = 1.65 * ELLE_M;
-          dRot.add(topCrown);
-        }
         pGroup.add(dRot);
         drumRotors.push(dRot);
       });
@@ -15309,41 +15491,49 @@ void main() {
       troughGeo.rotateZ(Math.PI * 0.5);
       cheekGeo.rotateZ(Math.PI * 0.5);
       fillGeo.rotateZ(Math.PI * 0.5);
-      for (let g = 0; g < 10; g++) {
-        const isAscending = (g < 5);
+      for (let g = 0; g < 14; g++) {
+        const isAscending = (g < 7);
         const buckGrp = new THREE.Group();
+        const procBuck = new THREE.Group();
         const shellM = new THREE.Mesh(troughGeo, isAscending ? ropeLoadMat : ropeEmptyMat);
-        buckGrp.add(shellM);
+        procBuck.add(shellM);
         [-0.48 * lenBuck, 0.48 * lenBuck].forEach((dxH) => {
           const chM = new THREE.Mesh(cheekGeo, hornbeamMat);
           chM.position.x = dxH;
-          buckGrp.add(chM);
+          procBuck.add(chM);
         });
         [-0.85 * ELLE_M, 0.85 * ELLE_M].forEach((dxCl) => {
           const clampM = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.11, 0.24), hornbeamMat);
           clampM.position.set(dxCl, 0, 0.05);
-          buckGrp.add(clampM);
+          procBuck.add(clampM);
         });
         const crossBar = new THREE.Mesh(new THREE.BoxGeometry(1.85 * ELLE_M, 0.075, 0.075), oakMat);
         crossBar.position.set(0, 0, 0.14);
-        buckGrp.add(crossBar);
+        procBuck.add(crossBar);
         if (isAscending) {
           const grM = new THREE.Mesh(fillGeo, ropeLoadMat);
           grM.position.z = 0.04;
-          buckGrp.add(grM);
+          procBuck.add(grM);
         }
+        buckGrp.add(procBuck);
+        buckGrp.userData.procGroup = procBuck;
         pGroup.add(buckGrp);
-        gondolas.push({ mesh: buckGrp, phaseOffset: (g % 5) / 5.0, isAscending });
+        gondolas.push({ mesh: buckGrp, phaseOffset: g / 14.0, isAscending });
       }
-      drumRotors.forEach((dR) => mergeRigidChildrenByMaterial(dR));
-      gondolas.forEach((g) => mergeRigidChildrenByMaterial(g.mesh));
+      drumRotors.forEach((dR) => mergeRigidChildrenByMaterial(dR.userData.procGroup));
+      gondolas.forEach((g) => mergeRigidChildrenByMaterial(g.mesh.userData.procGroup));
       const _patExclude = new Set([...drumRotors, ...gondolas.map((g) => g.mesh)]);
       mergeRigidChildrenByMaterial(pGroup, _patExclude);
       pGroup.userData.gondolas = gondolas;
+      pGroup.userData.buckets = gondolas;
       pGroup.userData.drumRotors = drumRotors;
+      pGroup.userData.botDrum = drumRotors[0];
+      pGroup.userData.midDrum = drumRotors[1];
+      pGroup.userData.topDrum = drumRotors[2];
       pGroup.userData.ropeLoadMat = ropeLoadMat;
       pGroup.userData.ropeEmptyMat = ropeEmptyMat;
       pGroup.userData.zBot = zBot;
+      pGroup.userData.zMid = zD2Drv;
       pGroup.userData.zTop = zTop;
       pGroup.userData.R_drum = R_drum;
       return pGroup;
@@ -15359,9 +15549,32 @@ void main() {
           drumRotors[d].rotation.x = -drumAngle;
         }
       }
+      // Geschlossene Umlaufbahn mit sanftem Kippen über oberer Auswurf- & unterer Schöpftrommel (14 Becher)
+      const arcLen = Math.PI * R_drum;
+      const totalPath = 2.0 * spanZ + 2.0 * arcLen;
       for (let i = 0; i < gondolas.length; i++) {
-        const g = gondolas[i], u = (liftPhase + g.phaseOffset) % 1.0;
-        g.mesh.position.set(0.0, g.isAscending ? R_drum : -R_drum, g.isAscending ? (zBot + u * spanZ) : (zTop - u * spanZ));
+        const g = gondolas[i];
+        const u = ((liftPhase * 0.5 + g.phaseOffset) % 1.0 + 1.0) % 1.0;
+        const s = u * totalPath;
+        if (s < spanZ) {
+          g.mesh.position.set(0.0, R_drum, zBot + s);
+          g.mesh.rotation.x = 0.0;
+        } else if (s < spanZ + arcLen) {
+          const a = ((s - spanZ) / arcLen) * Math.PI;
+          g.mesh.position.set(0.0, Math.cos(a) * R_drum, zTop + Math.sin(a) * R_drum);
+          g.mesh.rotation.x = -a;
+        } else if (s < 2.0 * spanZ + arcLen) {
+          const sd = s - (spanZ + arcLen);
+          g.mesh.position.set(0.0, -R_drum, zTop - sd);
+          g.mesh.rotation.x = -Math.PI;
+        } else {
+          const a = ((s - (2.0 * spanZ + arcLen)) / arcLen) * Math.PI;
+          g.mesh.position.set(0.0, -Math.cos(a) * R_drum, zBot - Math.sin(a) * R_drum);
+          g.mesh.rotation.x = -Math.PI - a;
+        }
+      }
+      if (Arche.Procedural && typeof Arche.Procedural.syncArkWaveBMachineryInstances === 'function') {
+        Arche.Procedural.syncArkWaveBMachineryInstances();
       }
     }
     Arche.Physics.evaluateGoepelShiftSchedule = function (timeOfDayHrs, isScheduleActive = false, overrideMode = null) {
@@ -15413,12 +15626,27 @@ void main() {
       if (!clutchGrp || !clutchGrp.userData.slideJaw) return;
       const ud = clutchGrp.userData;
       const offset = engaged ? 0.045 : 0.14;
+      const bOffset = engaged ? 0.00 : 0.17;
       if (ud.axis === 'X') {
         ud.slideJaw.position.x = offset;
         ud.forkM.rotation.y = engaged ? 0.0 : 0.25;
+        if (ud.blenderSlider) ud.blenderSlider.position.x = bOffset;
       } else {
         ud.slideJaw.position.y = offset;
         ud.forkM.rotation.x = engaged ? 0.0 : -0.25;
+        if (ud.blenderSlider) ud.blenderSlider.position.y = bOffset;
+      }
+      if (ud.blenderSliderInst && ud.blenderSliderInstIdx !== undefined) {
+        const im = ud.blenderSliderInst;
+        const _m = ud._sldDummy || (ud._sldDummy = new THREE.Object3D());
+        _m.position.copy(ud.blenderSliderBasePos);
+        if (ud.axis === 'X') _m.position.x += bOffset;
+        else _m.position.y += bOffset;
+        _m.rotation.set(0, 0, ud.axis === 'Y' ? (Math.PI * 0.5) : 0.0);
+        _m.scale.set(1, 1, 1);
+        _m.updateMatrix();
+        im.setMatrixAt(ud.blenderSliderInstIdx, _m.matrix);
+        im.instanceMatrix.needsUpdate = true;
       }
     }
     function updateGoepelTransmissionKinematics(gMaster, deltaAngleRad, shiftState = null) {
@@ -15489,8 +15717,9 @@ void main() {
       }
       if (millOn) {
         if (ud.underMillShaft) ud.underMillShaft.rotation.x -= pinionStep;
-        for (let m = 0; m < ud.millRotors.length; m++) {
-          ud.millRotors[m].rotation.z += pinionStep;
+        if (ud.millRotors[0]) ud.millRotors[0].rotation.z += pinionStep;
+        for (let m = 1; m < ud.millRotors.length; m++) {
+          ud.millRotors[m].rotation.z += pinionStep * 2.0; // 12:1 Läufersteine
         }
       }
       if (pumpOn) {
@@ -15538,17 +15767,46 @@ void main() {
       [goepelWheelS4, goepelWheelS11].forEach((gW) => {
         if (!gW || !gW.userData || !gW.userData.screwRotors) return;
         gW.userData.screwRotors.forEach((sRot) => {
-          if (sRot.children[2]) {
-            sRot.children[2].visible = pumpOn;
-            if (isTherm && sRot.children[2].material) {
+          const wMesh = (sRot.userData && sRot.userData.waterHelixMesh) || sRot.children[2];
+          if (wMesh) {
+            wMesh.visible = pumpOn;
+            if (isTherm && wMesh.material) {
               computeThermalRGB(ctx.T_bilge_C, rgbScratch);
-              sRot.children[2].material.color.setRGB(rgbScratch[0], rgbScratch[1], rgbScratch[2]);
-            } else if (sRot.children[2].material) {
-              sRot.children[2].material.color.setHex(0x1CA8B8);
+              wMesh.material.color.setRGB(rgbScratch[0], rgbScratch[1], rgbScratch[2]);
+            } else if (wMesh.material) {
+              wMesh.material.color.setHex(0x1CA8B8);
             }
           }
         });
       });
+      if (typeof galley3DGroup !== 'undefined' && galley3DGroup && galley3DGroup.userData && galley3DGroup.userData.steamClouds) {
+        const clouds = galley3DGroup.userData.steamClouds;
+        const sIM = galley3DGroup.userData.steamInstMesh;
+        const showSteam = isTex && Boolean(params.showFixtures) && (Arche.Environment.zSliceMaxLocal === undefined || Arche.Environment.zSliceMaxLocal > 11.2);
+        const tStm = (typeof S !== 'undefined' && S.simTime) ? S.simTime : 0.0;
+        if (sIM) sIM.visible = showSteam;
+        if (showSteam && sIM) {
+          const _sObj = galley3DGroup.userData._steamDummy || (galley3DGroup.userData._steamDummy = new THREE.Object3D());
+          let instIdx = 0;
+          for (let c = 0; c < clouds.length; c++) {
+            const cl = clouds[c];
+            cl.visible = true;
+            for (let p = 0; p < 3; p++) {
+              const ph = (tStm * 0.34 + c * 0.31 + p * 0.333) % 1.0;
+              _sObj.position.set(
+                cl.position.x + Math.sin(tStm * 1.4 + c * 2.1 + p * 1.7) * 0.06 * ph,
+                cl.position.y + Math.cos(tStm * 1.1 + c * 1.3 + p * 2.3) * 0.05 * ph,
+                cl.position.z + ph * 0.88
+              );
+              const sc = 0.55 + ph * 1.15;
+              _sObj.scale.set(sc, sc, sc * 0.82);
+              _sObj.updateMatrix();
+              sIM.setMatrixAt(instIdx++, _sObj.matrix);
+            }
+          }
+          sIM.instanceMatrix.needsUpdate = true;
+        }
+      }
       [goepelWheelS4, goepelWheelS11].forEach((gW, gIdx) => {
         if (!gW || !gW.userData || !gW.userData.oakMat) return;
         const u = gW.userData;
@@ -17884,7 +18142,6 @@ applyArkInteriorLighting(reflectedLight.indirectDiffuse, diffuseColor.rgb, vShip
             if (iSec === 0 || iSec === 13) {
               d2PenZones.push([xS0 + 0.95, xS0 + 3.65, sideSign, 5.35, 7.35], [xS0 + 6.35, xS0 + 9.05, sideSign, 5.35, 7.35]);
               d2PenZones.push([xS0 + 2.30, xS0 + 7.70, sideSign, 7.60, 10.85]);
-              d2MezzZones.push([xS0 + 0.95, xS0 + 3.65, sideSign, 5.35, 7.05], [xS0 + 6.35, xS0 + 9.05, sideSign, 5.35, 7.05]);
             }
           }
         });
@@ -17896,7 +18153,6 @@ applyArkInteriorLighting(reflectedLight.indirectDiffuse, diffuseColor.rgb, vShip
         [-1, 1].forEach((sideSign) => {
           if (iSec === 6 && sideSign < 0) return;
           d2PenZones.push([xS0 + 3.30, xS0 + 6.70, sideSign, 7.60, 10.95]);
-          d2MezzZones.push([xS0 + 3.30, xS0 + 6.70, sideSign, 8.05, 10.95]);
         });
       }
       // 2B) 476 Huftiere unten in den umzäunten Buchten (Z = 6.22 m): Proportional nach Buchtengröße mit Hex-Versatz!
@@ -18113,13 +18369,13 @@ applyArkInteriorLighting(reflectedLight.indirectDiffuse, diffuseColor.rgb, vShip
         addInst(bList, xT, yT, zT, yawT, wingSpan, 0.46, 0.52, batPal[gId % batPal.length], 'fix_aviary_rodent', 8.8, gId, [tb[0] - 0.44, tb[0] + 0.44, tb[1] - 0.28, tb[1] + 0.28], 0.055);
       }
       [
-        [65.2, -5.12, 10.125, Math.PI, 0x9E3D2B, 'fix_quarters_atrium'], // 1. Noah steht frei VOR dem Tontafel-Chronikpult (Y=-5.45m, Blick -Y zum Pult!)
-        [63.8, -1.95, 10.125, Math.PI, 0x3B6E8C, 'fix_quarters_atrium'], // 2. Noahs Frau steht frei VOR dem Refektoriumstisch (Y=-2.35m, Blick -Y zur Tafel!)
-        [65.6, 7.92, 10.380, 0.0, 0xC87A38, 'fix_galley'],          // 3. Schwiegertochter 1 steht frei auf dem Ziegelbett VOR den Basalt-Kochkesseln (Y=+8.45m, Blick +Y!)
-        [63.4, 7.92, 10.380, 0.0, 0x5A8242, 'fix_galley'],          // 4. Ham steht frei VOR dem Rüsttisch der Basalt-Kombüse (Y=+8.45m, Blick +Y!)
+        [66.75, -5.55, 10.125, Math.PI, 0x9E3D2B, 'fix_quarters_atrium'], // 1. Noah steht frei VOR dem Tontafel-Chronikpult (ark_crew_study_desk_set, Blick -Y!)
+        [63.8, -1.95, 10.125, Math.PI, 0x3B6E8C, 'fix_quarters_atrium'], // 2. Noahs Frau steht frei VOR dem 8er-Refektoriumstisch (Y=-2.125m, Blick -Y zur Tafel!)
+        [65.6, 7.92, 10.428, 0.0, 0xC87A38, 'fix_galley'],          // 3. Schwiegertochter 1 steht bündig auf dem Kombüsen-Ziegelbett VOR den 3 Bronzekesseln (Blick +Y!)
+        [63.4, 7.92, 10.428, 0.0, 0x5A8242, 'fix_galley'],          // 4. Ham steht bündig auf dem Kombüsen-Ziegelbett VOR dem Rüsttisch (Blick +Y!)
         [73.1, 9.32, 10.125, 0.0, 0x7A5432, 'fix_workshop_optics'], // 5. Sem steht frei VOR der Eichen-Hobelbank (Y=+9.85m, Blick +Y zur Werkbank!)
         [77.6, 7.02, 10.125, 0.0, 0xA68246, 'fix_workshop_optics'], // 6. Jafet steht frei VOR der Wipp-Drechselbank (Y=+7.55m, Blick +Y!)
-        [72.2, -7.55, 10.125, Math.PI, 0x8C4A6E, 'fix_svalbard'],        // 7. Schwiegertochter 2 steht im freien Mittelgang des Saatguttresors VOR der Aschetruhe (Y=-8.40m, Blick -Y!)
+        [72.2, -8.85, 10.125, Math.PI, 0x8C4A6E, 'fix_svalbard'],        // 7. Schwiegertochter 2 steht im 1,72-m-Mittelgang des Saatguttresors zwischen Amphoren & Aschetruhe (Blick -Y!)
         [34.2, -4.45, 6.125, 0.25, 0x4A6B8C, 'fix_goepel']           // 8. Schwiegertochter 3 steht frei am vorderen Ochsen-Göpel (S4 D2, Blick +Y zum Zugbaum!)
       ].forEach(([cx, cy, cz, yaw, col, key], idxC) => {
         addInst(cList, cx, cy, cz, yaw, 1.0, 1.0, 1.0, col, key, 37.0, -(idxC + 1), [cx - 0.3, cx + 0.3, cy - 0.3, cy + 0.3]);
@@ -19288,6 +19544,9 @@ diffuseColor.rgb *= kernel;`
       if (Arche.Procedural && typeof Arche.Procedural.syncArkWaveAVisibility === 'function') {
         Arche.Procedural.syncArkWaveAVisibility();
       }
+      if (Arche.Procedural && typeof Arche.Procedural.syncArkWaveBVisibility === 'function') {
+        Arche.Procedural.syncArkWaveBVisibility();
+      }
     }
     const edgePositions = [];
     const nodePositions = [];
@@ -20072,13 +20331,25 @@ transformed.z = -min(58.0, max(12.0, uWaterDepth * 0.42));
       function _collectLodGroupsFromScene(rawScene) {
         const grouped = new Map();
         rawScene.traverse((obj) => {
-          if (!obj || !obj.isMesh || !obj.geometry) return;
-          const m = /^(.*)_LOD([0-3])$/i.exec(obj.name || '');
+          if (!obj || !obj.name) return;
+          const m = /^(.*)_LOD([0-3])$/i.exec(obj.name);
           if (!m) return;
           const baseName = m[1];
           const lodIdx = Number(m[2]);
-          if (!grouped.has(baseName)) grouped.set(baseName, {});
-          grouped.get(baseName)[lodIdx] = obj;
+          if (obj.isMesh && obj.geometry) {
+            if (!grouped.has(baseName)) grouped.set(baseName, {});
+            grouped.get(baseName)[lodIdx] = obj;
+          } else if (obj.children && obj.children.length > 0) {
+            const prims = [];
+            for (let i = 0; i < obj.children.length; i++) {
+              const ch = obj.children[i];
+              if (ch && ch.isMesh && ch.geometry) prims.push(ch);
+            }
+            if (prims.length > 0) {
+              if (!grouped.has(baseName)) grouped.set(baseName, {});
+              grouped.get(baseName)[lodIdx] = prims;
+            }
+          }
         });
         return grouped;
       }
@@ -20437,9 +20708,8 @@ transformed.z = -min(58.0, max(12.0, uWaterDepth * 0.42));
               const meshes = [];
               const ttKey = BASE_TOOLTIP_MAP[baseName] || 'qs';
               [0, 1, 2, 3].forEach((lodIdx) => {
-                const srcObj = lodMap[lodIdx];
-                if (!srcObj) return;
-                const geo = _prepareArkGeometry(srcObj.geometry, true);
+                const srcEntry = lodMap[lodIdx];
+                if (!srcEntry) return;
                 const mapMat = (m) => {
                   const nm = (m && m.name) ? m.name : 'MAT_ARK_KOPHER';
                   if (nm === 'MAT_ARK_DECKS') {
@@ -20449,15 +20719,36 @@ transformed.z = -min(58.0, max(12.0, uWaterDepth * 0.42));
                   }
                   return arkState.baseMaterials[nm] || arkState.baseMaterials.MAT_ARK_KOPHER;
                 };
-                const matUse = Array.isArray(srcObj.material) ? srcObj.material.map(mapMat) : mapMat(srcObj.material);
-                const mesh = new THREE.Mesh(geo, matUse);
-                mesh.name = `${baseName}_LOD${lodIdx}`;
-                mesh.castShadow = canCastShadow && (lodIdx <= 1);
-                mesh.receiveShadow = true;
-                mesh.userData.arkTooltipKey = ttKey;
-                mesh.userData.arkBasePartName = baseName;
-                lodGroup.addLevel(mesh, dists[Math.min(lodIdx, dists.length - 1)]);
-                meshes.push(mesh);
+                if (Array.isArray(srcEntry)) {
+                  const grp = new THREE.Group();
+                  grp.name = `${baseName}_LOD${lodIdx}`;
+                  for (let pi = 0; pi < srcEntry.length; pi++) {
+                    const srcObj = srcEntry[pi];
+                    const geo = _prepareArkGeometry(srcObj.geometry, true);
+                    const matUse = Array.isArray(srcObj.material) ? srcObj.material.map(mapMat) : mapMat(srcObj.material);
+                    const mesh = new THREE.Mesh(geo, matUse);
+                    mesh.name = `${baseName}_LOD${lodIdx}_p${pi}`;
+                    mesh.castShadow = canCastShadow && (lodIdx <= 1);
+                    mesh.receiveShadow = true;
+                    mesh.userData.arkTooltipKey = ttKey;
+                    mesh.userData.arkBasePartName = baseName;
+                    grp.add(mesh);
+                    meshes.push(mesh);
+                  }
+                  lodGroup.addLevel(grp, dists[Math.min(lodIdx, dists.length - 1)]);
+                } else {
+                  const srcObj = srcEntry;
+                  const geo = _prepareArkGeometry(srcObj.geometry, true);
+                  const matUse = Array.isArray(srcObj.material) ? srcObj.material.map(mapMat) : mapMat(srcObj.material);
+                  const mesh = new THREE.Mesh(geo, matUse);
+                  mesh.name = `${baseName}_LOD${lodIdx}`;
+                  mesh.castShadow = canCastShadow && (lodIdx <= 1);
+                  mesh.receiveShadow = true;
+                  mesh.userData.arkTooltipKey = ttKey;
+                  mesh.userData.arkBasePartName = baseName;
+                  lodGroup.addLevel(mesh, dists[Math.min(lodIdx, dists.length - 1)]);
+                  meshes.push(mesh);
+                }
               });
               if (lodGroup.levels.length >= 2) {
                 Arche.Assets.configureSmoothLODGroup(lodGroup, isExt
@@ -20515,6 +20806,7 @@ transformed.z = -min(58.0, max(12.0, uWaterDepth * 0.42));
             });
 
             if (trimMat) {
+              arkState.masterTrimMat = trimMat;
               const carpGroup = new THREE.Group();
               carpGroup.name = 'ark_wave_a_carpentry_root';
               const makeInst = (baseName, maxCount, ttKey) => {
@@ -20604,6 +20896,1055 @@ transformed.z = -min(58.0, max(12.0, uWaterDepth * 0.42));
         return arkState.hydratePromise;
       }
       Arche.Procedural.hydrateArkWaveAKits3D = hydrateArkWaveAKits3D;
+    })();
+
+    // =========================================================================
+    // 1C. ARCHE-WELLE B: MASCHINENBAU (B1), 7.920 FÄSSER, HABITATE (B2) & MANNSCHAFTSRÄUME (B3)
+    //     (`ark_wave_b1_machines_rooms_kit.glb`, `ark_wave_b2_habitats_kit.glb`,
+    //      `ark_crew_quarters_kit.glb` + 1K-Stroh-Material `hay_straw_*`)
+    // =========================================================================
+    (function initArkWaveBPipeline() {
+      const wbState = {
+        b1Loaded: false,
+        b2Loaded: false,
+        b3Loaded: false,
+        hydratePromise: null,
+        rootGroup: null,
+        b1Group: null,
+        b1D3Group: null,
+        b2Group: null,
+        b3Group: null,
+        opticsGroup: null,
+        d1Group: null,
+        d2Group: null,
+        d3Group: null,
+        hayGroup: null,
+        hayInstMeshes: [],
+        barrelHeroInstMesh: null,
+        barrelLodGeos: null,
+        barrelActiveLod: 0,
+        barrelCutawayApplied: null,
+        barrelOrigMatrices: null,
+        amphoraHeroInstMesh: null,
+        patDrumInstMesh: null,
+        patBucketInstMesh: null,
+        clutchSliderInstMesh: null,
+        heroLodGroups: [],
+        goepelAttached: [],
+        paternosterAttached: [],
+        masterTrimMat: null,
+        hayStrawMat: null,
+        lastCullMode: 'OPEN',
+        lastLodCamPos: new THREE.Vector3(1e9, 1e9, 1e9),
+        lastLodFrame: -999
+      };
+      Arche.Procedural.arkWaveB = wbState;
+
+      const _WB_DUMMY = new THREE.Object3D();
+      const _WB_CAM = new THREE.Vector3();
+
+      function _loadTexAsyncWB(loader, url, isColor) {
+        return new Promise((resolve) => {
+          try {
+            loader.load(url, (tex) => {
+              tex.wrapS = THREE.RepeatWrapping;
+              tex.wrapT = THREE.RepeatWrapping;
+              tex.flipY = false;
+              Arche.Assets.applyCleanTextureFiltering(tex, isColor);
+              resolve(tex);
+            }, undefined, () => resolve(null));
+          } catch (_) {
+            resolve(null);
+          }
+        });
+      }
+
+      function _prepGeoWB(rawGeo, bakeZUp = true) {
+        const geo = rawGeo.clone();
+        if (bakeZUp) geo.rotateX(Math.PI * 0.5);
+        if (geo.attributes && geo.attributes.color) geo.deleteAttribute('color');
+        if (geo.attributes && geo.attributes.uv && !geo.attributes.uv2) {
+          geo.setAttribute('uv2', geo.attributes.uv);
+        }
+        geo.computeBoundingBox();
+        geo.computeBoundingSphere();
+        return geo;
+      }
+
+      // Sammelt sowohl einzelne Meshes als auch Multi-Primitive-Gruppen (z.B. ark_hay_bale_stack_LOD0 mit 2 Materialien)
+      function _collectWaveBNodes(sceneRoot) {
+        const map = new Map(); // baseName -> { 0: [Mesh...], 1: [...], 2: [...] }
+        const addEntry = (baseName, lodIdx, meshList) => {
+          if (!meshList || meshList.length === 0) return;
+          if (!map.has(baseName)) map.set(baseName, {});
+          map.get(baseName)[lodIdx] = meshList;
+        };
+        sceneRoot.traverse((obj) => {
+          if (!obj || !obj.name) return;
+          const m = obj.name.match(/^(.+)_LOD([0-2])$/);
+          if (!m) return;
+          const baseName = m[1];
+          const lodIdx = parseInt(m[2], 10);
+          if (obj.isMesh && obj.geometry) {
+            addEntry(baseName, lodIdx, [obj]);
+          } else if (obj.children && obj.children.length > 0) {
+            const prims = [];
+            for (let i = 0; i < obj.children.length; i++) {
+              const ch = obj.children[i];
+              if (ch && ch.isMesh && ch.geometry) prims.push(ch);
+            }
+            if (prims.length > 0) addEntry(baseName, lodIdx, prims);
+          }
+        });
+        return map;
+      }
+
+      function _ensureTrimMaterial(fallbackScene) {
+        if (Arche.Procedural.arkWaveA && Arche.Procedural.arkWaveA.masterTrimMat) {
+          wbState.masterTrimMat = Arche.Procedural.arkWaveA.masterTrimMat;
+          return wbState.masterTrimMat;
+        }
+        if (wbState.masterTrimMat) return wbState.masterTrimMat;
+        let trimMat = null;
+        if (fallbackScene) {
+          fallbackScene.traverse((o) => {
+            if (!trimMat && o && o.isMesh && o.material) {
+              const srcM = Array.isArray(o.material) ? o.material[0] : o.material;
+              if (srcM && srcM.name !== 'MAT_ARK_HAY_STRAW') {
+                trimMat = srcM.clone();
+                trimMat.name = 'Mat_Ark_Master_Trim';
+                trimMat.side = THREE.FrontSide;
+                trimMat.vertexColors = false;
+                trimMat.transparent = false;
+                trimMat.depthWrite = true;
+                trimMat.color.setHex(0xffffff);
+                trimMat.roughness = 0.86;
+                trimMat.metalness = 0.04;
+                trimMat.envMapIntensity = 0.34;
+                Arche.Assets.attachArcheMaterialHooks(trimMat, {
+                  category: 'ark',
+                  detailType: 'wood',
+                  dirtStrength: 0.0,
+                  isArkInterior: true,
+                  wind: false,
+                  noDeckClip: false,
+                  tempC: 22.0,
+                  etaEC5: 25.0
+                });
+              }
+            }
+          });
+        }
+        wbState.masterTrimMat = trimMat;
+        return trimMat;
+      }
+
+      async function _ensureHayStrawMaterial() {
+        if (wbState.hayStrawMat) return wbState.hayStrawMat;
+        const texLoader = new THREE.TextureLoader();
+        const [map, normalMap, roughnessMap] = await Promise.all([
+          _loadTexAsyncWB(texLoader, 'assets/textures/ark/materials/hay_straw_basecolor.png', true),
+          _loadTexAsyncWB(texLoader, 'assets/textures/ark/materials/hay_straw_normal.png', false),
+          _loadTexAsyncWB(texLoader, 'assets/textures/ark/materials/hay_straw_roughness.png', false)
+        ]);
+        const hayMat = new THREE.MeshStandardMaterial({
+          name: 'MAT_ARK_HAY_STRAW',
+          color: 0xffffff,
+          map: map || (Arche.Procedural && Arche.Procedural.DUMMY_TEX) || null,
+          normalMap: normalMap || (Arche.Procedural && Arche.Procedural.DUMMY_TEX) || null,
+          roughnessMap: roughnessMap || (Arche.Procedural && Arche.Procedural.DUMMY_TEX) || null,
+          roughness: 0.94,
+          metalness: 0.0,
+          envMapIntensity: 0.24,
+          side: THREE.FrontSide,
+          vertexColors: false,
+          transparent: false,
+          depthWrite: true
+        });
+        if (hayMat.normalScale) hayMat.normalScale.set(0.75, 0.75);
+        // Exakt identische attachArcheMaterialHooks-Signatur wie Mat_Ark_Master_Trim -> garantiert 0 neue Shader-Programme!
+        Arche.Assets.attachArcheMaterialHooks(hayMat, {
+          category: 'ark',
+          detailType: 'wood',
+          dirtStrength: 0.0,
+          isArkInterior: true,
+          wind: false,
+          noDeckClip: false,
+          tempC: 22.0,
+          etaEC5: 25.0
+        });
+        wbState.hayStrawMat = hayMat;
+        return hayMat;
+      }
+
+      function _buildHeroLODGroup(lodMap, baseName, mat, ttKey) {
+        if (!lodMap) return null;
+        const lodGroup = new THREE.Group();
+        lodGroup.name = `${baseName}_lod`;
+        const levels = [0, 1, 2];
+        let hasAny = false;
+        for (let li = 0; li < levels.length; li++) {
+          const prims = lodMap[li] || lodMap[0] || lodMap[1] || lodMap[2];
+          if (!prims || prims.length === 0) continue;
+          const levelNode = (prims.length === 1)
+            ? new THREE.Mesh(_prepGeoWB(prims[0].geometry, true), mat)
+            : new THREE.Group();
+          if (prims.length === 1) {
+            levelNode.name = `${baseName}_L${li}`;
+            levelNode.castShadow = false;
+            levelNode.receiveShadow = true;
+            levelNode.userData.arkTooltipKey = ttKey;
+          } else {
+            levelNode.name = `${baseName}_L${li}`;
+            for (let pi = 0; pi < prims.length; pi++) {
+              const pm = new THREE.Mesh(_prepGeoWB(prims[pi].geometry, true), mat);
+              pm.castShadow = false;
+              pm.receiveShadow = true;
+              pm.userData.arkTooltipKey = ttKey;
+              levelNode.add(pm);
+            }
+          }
+          levelNode.visible = (li === 0);
+          lodGroup.add(levelNode);
+          hasAny = true;
+        }
+        if (!hasAny) return null;
+        if (Arche.Assets && typeof Arche.Assets.configureSmoothLODGroup === 'function') {
+          Arche.Assets.configureSmoothLODGroup(lodGroup, {
+            lodDistance: 50.0,
+            lodFadeBand: 4.5,
+            maxVisibleDist: 145.0
+          });
+        }
+        wbState.heroLodGroups.push(lodGroup);
+        return lodGroup;
+      }
+
+      function _buildInstancedFromNode(lodMap, baseName, matrices, mat, ttKey, parentGrp, preferLod = 0) {
+        if (!lodMap || !matrices || matrices.length === 0) return null;
+        const prims = lodMap[preferLod] || lodMap[0] || lodMap[1] || lodMap[2];
+        if (!prims || prims.length === 0) return null;
+        const geo = _prepGeoWB(prims[0].geometry, true);
+        const im = new THREE.InstancedMesh(geo, mat, matrices.length);
+        im.name = `${baseName}_inst`;
+        im.castShadow = false;
+        im.receiveShadow = true;
+        im.frustumCulled = false;
+        im.userData.arkTooltipKey = ttKey;
+        for (let i = 0; i < matrices.length; i++) {
+          im.setMatrixAt(i, matrices[i]);
+        }
+        im.count = matrices.length;
+        im.instanceMatrix.needsUpdate = true;
+        im.visible = (matrices.length > 0);
+        if (parentGrp) parentGrp.add(im);
+        return im;
+      }
+
+      function _makeMatrix(px, py, pz, rx, ry, rz, sx, sy, sz) {
+        _WB_DUMMY.position.set(px, py, pz);
+        _WB_DUMMY.rotation.set(rx || 0, ry || 0, rz || 0);
+        _WB_DUMMY.scale.set(sx === undefined ? 1 : sx, sy === undefined ? 1 : sy, sz === undefined ? 1 : sz);
+        _WB_DUMMY.updateMatrix();
+        return _WB_DUMMY.matrix.clone();
+      }
+
+      // Paternoster-Rahmen/Trog: DB-Trog (Z < 2.2) bleibt unten im Sumpf (Z = 0.35), D3-Auswurfschurre (Z >= 2.2) wird exakt auf D3 (Z + 8.50 m = 10.88..11.78 m) gehoben!
+      function _preparePaternosterFrameGeo(rawGeo) {
+        const geo = _prepGeoWB(rawGeo, true);
+        const pos = geo.attributes.position;
+        if (!pos) return geo;
+        const idx = geo.index;
+        const nTris = idx ? (idx.count / 3) : (pos.count / 3);
+        const shiftedVerts = new Uint8Array(pos.count);
+        for (let t = 0; t < nTris; t++) {
+          const i0 = idx ? idx.getX(t * 3) : (t * 3);
+          const i1 = idx ? idx.getX(t * 3 + 1) : (t * 3 + 1);
+          const i2 = idx ? idx.getX(t * 3 + 2) : (t * 3 + 2);
+          const z0 = pos.getZ(i0), z1 = pos.getZ(i1), z2 = pos.getZ(i2);
+          const minZ = Math.min(z0, z1, z2);
+          if (minZ >= 2.20) {
+            shiftedVerts[i0] = 1; shiftedVerts[i1] = 1; shiftedVerts[i2] = 1;
+          }
+        }
+        for (let v = 0; v < pos.count; v++) {
+          if (shiftedVerts[v]) {
+            pos.setZ(v, pos.getZ(v) + 8.50);
+          }
+        }
+        pos.needsUpdate = true;
+        geo.computeBoundingBox();
+        geo.computeBoundingSphere();
+        return geo;
+      }
+
+      function syncArkWaveBBarrelsCount() {
+        const procB = Arche.Procedural && Arche.Procedural.barrelInstMesh;
+        const heroB = wbState.barrelHeroInstMesh;
+        if (procB && heroB) {
+          const maxB = heroB.userData.maxCount || gpuBarrelInstances.length;
+          heroB.count = Math.max(0, Math.min(maxB, procB.count));
+          const cutBB = Boolean(Arche.Environment && Arche.Environment.barrelUniforms && Arche.Environment.barrelUniforms.uCutawayBB && Arche.Environment.barrelUniforms.uCutawayBB.value > 0.5);
+          if (wbState.barrelCutawayApplied !== cutBB && wbState.barrelOrigMatrices) {
+            wbState.barrelCutawayApplied = cutBB;
+            const orig = wbState.barrelOrigMatrices;
+            const dst = heroB.instanceMatrix.array;
+            for (let i = 0, n = gpuBarrelInstances.length; i < n; i++) {
+              const hide = cutBB && Boolean(gpuBarrelInstances[i].cutawayHide);
+              const o16 = i * 16;
+              if (hide) {
+                for (let k = 0; k < 16; k++) dst[o16 + k] = 0.0;
+                dst[o16 + 15] = 1.0;
+              } else {
+                for (let k = 0; k < 16; k++) dst[o16 + k] = orig[o16 + k];
+              }
+            }
+            heroB.instanceMatrix.needsUpdate = true;
+          }
+        }
+        const procA = Arche.Procedural && Arche.Procedural.amphoraInstMesh;
+        const heroA = wbState.amphoraHeroInstMesh;
+        if (procA && heroA) {
+          const maxA = heroA.userData.maxCount || 40;
+          heroA.count = Math.max(0, Math.min(maxA, procA.count));
+        }
+        if (wbState.hayInstMeshes && wbState.hayInstMeshes.length > 0 && Arche.Groups && Arche.Groups.hayBale3D && Arche.Groups.hayBale3D.children) {
+          const hKids = Arche.Groups.hayBale3D.children;
+          let visRatio = 1.0;
+          if (hKids.length > 0) {
+            let vCnt = 0;
+            for (let i = 0; i < hKids.length; i++) if (hKids[i].visible) vCnt++;
+            visRatio = vCnt / hKids.length;
+          }
+          const nStacks = Math.max(1, Math.min(4, Math.round(4 * visRatio)));
+          for (let i = 0; i < wbState.hayInstMeshes.length; i++) {
+            wbState.hayInstMeshes[i].count = nStacks;
+          }
+        }
+      }
+      Arche.Procedural.syncArkWaveBBarrelsCount = syncArkWaveBBarrelsCount;
+
+      function syncArkWaveBVisibility(cullModeOverride) {
+        const cullMode = cullModeOverride || (typeof liveState !== 'undefined' && liveState && liveState.activeCullMode) || wbState.lastCullMode || 'OPEN';
+        wbState.lastCullMode = cullMode;
+        const isTextured = Boolean(Arche.State && Arche.State.viewShader === 'TEXTURED');
+        const isOpaque = (typeof params !== 'undefined' && params.hullOpacity >= 0.80);
+        const showFix = Boolean(typeof params === 'undefined' || params.showFixtures);
+        const isExtClosed = (cullMode === 'EXTERIOR_CLOSED' || cullMode === 'PORTAL_PEEK');
+        const zSlice = (Arche.Environment && Arche.Environment.zSliceMaxLocal !== undefined) ? Arche.Environment.zSliceMaxLocal : 100.0;
+
+        const wantB = isTextured && isOpaque && showFix && !isExtClosed;
+        const useB1 = wantB && wbState.b1Loaded;
+        const useB2 = wantB && wbState.b2Loaded;
+        const useB3 = wantB && wbState.b3Loaded;
+
+        if (wbState.rootGroup) wbState.rootGroup.visible = (useB1 || useB2 || useB3);
+        if (wbState.b1Group) wbState.b1Group.visible = useB1;
+        if (wbState.b1D3Group) wbState.b1D3Group.visible = useB1 && (zSlice > 10.10);
+        if (wbState.b2Group) wbState.b2Group.visible = useB2;
+        if (wbState.b3Group) wbState.b3Group.visible = useB3 && (zSlice > 10.10);
+        if (wbState.d1Group) wbState.d1Group.visible = useB2 && (zSlice > 2.05);
+        if (wbState.d2Group) wbState.d2Group.visible = useB2 && (zSlice > 6.05);
+        if (wbState.d3Group) wbState.d3Group.visible = useB2 && (zSlice > 10.10);
+        if (wbState.hayGroup) wbState.hayGroup.visible = useB2 && (zSlice > 6.05);
+        if (wbState.opticsGroup) wbState.opticsGroup.visible = useB1 && (zSlice > 13.50);
+        if (wbState.patDrumInstMesh) wbState.patDrumInstMesh.visible = useB1;
+        if (wbState.patBucketInstMesh) wbState.patBucketInstMesh.visible = useB1;
+        if (wbState.clutchSliderInstMesh) wbState.clutchSliderInstMesh.visible = useB1 && (zSlice > 6.05);
+
+        // 1. bucketFixtures, boneInstMesh & beddingVolumeMesh 0-ms Masken-Switch (EC5/THERMO/file:// = 0!)
+        const mask = (useB1 ? 1 : 0) | (useB2 ? 2 : 0) | (useB3 ? 4 : 0);
+        if (Arche.Procedural && typeof Arche.Procedural.setBucketFixturesWaveBMask === 'function') {
+          Arche.Procedural.setBucketFixturesWaveBMask(mask);
+        }
+
+        // 2. Göpel & Paternoster: Prozedural-Ersatzteile ausblenden, Blender-Teile einblenden (16 Pivots bleiben aktiv!)
+        for (let i = 0; i < wbState.goepelAttached.length; i++) {
+          const ga = wbState.goepelAttached[i];
+          const ud = ga.gMaster && ga.gMaster.userData;
+          if (!ud) continue;
+          if (ud.procBaseGroup) ud.procBaseGroup.visible = !useB1;
+          if (ud.procRotorGroup) ud.procRotorGroup.visible = !useB1;
+          if (ud.bbMainPinion) ud.bbMainPinion.visible = !useB1;
+          if (ud.sbMainPinion) ud.sbMainPinion.visible = !useB1;
+          if (ud.procMillStaticGroup) ud.procMillStaticGroup.visible = !useB1;
+          if (ud.procMillRunnerGroups) ud.procMillRunnerGroups.forEach((g) => { g.visible = !useB1; });
+          if (ud.procScrewTubeGroups) ud.procScrewTubeGroups.forEach((g) => { g.visible = !useB1; });
+          if (ud.procScrewHelixGroups) ud.procScrewHelixGroups.forEach((g) => { g.visible = !useB1; });
+          [ud.clutchPat, ud.clutchMill, ud.clutchPump].forEach((cl) => {
+            if (!cl || !cl.userData) return;
+            for (let c = 0; c < cl.children.length; c++) {
+              const ch = cl.children[c];
+              if (ch.userData && ch.userData.isWaveB) ch.visible = useB1;
+              else ch.visible = !useB1;
+            }
+          });
+          for (let b = 0; b < ga.blenderObjs.length; b++) {
+            ga.blenderObjs[b].visible = useB1;
+          }
+        }
+        for (let i = 0; i < wbState.paternosterAttached.length; i++) {
+          const pa = wbState.paternosterAttached[i];
+          const ud = pa.pGroup && pa.pGroup.userData;
+          if (!ud) continue;
+          if (ud.drumRotors) ud.drumRotors.forEach((dR) => { if (dR.userData.procGroup) dR.userData.procGroup.visible = !useB1; });
+          if (ud.buckets) ud.buckets.forEach((bk) => { if (bk.mesh && bk.mesh.userData.procGroup) bk.mesh.userData.procGroup.visible = !useB1; });
+          for (let b = 0; b < pa.blenderObjs.length; b++) {
+            pa.blenderObjs[b].visible = useB1;
+          }
+        }
+
+        // 3. Fässer (7.920) & Amphoren (40)
+        if (wbState.barrelHeroInstMesh) {
+          wbState.barrelHeroInstMesh.visible = useB1 && (wbState.barrelHeroInstMesh.count > 0);
+        }
+        if (Arche.Procedural && Arche.Procedural.barrelInstMesh) {
+          Arche.Procedural.barrelInstMesh.visible = showFix && !isExtClosed && !useB1;
+        }
+        if (wbState.amphoraHeroInstMesh) {
+          wbState.amphoraHeroInstMesh.visible = useB1 && (zSlice > 10.10) && (wbState.amphoraHeroInstMesh.count > 0);
+        }
+        if (Arche.Procedural && Arche.Procedural.amphoraInstMesh) {
+          Arche.Procedural.amphoraInstMesh.visible = showFix && !isExtClosed && !useB1;
+        }
+
+        // 4. Galley3DGroup (prozedurale Kinder ausblenden wenn B1+B3 aktiv, steamClouds bleiben sichtbar, T07 children.length >= 30 unberührt!)
+        if (typeof galley3DGroup !== 'undefined' && galley3DGroup) {
+          const hideGalProc = useB1 && useB3;
+          for (let c = 0; c < galley3DGroup.children.length; c++) {
+            const ch = galley3DGroup.children[c];
+            if (ch.userData && ch.userData.isSteamCloud) {
+              ch.visible = isTextured && showFix && !isExtClosed && (zSlice > 11.20);
+            } else {
+              ch.visible = !hideGalProc;
+            }
+          }
+        }
+
+        // 5. HayBale3DGroup (prozedurale Boxen ausblenden wenn B2 aktiv)
+        if (Arche.Groups && Arche.Groups.hayBale3D) {
+          Arche.Groups.hayBale3D.visible = showFix && !isExtClosed && (zSlice > 6.20) && !useB2;
+        }
+
+        // 6. ZoharOpticsGroup (prozedurale Spiegel/Laternen ausblenden wenn B1 aktiv; Lichtstrahlen bleiben!)
+        if (typeof zoharOpticsGroup !== 'undefined' && zoharOpticsGroup) {
+          zoharOpticsGroup.visible = showFix && !isExtClosed && (zSlice > 13.50) && !useB1;
+        }
+
+        syncArkWaveBBarrelsCount();
+      }
+      Arche.Procedural.syncArkWaveBVisibility = syncArkWaveBVisibility;
+
+      function updateArkWaveBLODs(cam, force = false) {
+        if (!wbState.rootGroup || !wbState.rootGroup.visible || !cam) return;
+        const fNow = (typeof S !== 'undefined' && S.frameCounter) ? S.frameCounter : 0;
+        if (!force) {
+          if ((fNow - wbState.lastLodFrame) < 6 && cam.position.distanceToSquared(wbState.lastLodCamPos) < 2.25) return;
+        }
+        wbState.lastLodFrame = fNow;
+        wbState.lastLodCamPos.copy(cam.position);
+
+        if (Arche.Assets && typeof Arche.Assets.updateSmoothLODGroup === 'function') {
+          for (let i = 0; i < wbState.heroLodGroups.length; i++) {
+            const g = wbState.heroLodGroups[i];
+            if (g && g.visible) Arche.Assets.updateSmoothLODGroup(g, cam);
+          }
+        }
+
+        // Kurze Innenraum-LODs für die 7.920 Eichenfässer (d01 = 27.5 m, d12 = 75.0 m; bei hoher Übersicht oder Tier>=2 LOD1 = 76 Tris!)
+        if (wbState.barrelHeroInstMesh && wbState.barrelLodGeos && typeof shipGroup !== 'undefined') {
+          _WB_CAM.copy(cam.position);
+          shipGroup.worldToLocal(_WB_CAM);
+          const inHullDist = Math.max(0.0, Math.abs(_WB_CAM.x) - 65.0) + Math.max(0.0, Math.abs(_WB_CAM.y) - 11.5) + Math.max(0.0, Math.abs(_WB_CAM.z - 6.0) - 8.0);
+          const isHighCutaway = (_WB_CAM.z > 12.5) || (Math.abs(_WB_CAM.y) > 13.0);
+          const curTier = (Arche.Performance && Arche.Performance.currentTier !== undefined) ? Arche.Performance.currentTier : 0;
+          let wantLod = (inHullDist < 27.5) ? 0 : ((inHullDist < 75.0) ? 1 : 2);
+          if (wantLod === 0 && (isHighCutaway || curTier >= 2)) wantLod = 1;
+          if (wantLod !== wbState.barrelActiveLod && wbState.barrelLodGeos[wantLod]) {
+            wbState.barrelActiveLod = wantLod;
+            wbState.barrelHeroInstMesh.geometry = wbState.barrelLodGeos[wantLod];
+          }
+        }
+        syncArkWaveBBarrelsCount();
+      }
+      Arche.Procedural.updateArkWaveBLODs = updateArkWaveBLODs;
+
+      // Aktualisiert die instanziierten Paternoster-Trommeln (6 -> 1 Draw-Call) & 28 kippenden Schöpftröge (28 -> 1 Draw-Call)
+      function syncArkWaveBMachineryInstances() {
+        const dIM = wbState.patDrumInstMesh;
+        const bIM = wbState.patBucketInstMesh;
+        if (!dIM && !bIM) return;
+        const pList = [paternosterS4, paternosterS11];
+        let dIdx = 0, bIdx = 0;
+        for (let pi = 0; pi < pList.length; pi++) {
+          const pGrp = pList[pi];
+          if (!pGrp || !pGrp.userData) continue;
+          const px = pGrp.position.x, py = pGrp.position.y, pz = pGrp.position.z;
+          const ud = pGrp.userData;
+          if (dIM && ud.drumRotors) {
+            for (let d = 0; d < ud.drumRotors.length; d++) {
+              const dr = ud.drumRotors[d];
+              _WB_DUMMY.position.set(px + dr.position.x, py + dr.position.y, pz + dr.position.z);
+              _WB_DUMMY.rotation.set(dr.rotation.x, dr.rotation.y, dr.rotation.z);
+              if (d === 1) _WB_DUMMY.scale.set(1.0, 0.65, 0.65);
+              else _WB_DUMMY.scale.set(1.0, 1.0, 1.0);
+              _WB_DUMMY.updateMatrix();
+              dIM.setMatrixAt(dIdx++, _WB_DUMMY.matrix);
+            }
+          }
+          if (bIM && ud.buckets) {
+            for (let b = 0; b < ud.buckets.length; b++) {
+              const bk = ud.buckets[b].mesh;
+              _WB_DUMMY.position.set(px + bk.position.x, py + bk.position.y, pz + bk.position.z);
+              _WB_DUMMY.rotation.set(bk.rotation.x, bk.rotation.y, bk.rotation.z);
+              _WB_DUMMY.scale.set(1.0, 1.0, 1.0);
+              _WB_DUMMY.updateMatrix();
+              bIM.setMatrixAt(bIdx++, _WB_DUMMY.matrix);
+            }
+          }
+        }
+        if (dIM) dIM.instanceMatrix.needsUpdate = true;
+        if (bIM) bIM.instanceMatrix.needsUpdate = true;
+      }
+      Arche.Procedural.syncArkWaveBMachineryInstances = syncArkWaveBMachineryInstances;
+
+      async function hydrateArkWaveBKits3D() {
+        if (wbState.hydratePromise) return wbState.hydratePromise;
+        if (typeof window !== 'undefined' && window.location && window.location.protocol === 'file:') {
+          return { ok: false, reason: 'file-protocol-fallback' };
+        }
+        wbState.hydratePromise = (async () => {
+          if (!Arche.Assets || typeof Arche.Assets.loadRawGLB !== 'function') {
+            return { ok: false, reason: 'no_asset_loader' };
+          }
+          // Alle 3 Welle-B-GLBs + 1K-Stroh-Texturen sofort parallel zu Welle A laden (spart ~12 s Bootzeit!)
+          const waveAProm = (Arche.Procedural && typeof Arche.Procedural.hydrateArkWaveAKits3D === 'function')
+            ? Arche.Procedural.hydrateArkWaveAKits3D().catch(() => null)
+            : Promise.resolve(null);
+          const [_, b1Scene, b2Scene, b3Scene, hayMat] = await Promise.all([
+            waveAProm,
+            Arche.Assets.loadRawGLB('ark_wave_b1_machines_rooms_kit', 'assets/glb/ark/ark_wave_b1_machines_rooms_kit.glb').catch(() => null),
+            Arche.Assets.loadRawGLB('ark_wave_b2_habitats_kit', 'assets/glb/ark/ark_wave_b2_habitats_kit.glb').catch(() => null),
+            Arche.Assets.loadRawGLB('ark_crew_quarters_kit', 'assets/glb/ark/ark_crew_quarters_kit.glb').catch(() => null),
+            _ensureHayStrawMaterial().catch(() => null)
+          ]);
+          const trimMat = _ensureTrimMaterial(b1Scene || b2Scene || b3Scene);
+          if (!trimMat) return { ok: false, reason: 'no-trim-mat' };
+
+          const rootGrp = new THREE.Group();
+          rootGrp.name = 'ark_wave_b_root';
+          shipGroup.add(rootGrp);
+          wbState.rootGroup = rootGrp;
+
+          // ===================================================================
+          // A) WELLE B1 — MASCHINENBAU (S4 & S11), 7.920 FÄSSER, SPEZIALRÄUME & OPTIK
+          // ===================================================================
+          if (b1Scene) {
+            const gB1 = _collectWaveBNodes(b1Scene);
+            const b1Grp = new THREE.Group();
+            b1Grp.name = 'ark_wave_b1_group';
+            rootGrp.add(b1Grp);
+            wbState.b1Group = b1Grp;
+
+            const getGeoB1 = (name, lod = 0) => {
+              const lm = gB1.get(name);
+              const pr = lm && (lm[lod] || lm[0] || lm[1] || lm[2]);
+              return (pr && pr[0]) ? _prepGeoWB(pr[0].geometry, true) : null;
+            };
+
+            // 1. 2× 3-Ochsen-Göpel, 6:1-Stockritzel, 3 Klauenkupplungen, 4 Schrotmühlen & 4 Archimedische Schnecken
+            //    Statische Teile gebündelt in InstancedMeshes / 1 statischem Batch -> spart 48 Draw-Calls!
+            const geoBase = getGeoB1('ark_goepel_base_bearing', 0);
+            const geoRotor = getGeoB1('ark_goepel_rotor_crown', 0);
+            const geoPinion = getGeoB1('ark_goepel_lantern_pinion', 0);
+            const geoClFix = getGeoB1('ark_goepel_dog_clutch_fixed', 0);
+            const geoClSld = getGeoB1('ark_goepel_dog_clutch_slider', 0);
+            const geoMillTbl = getGeoB1('ark_mill_table_base', 0);
+            const geoMillRun = getGeoB1('ark_mill_runner_stone', 0);
+            const geoScrTube = getGeoB1('ark_archimedes_screw_tube', 0);
+            const geoScrHelix = getGeoB1('ark_archimedes_screw_helix', 0);
+
+            const staticMachEntries = [];
+            const clutchSliderIM = geoClSld ? new THREE.InstancedMesh(geoClSld, trimMat, 6) : null;
+            if (clutchSliderIM) {
+              clutchSliderIM.name = 'ark_goepel_clutch_sliders_inst';
+              clutchSliderIM.castShadow = false;
+              clutchSliderIM.receiveShadow = true;
+              clutchSliderIM.frustumCulled = false;
+              clutchSliderIM.userData.arkTooltipKey = 'fix_goepel';
+              b1Grp.add(clutchSliderIM);
+              wbState.clutchSliderInstMesh = clutchSliderIM;
+            }
+            let clSliderCursor = 0;
+
+            [goepelWheelS4, goepelWheelS11].forEach((gMaster, gIdx) => {
+              if (!gMaster || !gMaster.userData) return;
+              const ud = gMaster.userData;
+              const gx = gMaster.position.x, gy = gMaster.position.y, gz = gMaster.position.z;
+              const bObjs = [];
+              const addBObj = (parent, geo, px, py, pz, rx, ry, rz, ttKey) => {
+                if (!parent || !geo) return null;
+                const m = new THREE.Mesh(geo, trimMat);
+                m.position.set(px || 0, py || 0, pz || 0);
+                m.rotation.set(rx || 0, ry || 0, rz || 0);
+                m.castShadow = false;
+                m.receiveShadow = true;
+                m.userData.isWaveB = true;
+                m.userData.arkTooltipKey = ttKey || 'fix_goepel';
+                parent.add(m);
+                bObjs.push(m);
+                return m;
+              };
+              // Spurlager & 16 Huf-Leisten statisch auf Deck 2 (Z_abs = 6.122 m)
+              if (geoBase) staticMachEntries.push({ geo: geoBase, matrix: _makeMatrix(gx, gy, gz + 0.122, 0, 0, 0, 1, 1, 1) });
+              // Königswelle + 48-Zähne-Kammrad + 3-Ochsen-Jochbaum exakt in rotorGroup!
+              addBObj(ud.rotorGroup, geoRotor, 0, 0, 0.0, 0, 0, 0, 'fix_goepel');
+              // 2× 6:1-Stockritzel auf Backbord- & Steuerbord-Transmissionswelle
+              const R_gear = 2.5 * ELLE_M;
+              addBObj(ud.transShaftBB, geoPinion, 0, (-R_gear) - 0.5 * (ud.yBBIn + ud.yBBOut), 0, 0, 0, 0, 'fix_goepel');
+              addBObj(ud.transShaftSB, geoPinion, 0, (+R_gear) - 0.5 * (ud.ySBIn + ud.ySBOut), 0, 0, 0, 0, 'fix_goepel');
+              // 3× Klauenkupplungen (fixed statisch gemerged + slider im 1-Draw-Call InstancedMesh 0.00 <-> +0.17 m)
+              [ud.clutchPat, ud.clutchMill, ud.clutchPump].forEach((cl) => {
+                if (!cl || !cl.userData) return;
+                const isY = (cl.userData.axis === 'Y');
+                const rotZ = isY ? (Math.PI * 0.5) : 0.0;
+                const cx = gx + cl.position.x, cy = gy + cl.position.y, cz = gz + cl.position.z;
+                if (geoClFix) staticMachEntries.push({ geo: geoClFix, matrix: _makeMatrix(cx, cy, cz, 0, 0, rotZ, 1, 1, 1) });
+                if (clutchSliderIM && clSliderCursor < 6) {
+                  const idxS = clSliderCursor++;
+                  cl.userData.blenderSliderInst = clutchSliderIM;
+                  cl.userData.blenderSliderInstIdx = idxS;
+                  cl.userData.blenderSliderBasePos = new THREE.Vector3(cx, cy, cz);
+                  clutchSliderIM.setMatrixAt(idxS, _makeMatrix(cx, cy, cz, 0, 0, rotZ, 1, 1, 1));
+                }
+              });
+              // Mühlentisch + 2 Bodensteine + überstehende Mehlschurre + 2 rotierende Läufersteine (12:1!)
+              if (geoMillTbl) staticMachEntries.push({ geo: geoMillTbl, matrix: _makeMatrix(gx + ud.xMillRel, gy + ud.yMillRel, gz + 0.122, 0, 0, 0, 1, 1, 1) });
+              if (ud.millRunners && geoMillRun) {
+                const zRunOff = (0.122 + 1.050 + 0.090) - ud.zRunnerBot;
+                for (let r = 0; r < ud.millRunners.length; r++) {
+                  addBObj(ud.millRunners[r], geoMillRun, 0, 0, zRunOff, 0, 0, 0, 'fix_goepel');
+                }
+              }
+              // 2× Archimedische Schnecken (Trog statisch gemerged, Helix in screwRotor -> 6:1 um lokale Y-Achse!)
+              if (ud.screwUnits && ud.screwRotors) {
+                for (let s = 0; s < ud.screwUnits.length; s++) {
+                  const su = ud.screwUnits[s];
+                  if (geoScrTube) {
+                    const mSu = _makeMatrix(gx + su.position.x, gy + su.position.y, gz + su.position.z, su.rotation.x, su.rotation.y, su.rotation.z, 1, 1, 1);
+                    const mOff = _makeMatrix(0, -0.36, 0, 0, 0, 0, 1, 1, 1);
+                    staticMachEntries.push({ geo: geoScrTube, matrix: mSu.multiply(mOff) });
+                  }
+                  addBObj(ud.screwRotors[s], geoScrHelix, 0, -0.36, 0, 0, 0, 0, 'fix_goepel');
+                }
+              }
+              wbState.goepelAttached.push({ gMaster, idx: gIdx, blenderObjs: bObjs });
+            });
+            if (clutchSliderIM) clutchSliderIM.instanceMatrix.needsUpdate = true;
+
+            // 2. 2× Paternoster-Becherwerke (DB-Sumpf + D3-Auswurf statisch gemerged, 6 Trommeln = 1 InstancedMesh, 28 kippende Becher = 1 InstancedMesh!)
+            const patFrameLm = gB1.get('ark_paternoster_frame_trough');
+            const geoPatFrame = (patFrameLm && patFrameLm[0] && patFrameLm[0][0])
+              ? _preparePaternosterFrameGeo(patFrameLm[0][0].geometry)
+              : null;
+            const geoPatDrum = getGeoB1('ark_paternoster_drum', 0);
+            const geoPatBucket = getGeoB1('ark_paternoster_bucket', 0);
+            [paternosterS4, paternosterS11].forEach((pGrp, pIdx) => {
+              if (!pGrp || !pGrp.userData) return;
+              if (geoPatFrame) {
+                staticMachEntries.push({
+                  geo: geoPatFrame,
+                  matrix: _makeMatrix(pGrp.position.x, pGrp.position.y, pGrp.position.z + 0.389, 0, 0, 0, 1, 1, 1)
+                });
+              }
+              wbState.paternosterAttached.push({ pGroup: pGrp, idx: pIdx, blenderObjs: [] });
+            });
+            if (staticMachEntries.length > 0 && typeof mergeTransformedGeos === 'function') {
+              const mergedStaticMachGeo = mergeTransformedGeos(staticMachEntries);
+              if (mergedStaticMachGeo) {
+                if (mergedStaticMachGeo.attributes && mergedStaticMachGeo.attributes.uv && !mergedStaticMachGeo.attributes.uv2) {
+                  mergedStaticMachGeo.setAttribute('uv2', mergedStaticMachGeo.attributes.uv);
+                }
+                mergedStaticMachGeo.computeBoundingBox();
+                mergedStaticMachGeo.computeBoundingSphere();
+                const staticMachMesh = new THREE.Mesh(mergedStaticMachGeo, trimMat);
+                staticMachMesh.name = 'ark_wave_b1_static_machinery_merged';
+                staticMachMesh.castShadow = false;
+                staticMachMesh.receiveShadow = true;
+                staticMachMesh.userData.arkTooltipKey = 'fix_goepel';
+                b1Grp.add(staticMachMesh);
+              }
+            }
+            if (geoPatDrum) {
+              const patDrumIM = new THREE.InstancedMesh(geoPatDrum, trimMat, 6);
+              patDrumIM.name = 'ark_paternoster_drums_inst';
+              patDrumIM.castShadow = false;
+              patDrumIM.receiveShadow = true;
+              patDrumIM.frustumCulled = false;
+              patDrumIM.userData.arkTooltipKey = 'fix_paternoster';
+              b1Grp.add(patDrumIM);
+              wbState.patDrumInstMesh = patDrumIM;
+            }
+            if (geoPatBucket) {
+              const patBuckIM = new THREE.InstancedMesh(geoPatBucket, trimMat, 28);
+              patBuckIM.name = 'ark_paternoster_buckets_inst';
+              patBuckIM.castShadow = false;
+              patBuckIM.receiveShadow = true;
+              patBuckIM.frustumCulled = false;
+              patBuckIM.userData.arkTooltipKey = 'fix_paternoster';
+              b1Grp.add(patBuckIM);
+              wbState.patBucketInstMesh = patBuckIM;
+            }
+            syncArkWaveBMachineryInstances();
+
+            // 3. 7.920 Eichenfässer (1 InstancedMesh = 1 Draw-Call, 3 LOD-Stufen, 0 neue Shader!)
+            const barrelLm = gB1.get('ark_barrel_hero');
+            if (barrelLm && Arche.Procedural && Arche.Procedural.barrelInstMesh) {
+              const normBarrel = (lodIdx) => {
+                const pr = barrelLm[lodIdx] || barrelLm[0];
+                if (!pr || !pr[0]) return null;
+                const g = _prepGeoWB(pr[0].geometry, true);
+                g.scale(1.0 / 0.317, 1.0 / 0.934, 1.0 / 0.317);
+                g.computeBoundingBox();
+                g.computeBoundingSphere();
+                return g;
+              };
+              const bGeos = [normBarrel(0), normBarrel(1), normBarrel(2)];
+              if (bGeos[0]) {
+                const nBarrels = gpuBarrelInstances.length;
+                const bHeroIM = new THREE.InstancedMesh(bGeos[0], trimMat, nBarrels);
+                bHeroIM.name = 'ark_barrel_hero_inst';
+                bHeroIM.castShadow = false;
+                bHeroIM.receiveShadow = false;
+                bHeroIM.frustumCulled = false;
+                bHeroIM.userData.maxCount = nBarrels;
+                bHeroIM.userData.arkTooltipKey = 'fix_barrels_racks';
+                const procB = Arche.Procedural.barrelInstMesh;
+                bHeroIM.instanceMatrix.array.set(procB.instanceMatrix.array);
+                bHeroIM.instanceMatrix.needsUpdate = true;
+                wbState.barrelOrigMatrices = new Float32Array(procB.instanceMatrix.array);
+                wbState.barrelLodGeos = bGeos;
+                wbState.barrelHeroInstMesh = bHeroIM;
+                b1Grp.add(bHeroIM);
+              }
+            }
+
+            // 4. Spezialräume Deck 3 (Svalbard-Tresor + 40 Amphoren, Basalt-Kombüse, Zimmermannswerkstatt -> in b1D3Group für sauberes zSlice-Culling!)
+            const b1D3Grp = new THREE.Group();
+            b1D3Grp.name = 'ark_wave_b1_d3_rooms';
+            b1Grp.add(b1D3Grp);
+            wbState.b1D3Group = b1D3Grp;
+            const svalbardLod = _buildHeroLODGroup(gB1.get('ark_svalbard_vault_set'), 'ark_svalbard_vault_set', trimMat, 'fix_svalbard');
+            if (svalbardLod) {
+              svalbardLod.position.set(2.10, -8.16, 10.125);
+              b1D3Grp.add(svalbardLod);
+            }
+            const amphLm = gB1.get('ark_svalbard_amphora');
+            if (amphLm) {
+              const amphMats = [];
+              // 40 Amphoren (10 Spalten × 2 Reihen × 2 Etagen) exakt in den 40 Gestellbohrungen von ark_svalbard_vault_set
+              for (let tier = 0; tier < 2; tier++) {
+                const zShelf = 10.125 + (tier === 0 ? 0.08 : 1.095);
+                for (let r = 0; r < 2; r++) {
+                  const yAmp = -8.16 + (r === 0 ? -2.52 : -1.95);
+                  for (let c = 0; c < 10; c++) {
+                    const xAmp = 2.10 + (-1.485 + c * 0.330);
+                    const scH = 0.94 + 0.08 * ((c * 3 + r + tier) % 3);
+                    amphMats.push(_makeMatrix(xAmp, yAmp, zShelf, 0, 0, ((c * 1.7 + r) % 6.28), 0.92, 0.92, scH));
+                  }
+                }
+              }
+              const aHeroIM = _buildInstancedFromNode(amphLm, 'ark_svalbard_amphora', amphMats, trimMat, 'fix_svalbard', b1D3Grp, 0);
+              if (aHeroIM) {
+                aHeroIM.userData.maxCount = amphMats.length;
+                wbState.amphoraHeroInstMesh = aHeroIM;
+              }
+            }
+            const galleyLod = _buildHeroLODGroup(gB1.get('ark_galley_stove_set'), 'ark_galley_stove_set', trimMat, 'fix_galley');
+            if (galleyLod) {
+              galleyLod.position.set(-5.00, 8.12, 10.125);
+              b1D3Grp.add(galleyLod);
+            }
+            const workshopLod = _buildHeroLODGroup(gB1.get('ark_workshop_set'), 'ark_workshop_set', trimMat, 'fix_workshop_optics');
+            if (workshopLod) {
+              workshopLod.position.set(4.95, 8.16, 10.125);
+              b1D3Grp.add(workshopLod);
+            }
+
+            // 5. Optik & Laternen (3 InstancedMeshes: 12 Heliostaten, 12 Alabaster-Linsen, 12 Glimmer-Laternen)
+            const optGrp = new THREE.Group();
+            optGrp.name = 'ark_wave_b1_optics';
+            b1Grp.add(optGrp);
+            wbState.opticsGroup = optGrp;
+            const helioMats = [], lensMats = [], lantMats = [];
+            [15.0, 25.0, 35.0, 45.0, 55.0, 65.0, 75.0, 85.0, 95.0, 105.0, 115.0, 125.0].forEach((xOpt) => {
+              const xc = xOpt - 70.0;
+              helioMats.push(_makeMatrix(xc, 0.0, 14.38, 0.28, 0, 0, 1, 1, 1));
+              lensMats.push(_makeMatrix(xc, 0.0, 13.75, 0, 0, 0, 1, 1, 1));
+            });
+            [-45.0, -15.0, 15.0, 45.0].forEach((xL) => {
+              [5.62, 9.62, 13.62].forEach((zL) => {
+                lantMats.push(_makeMatrix(xL, 0.0, zL, 0, 0, 0, 1, 1, 1));
+              });
+            });
+            _buildInstancedFromNode(gB1.get('ark_zohar_heliostat'), 'ark_zohar_heliostat', helioMats, trimMat, 'fix_workshop_optics', optGrp, 0);
+            _buildInstancedFromNode(gB1.get('ark_alabaster_lens'), 'ark_alabaster_lens', lensMats, trimMat, 'fix_workshop_optics', optGrp, 0);
+            _buildInstancedFromNode(gB1.get('ark_mica_lantern'), 'ark_mica_lantern', lantMats, trimMat, 'fix_workshop_optics', optGrp, 0);
+
+            wbState.b1Loaded = true;
+          }
+
+          // ===================================================================
+          // B) WELLE B2 — TIER-LEBENSWELTEN D1–D3, 1K-HEUBALLEN & 5 PIKTOGRAMME
+          // ===================================================================
+          if (b2Scene) {
+            const gB2 = _collectWaveBNodes(b2Scene);
+            const b2Grp = new THREE.Group();
+            b2Grp.name = 'ark_wave_b2_group';
+            rootGrp.add(b2Grp);
+            wbState.b2Group = b2Grp;
+
+            const d1Grp = new THREE.Group(); d1Grp.name = 'ark_wave_b2_d1'; b2Grp.add(d1Grp); wbState.d1Group = d1Grp;
+            const d2Grp = new THREE.Group(); d2Grp.name = 'ark_wave_b2_d2'; b2Grp.add(d2Grp); wbState.d2Group = d2Grp;
+            const d3Grp = new THREE.Group(); d3Grp.name = 'ark_wave_b2_d3'; b2Grp.add(d3Grp); wbState.d3Group = d3Grp;
+            const hayGrp = new THREE.Group(); hayGrp.name = 'ark_wave_b2_hay'; b2Grp.add(hayGrp); wbState.hayGroup = hayGrp;
+
+            const zD1 = 2.00 + 1.5 * HANDBREITE_M + 0.005;  // 2.122 m
+            const zD2 = 6.00 + 1.5 * HANDBREITE_M + 0.005;  // 6.122 m
+            const zD3 = 10.00 + 1.5 * HANDBREITE_M + 0.005; // 10.122 m
+
+            const mD1Mega = [], mD1Carn = [], mD1Drain = [];
+            const mD2Ung = [], mD2Mezz = [], mD2Ox = [], mHay = [];
+            const mD3Avi = [], mD3Rod = [], mD3Bat = [];
+            const mPlMega = [], mPlCarn = [], mPlUng = [], mPlBird = [], mPlRod = [];
+
+            const pushPlaque = (arr, xShip, yFront, zDeck, sSign) => {
+              // Rückseite exakt am äußeren Gatterpfosten, Relief ins Ganglicht -> 0,0 cm Überstand in den freien Korridor!
+              const rotZ = (sSign > 0) ? Math.PI : 0.0;
+              const yMount = yFront + sSign * 0.036;
+              arr.push(_makeMatrix(xShip - 70.0, yMount, zDeck + 1.35, 0, 0, rotZ, 1, 1, 1));
+            };
+
+            // 1. Deck 1 Megafauna-Buchten (Front exakt auf |Y| = 2.100 m / 7.233 m)
+            waveBSpecs.d1Mega.forEach((sp) => {
+              const spanX = sp.x1 - sp.x0;
+              const depthY = Math.abs(sp.yBack - sp.yFront);
+              const sSign = (sp.yBack > sp.yFront) ? 1.0 : -1.0;
+              const rotZ = (sSign > 0) ? 0.0 : Math.PI;
+              const cx = 0.5 * (sp.x0 + sp.x1) - 70.0;
+              const sx = spanX / 2.20;
+              const sy = depthY / 2.80;
+              mD1Mega.push(_makeMatrix(cx, sp.yFront, zD1, 0, 0, rotZ, sx, sy, 1.0));
+              if (spanX >= 2.10) pushPlaque(mPlMega, sp.x0 + 0.28, sp.yFront, zD1, sSign);
+            });
+
+            // 2. Deck 1 Raubtier-Doppelgitter-Trakte (S5, S10 & S13 Bb/Stb, Front exakt |Y| = 7.233 m)
+            waveBSpecs.d1Carn.forEach((sp) => {
+              const spanX = sp.x1 - sp.x0;
+              const depthY = Math.abs(sp.yBack - sp.yFront);
+              const sSign = (sp.yBack > sp.yFront) ? 1.0 : -1.0;
+              const rotZ = (sSign > 0) ? 0.0 : Math.PI;
+              const cx = 0.5 * (sp.x0 + sp.x1) - 70.0;
+              mD1Carn.push(_makeMatrix(cx, sp.yFront, zD1, 0, 0, rotZ, spanX / 2.20, depthY / 3.873, 1.0));
+              pushPlaque(mPlCarn, sp.x0 + 0.30, sp.yFront, zD1, sSign);
+            });
+
+            // 3. 28 Eichen-Stegbrücken über die D1-/D2-Spülrinnen (an den Sektions-Zugängen)
+            for (let s = 0; s < 14; s++) {
+              const xMidS = X_STATIONS[s] + 5.0;
+              [-1.0, 1.0].forEach((sideSign) => {
+                const isD1 = ((s + (sideSign > 0 ? 1 : 0)) % 2 === 0);
+                const zBr = isD1 ? (zD1 + 0.02) : (zD2 + 0.02);
+                const yFrontCh = isD1 ? (sideSign * 3.5 * ELLE_M) : (sideSign * 2.5 * ELLE_M);
+                const rotZ = (sideSign > 0) ? 0.0 : Math.PI;
+                mD1Drain.push(_makeMatrix(xMidS - 70.0, yFrontCh, zBr, 0, 0, rotZ, 1.0, 0.467 / 0.560, 1.0));
+              });
+            }
+
+            // 4. Deck 2 Huftier-Buchten & Zweigeschossige Mezzanin-Galerien
+            waveBSpecs.d2Pens.forEach((sp) => {
+              const spanX = sp.x1 - sp.x0;
+              const depthY = Math.abs(sp.yBack - sp.yFront);
+              const sSign = (sp.yBack > sp.yFront) ? 1.0 : -1.0;
+              const rotZ = (sSign > 0) ? 0.0 : Math.PI;
+              const cx = 0.5 * (sp.x0 + sp.x1) - 70.0;
+              if (sp.hasMezz) {
+                mD2Mezz.push(_makeMatrix(cx, sp.yFront, zD2, 0, 0, rotZ, spanX / 3.30, depthY / 3.267, 1.0));
+              } else {
+                mD2Ung.push(_makeMatrix(cx, sp.yFront, zD2, 0, 0, rotZ, spanX / 1.65, depthY / 3.267, 1.0));
+              }
+              if (spanX >= 2.20) pushPlaque(mPlUng, sp.x0 + 0.28, sp.yFront, zD2, sSign);
+            });
+
+            // 5. Deck 2 Reserve-Zugochsenstände (S4 & S11 Bb/Stb)
+            waveBSpecs.d2Ox.forEach((sp) => {
+              const dx = (sp.x1 - sp.x0) / sp.nStalls;
+              const depthY = Math.abs(sp.yWall - sp.yFront);
+              const rotZ = (sp.sideSign > 0) ? 0.0 : Math.PI;
+              for (let st = 0; st < sp.nStalls; st++) {
+                const cx = (sp.x0 + (st + 0.5) * dx) - 70.0;
+                mD2Ox.push(_makeMatrix(cx, sp.yFront, zD2, 0, 0, rotZ, dx / 1.00, depthY / 3.033, 1.0));
+              }
+              pushPlaque(mPlUng, sp.x0 + 0.25, sp.yFront, zD2, sp.sideSign);
+            });
+
+            // 6. 4× 1K-Heustöcke (S1 & S14 Bb/Stb, Multi-Material: Mat_Ark_Master_Trim + MAT_ARK_HAY_STRAW)
+            waveBSpecs.hayStacks.forEach((sp) => {
+              const cx = 0.5 * (sp.x0 + sp.x1) - 70.0;
+              const rotZ = (sp.sideSign > 0) ? 0.0 : Math.PI;
+              const yFront = (sp.sideSign > 0) ? sp.y0 : sp.y1;
+              mHay.push(_makeMatrix(cx, yFront, zD2, 0, 0, rotZ, 1.0, 1.0, 1.0));
+            });
+
+            // 7. Deck 3 Korb-Volieren
+            waveBSpecs.d3Aviary.forEach((sp) => {
+              const spanX = sp.x1 - sp.x0;
+              const depthY = sp.yMax - sp.yMin;
+              const yFront = (sp.sSign > 0) ? sp.yMin : sp.yMax;
+              const rotZ = (sp.sSign > 0) ? 0.0 : Math.PI;
+              const cx = 0.5 * (sp.x0 + sp.x1) - 70.0;
+              mD3Avi.push(_makeMatrix(cx, yFront, zD3, 0, 0, rotZ, spanX / 2.20, depthY / 3.967, 1.0));
+              if (spanX >= 2.40) pushPlaque(mPlBird, sp.x0 + 0.28, yFront, zD3, sp.sSign);
+            });
+
+            // 8. Deck 3 20er-Nagerwaben-Blöcke
+            waveBSpecs.d3Rodent.forEach((sp) => {
+              const spanX = sp.x1 - sp.x0;
+              const depthY = sp.halfDepthY * 2.0;
+              const yFront = (sp.sSign > 0) ? (sp.yShelf - sp.halfDepthY) : (sp.yShelf + sp.halfDepthY);
+              const rotZ = (sp.sSign > 0) ? 0.0 : Math.PI;
+              const cx = 0.5 * (sp.x0 + sp.x1) - 70.0;
+              mD3Rod.push(_makeMatrix(cx, yFront, zD3, 0, 0, rotZ, spanX / 3.20, depthY / 0.70, 1.0));
+              if (spanX >= 2.20) pushPlaque(mPlRod, sp.x0 + 0.25, yFront, zD3, sp.sSign);
+            });
+
+            // 9. Deck 3 Fledermauskästen unter den Dachsparren
+            waveBSpecs.d3Bat.forEach((sp) => {
+              const rotZ = (sp.sideSign > 0) ? 0.0 : Math.PI;
+              const yFront = sp.yBatWall - sp.sideSign * 0.225;
+              mD3Bat.push(_makeMatrix(sp.xBat - 70.0, yFront, 12.68, 0, 0, rotZ, 0.82, 1.0, 1.0));
+            });
+
+            _buildInstancedFromNode(gB2.get('ark_pen_d1_megafauna_bay'), 'ark_pen_d1_megafauna_bay', mD1Mega, trimMat, 'fix_mega_karn', d1Grp, 0);
+            _buildInstancedFromNode(gB2.get('ark_pen_d1_carnivore_bay'), 'ark_pen_d1_carnivore_bay', mD1Carn, trimMat, 'fix_mega_karn', d1Grp, 0);
+            _buildInstancedFromNode(gB2.get('ark_d1_drain_bridge'), 'ark_d1_drain_bridge', mD1Drain, trimMat, 'fix_chute_flush', b2Grp, 0);
+            _buildInstancedFromNode(gB2.get('ark_pen_d2_ungulate_bay'), 'ark_pen_d2_ungulate_bay', mD2Ung, trimMat, 'fix_oxen_pens', d2Grp, 0);
+            _buildInstancedFromNode(gB2.get('ark_pen_d2_mezzanine_bay'), 'ark_pen_d2_mezzanine_bay', mD2Mezz, trimMat, 'fix_oxen_pens', d2Grp, 0);
+            _buildInstancedFromNode(gB2.get('ark_pen_d2_ox_stall'), 'ark_pen_d2_ox_stall', mD2Ox, trimMat, 'fix_oxen_pens', d2Grp, 0);
+            _buildInstancedFromNode(gB2.get('ark_aviary_d3_bay'), 'ark_aviary_d3_bay', mD3Avi, trimMat, 'fix_aviary_rodent', d3Grp, 0);
+            _buildInstancedFromNode(gB2.get('ark_rodent_honeycomb_d3'), 'ark_rodent_honeycomb_d3', mD3Rod, trimMat, 'fix_aviary_rodent', d3Grp, 0);
+            _buildInstancedFromNode(gB2.get('ark_bat_roost_box_d3'), 'ark_bat_roost_box_d3', mD3Bat, trimMat, 'fix_aviary_rodent', d3Grp, 0);
+
+            // Multi-Material-Instancing für ark_hay_bale_stack (Primitive 0 = Master-Trim, Primitive 1 = 1K-Stroh-PBR!)
+            const hayLm = gB2.get('ark_hay_bale_stack');
+            const hayPrims = hayLm && (hayLm[0] || hayLm[1] || hayLm[2]);
+            if (hayPrims && mHay.length > 0) {
+              for (let pi = 0; pi < hayPrims.length; pi++) {
+                const srcP = hayPrims[pi];
+                const srcMatName = (srcP.material && srcP.material.name) ? srcP.material.name : '';
+                const useMat = (srcMatName === 'MAT_ARK_HAY_STRAW' && hayMat) ? hayMat : trimMat;
+                const im = new THREE.InstancedMesh(_prepGeoWB(srcP.geometry, true), useMat, mHay.length);
+                im.name = `ark_hay_bale_stack_inst_${pi}`;
+                im.castShadow = false;
+                im.receiveShadow = true;
+                im.frustumCulled = false;
+                im.userData.arkTooltipKey = 'fix_hay_bedding';
+                for (let k = 0; k < mHay.length; k++) im.setMatrixAt(k, mHay[k]);
+                im.count = mHay.length;
+                im.instanceMatrix.needsUpdate = true;
+                hayGrp.add(im);
+                wbState.hayInstMeshes.push(im);
+              }
+            }
+
+            // 5 Terrakotta-Tierpiktogramm-Plaketten (5 kompakte InstancedMeshes)
+            _buildInstancedFromNode(gB2.get('ark_plaque_megafauna'), 'ark_plaque_megafauna', mPlMega, trimMat, 'fix_mega_karn', d1Grp, 0);
+            _buildInstancedFromNode(gB2.get('ark_plaque_carnivore'), 'ark_plaque_carnivore', mPlCarn, trimMat, 'fix_mega_karn', d1Grp, 0);
+            _buildInstancedFromNode(gB2.get('ark_plaque_ungulate'), 'ark_plaque_ungulate', mPlUng, trimMat, 'fix_oxen_pens', d2Grp, 0);
+            _buildInstancedFromNode(gB2.get('ark_plaque_bird'), 'ark_plaque_bird', mPlBird, trimMat, 'fix_aviary_rodent', d3Grp, 0);
+            _buildInstancedFromNode(gB2.get('ark_plaque_rodent'), 'ark_plaque_rodent', mPlRod, trimMat, 'fix_aviary_rodent', d3Grp, 0);
+
+            wbState.b2Loaded = true;
+          }
+
+          // ===================================================================
+          // C) WELLE B3 — MANNSCHAFTSRÄUME FÜR NOAHS 8-KÖPFIGE FAMILIE (S7 DECK 3)
+          // ===================================================================
+          if (b3Scene) {
+            const gB3 = _collectWaveBNodes(b3Scene);
+            const b3Grp = new THREE.Group();
+            b3Grp.name = 'ark_wave_b3_crew_quarters';
+            rootGrp.add(b3Grp);
+            wbState.b3Group = b3Grp;
+            const zD3 = 10.125;
+
+            const placeHeroB3 = (name, px, py, pz, rx, ry, rz, sx, sy, sz) => {
+              const lod = _buildHeroLODGroup(gB3.get(name), name, trimMat, 'fix_quarters_atrium');
+              if (!lod) return null;
+              lod.position.set(px, py, pz);
+              lod.rotation.set(rx || 0, ry || 0, rz || 0);
+              lod.scale.set(sx === undefined ? 1 : sx, sy === undefined ? 1 : sy, sz === undefined ? 1 : sz);
+              b3Grp.add(lod);
+              return lod;
+            };
+
+            // 1. Refektorium (S7 D3-Mittelschiff xShip 61.40..66.20, Y -4.48..-2.12 — Mittelgang 100 % frei!)
+            placeHeroB3('ark_crew_carpet', -6.20, -3.30, zD3 + 0.004, 0, 0, 0, 1.85, 1.45, 1.0);
+            placeHeroB3('ark_crew_dining_feast_table', -6.20, -3.30, zD3, 0, 0, 0, 1, 1, 1);
+            placeHeroB3('ark_crew_sideboard_cupboard', -0.62, -3.35, zD3, 0, 0, -Math.PI * 0.5, 1, 1, 1);
+
+            // 2. Mittelschiff-Schlafzone (S7 D3 xShip 60.8..64.0, Y +2.35..+4.65 — Rampen-Antritt frei!)
+            const mHammocks = [
+              _makeMatrix(-7.40, 2.92, zD3, 0, 0, 0, 1, 1, 1),
+              _makeMatrix(-7.40, 4.12, zD3, 0, 0, 0, 1, 1, 1)
+            ];
+            _buildInstancedFromNode(gB3.get('ark_crew_hammock_frame'), 'ark_crew_hammock_frame', mHammocks, trimMat, 'fix_quarters_atrium', b3Grp, 0);
+
+            // 3. 4 Familienkammern (S7 D3-Backbord xShip 60.6..69.4, Y -11.08..-7.00)
+            const cabXs = [-8.29, -6.10, -3.91, -1.72];
+            const mParts = [], mBeds = [], mChests = [], mWash = [], mShelves = [];
+            cabXs.forEach((cx) => {
+              mParts.push(_makeMatrix(cx, -7.02, zD3, 0, 0, Math.PI, 0.95, 1.0, 1.0));
+              mBeds.push(_makeMatrix(cx - 0.22, -9.98, zD3, 0, 0, Math.PI * 0.5, 0.96, 0.94, 1.0));
+              mChests.push(_makeMatrix(cx, -8.22, zD3, 0, 0, 0, 0.95, 0.95, 1.0));
+            });
+            // Zusätzliche Truhe in der Mittelschiff-Schlafzone
+            mChests.push(_makeMatrix(-9.15, 3.52, zD3, 0, 0, Math.PI * 0.5, 0.95, 0.95, 1.0));
+            // 2 Waschplätze (Kammern #1 & #3)
+            mWash.push(_makeMatrix(-7.42, -9.90, zD3, 0, 0, -Math.PI * 0.5, 1, 1, 1));
+            mWash.push(_makeMatrix(-3.04, -9.90, zD3, 0, 0, -Math.PI * 0.5, 1, 1, 1));
+            // 4 Wandregale (2 im Refektorium an LBH -5.0 m, 2 in Kammern #1 & #4 an Außenwand -11.04 m)
+            mShelves.push(
+              _makeMatrix(-7.60, -4.85, zD3 + 1.35, 0, 0, 0, 1, 1, 1),
+              _makeMatrix(-4.80, -4.85, zD3 + 1.35, 0, 0, 0, 1, 1, 1),
+              _makeMatrix(-8.29, -11.04, zD3 + 1.35, 0, 0, 0, 1, 1, 1),
+              _makeMatrix(-1.72, -11.04, zD3 + 1.35, 0, 0, 0, 1, 1, 1)
+            );
+            _buildInstancedFromNode(gB3.get('ark_crew_cabin_partition'), 'ark_crew_cabin_partition', mParts, trimMat, 'fix_quarters_atrium', b3Grp, 0);
+            _buildInstancedFromNode(gB3.get('ark_crew_family_bed'), 'ark_crew_family_bed', mBeds, trimMat, 'fix_quarters_atrium', b3Grp, 0);
+            _buildInstancedFromNode(gB3.get('ark_crew_storage_chest'), 'ark_crew_storage_chest', mChests, trimMat, 'fix_quarters_atrium', b3Grp, 0);
+            _buildInstancedFromNode(gB3.get('ark_crew_washstand_basin'), 'ark_crew_washstand_basin', mWash, trimMat, 'fix_quarters_atrium', b3Grp, 0);
+            _buildInstancedFromNode(gB3.get('ark_crew_wall_shelf'), 'ark_crew_wall_shelf', mShelves, trimMat, 'fix_quarters_atrium', b3Grp, 0);
+
+            // Webstuhl in Kammer #2
+            placeHeroB3('ark_crew_weaving_loom', -5.25, -9.85, zD3, 0, 0, -Math.PI * 0.5, 1, 1, 1);
+
+            // 4. Vorflur (Y -7.00..-5.20): Noahs Chronik-Schreibpult direkt vor Noah (66.75, -5.55)
+            placeHeroB3('ark_crew_study_desk_set', -3.25, -6.46, zD3, 0, 0, Math.PI, 1, 1, 1);
+
+            wbState.b3Loaded = true;
+          }
+
+          if (wbState.b1Loaded || wbState.b2Loaded || wbState.b3Loaded) {
+            syncArkWaveBVisibility();
+            if (typeof camera !== 'undefined' && camera) updateArkWaveBLODs(camera, true);
+            if (typeof _precomputeHoverBounds === 'function') _precomputeHoverBounds();
+          }
+          return { ok: wbState.b1Loaded && wbState.b2Loaded && wbState.b3Loaded, b1: wbState.b1Loaded, b2: wbState.b2Loaded, b3: wbState.b3Loaded };
+        })();
+        return wbState.hydratePromise;
+      }
+      Arche.Procedural.hydrateArkWaveBKits3D = hydrateArkWaveBKits3D;
     })();
 
     // =========================================================================
@@ -38396,6 +39737,9 @@ diffuseColor.rgb = mix(diffuseColor.rgb, gLit, uUseTexMap);`
           hayList[h].visible = (h < nHayVisible);
         }
       }
+      if (Arche.Procedural && typeof Arche.Procedural.syncArkWaveBBarrelsCount === 'function') {
+        Arche.Procedural.syncArkWaveBBarrelsCount();
+      }
 
       if (shipyardGroup.userData && shipyardGroup.userData.boardingGroup) {
         // Berechne boardingFrac
@@ -40160,6 +41504,9 @@ diffuseColor.rgb = mix(diffuseColor.rgb, mix(vec3(0.24, 0.17, 0.11), vec3(0.38, 
         if (Arche.Procedural && typeof Arche.Procedural.syncArkWaveAVisibility === 'function') {
           Arche.Procedural.syncArkWaveAVisibility('OPEN');
         }
+        if (Arche.Procedural && typeof Arche.Procedural.syncArkWaveBVisibility === 'function') {
+          Arche.Procedural.syncArkWaveBVisibility('OPEN');
+        }
       }
 
       function updateExteriorPortalCulling(cam) {
@@ -40296,6 +41643,9 @@ diffuseColor.rgb = mix(diffuseColor.rgb, mix(vec3(0.24, 0.17, 0.11), vec3(0.38, 
         if (Arche.Procedural && typeof Arche.Procedural.syncArkWaveAVisibility === 'function') {
           Arche.Procedural.syncArkWaveAVisibility(cullState);
         }
+        if (Arche.Procedural && typeof Arche.Procedural.syncArkWaveBVisibility === 'function') {
+          Arche.Procedural.syncArkWaveBVisibility(cullState);
+        }
       }
 
       return {
@@ -40328,6 +41678,9 @@ diffuseColor.rgb = mix(diffuseColor.rgb, mix(vec3(0.24, 0.17, 0.11), vec3(0.38, 
       }
       if (Arche.Procedural && typeof Arche.Procedural.syncArkWaveAVisibility === 'function') {
         Arche.Procedural.syncArkWaveAVisibility();
+      }
+      if (Arche.Procedural && typeof Arche.Procedural.syncArkWaveBVisibility === 'function') {
+        Arche.Procedural.syncArkWaveBVisibility();
       }
       if (typeof updateGate3D === 'function') {
         updateGate3D(params.gateMode);
@@ -44887,6 +46240,10 @@ diffuseColor.rgb = mix(diffuseColor.rgb, mix(vec3(0.24, 0.17, 0.11), vec3(0.38, 
       }
       if (_arkWA && _arkWA.waveALoaded && _arkWA.carpentryGroup && _arkWA.carpentryGroup.visible) {
         _collectHoverTargets(_arkWA.carpentryGroup, targets);
+      }
+      const _arkWB = Arche.Procedural && Arche.Procedural.arkWaveB;
+      if (!isExtClosed && _arkWB && _arkWB.rootGroup && _arkWB.rootGroup.visible) {
+        _collectHoverTargets(_arkWB.rootGroup, targets);
       }
       const hullBuckets = isExtClosed
         ? [bucketRoof, bucketWallBB, bucketWallSB]
@@ -50261,6 +51618,9 @@ void main() {
       if (Arche.Procedural && typeof Arche.Procedural.updateArkWaveALODs === 'function') {
         Arche.Procedural.updateArkWaveALODs(camera);
       }
+      if (Arche.Procedural && typeof Arche.Procedural.updateArkWaveBLODs === 'function') {
+        Arche.Procedural.updateArkWaveBLODs(camera);
+      }
       const shouldUpdateDOM = (S.frameCounter % 3 === 0 || !params.autoPlay || window._scrubRelaxFrames > 0);
       if (shouldUpdateDOM && domDayTime) {
         const hrs = Math.floor(params.timeOfDay);
@@ -52938,6 +54298,9 @@ void main() {
         if (Arche.Procedural && typeof Arche.Procedural.updateArkWaveALODs === 'function') {
           Arche.Procedural.updateArkWaveALODs(camera, true);
         }
+        if (Arche.Procedural && typeof Arche.Procedural.updateArkWaveBLODs === 'function') {
+          Arche.Procedural.updateArkWaveBLODs(camera, true);
+        }
       } catch (_) { }
 
       // 2. Sammle alle aktuell sichtbaren Meshes (geschlossener Innenraum, tote prozedurale Fallbacks & Ararat werden NICHT kompiliert!)
@@ -52969,7 +54332,8 @@ void main() {
           typeof zoharLightBeamGroup !== 'undefined' ? zoharLightBeamGroup : null,
           typeof interiorGroup !== 'undefined' ? interiorGroup : null,
           typeof faunaGroup !== 'undefined' ? faunaGroup : null,
-          typeof fixturesGroup !== 'undefined' ? fixturesGroup : null
+          typeof fixturesGroup !== 'undefined' ? fixturesGroup : null,
+          (Arche.Procedural && Arche.Procedural.arkWaveB && Arche.Procedural.arkWaveB.rootGroup) ? Arche.Procedural.arkWaveB.rootGroup : null
         ].forEach((n) => { if (n) skipClosedNodes.add(n); });
       }
 
@@ -53341,6 +54705,9 @@ void main() {
         }
         if (Arche.Procedural && typeof Arche.Procedural.hydrateArkWaveAKits3D === 'function') {
           kitJobs.push(_withTimeout(Arche.Procedural.hydrateArkWaveAKits3D(), kitTimeoutMs).then(() => bumpKit('Arche Welle-A Kits hydriert', 'Ark Wave-A kits hydrated')));
+        }
+        if (Arche.Procedural && typeof Arche.Procedural.hydrateArkWaveBKits3D === 'function') {
+          kitJobs.push(_withTimeout(Arche.Procedural.hydrateArkWaveBKits3D(), kitTimeoutMs).then(() => bumpKit('Arche Welle-B Kits hydriert', 'Ark Wave-B kits hydrated')));
         }
         if (Arche.Environment && typeof Arche.Environment.hydrateMesopotamiaCityKit3D === 'function') {
           kitJobs.push(_withTimeout(Arche.Environment.hydrateMesopotamiaCityKit3D(), kitTimeoutMs).then(() => bumpKit('Ur-Schinar City-Kit hydriert', 'Ur-Shinar city kit hydrated')));
