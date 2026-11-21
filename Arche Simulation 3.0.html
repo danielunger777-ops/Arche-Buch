@@ -5911,10 +5911,12 @@ void applyArkInteriorLighting(inout vec3 indirectDiff, vec3 baseAlbedo, vec3 shi
         return prevCacheKey + '_lod_' + (isBarrelMat ? 1 : 0) + (isVolumetricBedding ? 1 : 0) + (isBasaltStone ? 1 : 0);
       };
       const isPitchUniform = { value: isPitchHull ? 1.0 : 0.0 };
+      if (!Arche.Procedural.uHasHullCC0Wood) Arche.Procedural.uHasHullCC0Wood = { value: 0.0 };
       mat.onBeforeCompile = function (shader) {
         shader.uniforms.uUseTexMap = Arche.Procedural.uUseTexMap;
         shader.uniforms.uPomQuality = Arche.Procedural.uPomQuality;
         shader.uniforms.uIsPitchHull = isPitchUniform;
+        shader.uniforms.uHasHullCC0Wood = Arche.Procedural.uHasHullCC0Wood;
         Arche.Procedural.bindEnvUniforms(shader);
         Arche.Procedural.bindInteriorLightUniforms(shader);
         let vSrc = Arche.Procedural.INTERIOR_LIGHT_VERTEX_DECL + `varying vec3 vLodWorldPos;
@@ -6091,7 +6093,7 @@ vLateWoodMask   = -0.45;
 diffuseColor.rgb = mix(mortarCol, rockCol, mortMask);`;
         } else {
           const carpentryGLSL = `
-if (uIsPitchHull < 0.5 && camDist < 10.0 && uPomQuality > 0.40) {
+if (uIsPitchHull < 0.5 && uHasHullCC0Wood < 0.5 && camDist < 10.0 && uPomQuality > 0.40) {
 float closeWeight = (1.0 - smoothstep(3.5, 10.0, camDist)) * step(0.5, uUseTexMap);
 if (closeWeight > 0.01) {
 float nyqCarp = clamp(1.0 - max(fw.x, fw.y) * 22.0, 0.0, 1.0) * closeWeight;
@@ -6182,9 +6184,12 @@ lateWood = smoothstep(0.55, 0.88, ringPos) * (1.0 - smoothstep(0.88, 0.98, ringP
 vLateWoodMask  = lateWood * lodMid;
 fineStr  = (plankNoise(vec2(vUv.x * 24.0 + bSeed * 13.0, vUv.y * 180.0 + fbmWarp * 9.0)) - 0.5) * nyqFine;
 }
-vec3 woodTint = mix(mix(vec3(0.76, 0.64, 0.52), vec3(1.14, 1.02, 0.88), bSeed), vec3(0.88 + 0.24 * bSeed), step(0.5, uIsPitchHull));
-float grainMod = 1.0 - (mix(0.32, 0.18, step(0.5, uIsPitchHull)) * lateWood - 0.16 * fineStr) * lodMid;
-texelColor.rgb *= woodTint * grainMod * seamMask;
+vec3 baseWoodTint = mix(mix(vec3(0.76, 0.64, 0.52), vec3(1.14, 1.02, 0.88), bSeed), vec3(0.88 + 0.24 * bSeed), step(0.5, uIsPitchHull));
+vec3 cc0WoodTint  = vec3(0.70, 0.56, 0.44) * (0.94 + 0.12 * bSeed);
+vec3 woodTint     = mix(baseWoodTint, cc0WoodTint, uHasHullCC0Wood * (1.0 - step(0.5, uIsPitchHull)));
+float grainMod    = mix(1.0 - (mix(0.32, 0.18, step(0.5, uIsPitchHull)) * lateWood - 0.16 * fineStr) * lodMid, 1.0, uHasHullCC0Wood * (1.0 - step(0.5, uIsPitchHull)));
+float seamUse     = mix(seamMask, 0.90 + 0.10 * seamMask, uHasHullCC0Wood * (1.0 - step(0.5, uIsPitchHull)));
+texelColor.rgb   *= woodTint * grainMod * seamUse;
 if (lodNear > 0.01 && nyqFine > 0.02 && uPomQuality > 0.25) {
 float pore1 = (plankNoise(vec2(vUv.x * 65.0 + bSeed * 29.0, vUv.y * 420.0 + fbmWarp * 14.0)) - 0.5) * nyqFine;
 float pore2 = (plankNoise(vec2(vUv.x * 190.0, vUv.y * 1100.0)) - 0.5) * clamp(1.0 - fw.y * 180.0, 0.0, 1.0);
@@ -6201,6 +6206,7 @@ ${carpentryGLSL}`;
 uniform float uUseTexMap;
 uniform float uPomQuality;
 uniform float uIsPitchHull;
+uniform float uHasHullCC0Wood;
 uniform float uSimTime;
 uniform float uWaterLevelZ;
 uniform vec2 uWindVec;
@@ -10412,6 +10418,16 @@ float caust = mix(0.35, smoothstep(0.30, 0.78, bgNoise(cUv1) * bgNoise(cUv2) * 2
 vec3 deepFresh = vec3(0.06, 0.42, 0.74);
 vec3 cyanCaust = vec3(0.34, 0.88, 1.00);
 diffuseColor.rgb = mix(deepFresh, cyanCaust, caust * 0.52 + wallMeniscus * 0.28);
+} else if (vColor.r < 0.06 && vColor.g < 0.06 && vColor.b < 0.06) {
+vec2  kUv1   = vUv * vec2(5.5, 1.8) + vec2(uTime * 0.34, 0.0);
+vec2  kUv2   = vUv * vec2(11.0, 3.4) - vec2(uTime * 0.22, uTime * 0.08);
+float kFlow  = mix(0.45, smoothstep(0.28, 0.78, 0.55 * bgNoise(kUv1) + 0.45 * bgNoise(kUv2)), lodDetail);
+vec3 deepKopher = vec3(0.004, 0.0035, 0.003);
+vec3 wetSheen   = vec3(0.018, 0.015, 0.012);
+vec3 dampRim    = vec3(0.010, 0.008, 0.006);
+vec3 kCol = mix(deepKopher, wetSheen, kFlow * 0.75);
+kCol      = mix(kCol, dampRim, wallMeniscus * 0.45);
+diffuseColor.rgb = kCol;
 } else {
 vec2  bUv1   = vUv * vec2(3.5, 2.8) + vec2(uTime * 0.20, uTime * 0.10);
 vec2  bUv2   = vUv * vec2(7.0, 5.5) - vec2(uTime * 0.16, -uTime * 0.14);
@@ -10425,6 +10441,18 @@ vec3 bCol = mix(darkBrackish, oliveTurbid, cloudy * 0.78);
 bCol      = mix(bCol, frothAmber, wallMeniscus * 0.30);
 diffuseColor.rgb = bCol;
 }
+}`
+      ).replace(
+        '#include <emissivemap_fragment>',
+        `#include <emissivemap_fragment>
+if (uIsThermal < 0.5 && vUv.x >= 0.0 && vColor.r < 0.06 && vColor.g < 0.06 && vColor.b < 0.06) {
+  totalEmissiveRadiance = vec3(0.0);
+}`
+      ).replace(
+        '#include <specularmap_fragment>',
+        `#include <specularmap_fragment>
+if (uIsThermal < 0.5 && vUv.x >= 0.0 && vColor.r < 0.06 && vColor.g < 0.06 && vColor.b < 0.06) {
+  specularStrength *= 0.16;
 }`
       );
     };
@@ -13110,21 +13138,22 @@ void main() {
       const yMidR = 0.5 * (yMinR + yMaxR);
       const spanY = yMaxR - yMinR;
       const bPostR = 0.13;
-      const R_belly = R_barrel_E * 1.06; // 0.330 m wahrer Bauchradius inkl. Zinnbronze-Reifen (D_belly = 0.66m)
-      const hShelf = 0.065;             // 6.5 cm starke Eichen-Regalbohle
-      const dzTier = (zCeilTop - zLegBot - 0.06) / 5.0; // Exakt 0.738 m pro Etage (5 Etagen passen perfekt in 3.75m lichte Deckhöhe!)
-      [yMinR + 0.07, yMidR, yMaxR - 0.07].forEach((yPost) => {
-        addBoxToBucket(bucketFixtures, xR0 + 0.03, xR0 + 0.03 + bPostR, yPost - 0.5 * bPostR, yPost + 0.5 * bPostR, zLegBot, zCeilTop, 1, 0, 3);
-        addBoxToBucket(bucketFixtures, xR1 - 0.03 - bPostR, xR1 - 0.03, yPost - 0.5 * bPostR, yPost + 0.5 * bPostR, zLegBot, zCeilTop, 1, 0, 3);
-      });
-      addWireBox(xR0, xR1, yMinR, yMaxR, zLegBot, zCeilTop);
+      const R_belly = R_barrel_E;        // 0.311 m exakter Bauchradius (D_belly = 0.622 m -> 5 Lagen exakt unter Deck-Cutaway 5.42 / 9.42 m!)
+      const hShelf = 0.030;              // 3.0 cm starke Eichen-Regalbohle (Kantner-Sattel)
+      const dzTier = 0.654;              // Exakt 0.654 m pro Etage -> Oberkante Etage 4 = 5.396 m (< 5.42 m D1) & 9.396 m (< 9.42 m D2)!
       const nTiers = 5; // 5 Etagen (Etage 0 im unteren Kantnersockel + Etagen 1..4 darüber)
       const nColsY = (forceColsY > 0) ? forceColsY : Math.max(2, Math.min(6, Math.floor((spanY + 0.05) / 0.69)));
       const innerY0 = yMinR + 0.10 + R_belly;
       const innerY1 = yMaxR - 0.10 - R_belly;
       const dyStep = (nColsY > 1) ? ((innerY1 - innerY0) / (nColsY - 1)) : 0.0;
+      const yMidPost = (nColsY > 2 && nColsY % 2 === 1) ? (yMidR + 0.5 * dyStep) : yMidR;
+      [yMinR + 0.07, yMidPost, yMaxR - 0.07].forEach((yPost) => {
+        addBoxToBucket(bucketFixtures, xR0 + 0.03, xR0 + 0.03 + bPostR, yPost - 0.5 * bPostR, yPost + 0.5 * bPostR, zLegBot, zCeilTop, 1, 0, 3);
+        addBoxToBucket(bucketFixtures, xR1 - 0.03 - bPostR, xR1 - 0.03, yPost - 0.5 * bPostR, yPost + 0.5 * bPostR, zLegBot, zCeilTop, 1, 0, 3);
+      });
+      addWireBox(xR0, xR1, yMinR, yMaxR, zLegBot, zCeilTop);
       for (let tier = 0; tier < nTiers; tier++) {
-        const zShelfTop = zLegBot + 0.05 + tier * dzTier;
+        const zShelfTop = zLegBot + 0.036 + tier * dzTier;
         addBoxToBucket(bucketFixtures, xR0 + 0.02, xR1 - 0.02, yMinR + 0.02, yMaxR - 0.02, zShelfTop - hShelf, zShelfTop, 0, 0, 3);
         const zCyl = zShelfTop + R_belly;
         for (let r = 0; r < nColsY; r++) {
@@ -13136,15 +13165,15 @@ void main() {
     function addChineWallBarrelRack(xCh0, xCh1, yCh0, yCh1, zDeck, isPortSide, nColsX = 5, nRowsY = 2) {
       const zLegBot = zDeck + 1.5 * HANDBREITE_M + 0.005;
       const zCeilTop = zDeck + 4.00 - 1.5 * HANDBREITE_M - 0.008;
-      const zSockTop = zDeck + h_kantner_D1;
-      const R_belly = R_barrel_E * 1.06;
-      const hShelf = 0.065;
-      const dzTier = (zCeilTop - zLegBot - 0.06) / 5.0;
+      const zSockTop = zLegBot + 0.036;
+      const R_belly = R_barrel_E;
+      const hShelf = 0.030;
+      const dzTier = 0.654;
       const innerX0 = xCh0 + 0.10 + R_belly;
       const innerX1 = xCh1 - 0.10 - R_belly;
       const dxStep = (nColsX > 1) ? ((innerX1 - innerX0) / (nColsX - 1)) : 0.0;
-      addBoxToBucket(bucketFixtures, xCh0, xCh1, yCh0, yCh1, zSockTop - 0.14, zSockTop, 0, 0, 3);
-      addWireBox(xCh0, xCh1, yCh0, yCh1, zLegBot, isPortSide ? zSockTop : zCeilTop);
+      addBoxToBucket(bucketFixtures, xCh0, xCh1, yCh0, yCh1, zLegBot, zSockTop, 0, 0, 3);
+      addWireBox(xCh0, xCh1, yCh0, yCh1, zLegBot, isPortSide ? (zSockTop + 2.0 * R_belly) : zCeilTop);
       if (!isPortSide) {
         [xCh0 + 0.08, 0.5 * (xCh0 + xCh1), xCh1 - 0.08].forEach((xP) => {
           addBoxToBucket(bucketFixtures, xP - 0.07, xP + 0.07, yCh0 + 0.04, yCh0 + 0.18, zLegBot, zCeilTop, 1, 0, 3);
@@ -13152,7 +13181,7 @@ void main() {
         });
       }
       for (let tier = 0; tier < 5; tier++) {
-        const zShelfTop = zLegBot + 0.05 + tier * dzTier;
+        const zShelfTop = zLegBot + 0.036 + tier * dzTier;
         if (!isPortSide && tier > 0) {
           addBoxToBucket(bucketFixtures, xCh0 + 0.02, xCh1 - 0.02, yCh0 + 0.02, yCh1 - 0.02, zShelfTop - hShelf, zShelfTop, 0, 0, 3);
         }
@@ -13284,6 +13313,8 @@ void main() {
     const yD1MegaWall = 10.5 * ELLE_M;
     const chuteWatPos = [], chuteWatNorm = [], chuteWatCol = [], chuteWatUv = [];
     function addFlushChuteSlottedOakGrating3D(xG0, xG1, yC0, yC1, zDeck) {
+      const _prevWaveGr = _curFixReplaceWave;
+      _curFixReplaceWave = 2; // Im TEXTURED-Modus mit Blender-Welle B2 (dunkle Stegbrücken ark_d1_drain_bridge) blasse Prozedur-Latten ausblenden -> freie dunkle Kopher-Rinne!
       const isBaseAlreadyDeckTop = (zDeck > 2.02 && zDeck < 2.25);
       const zFloorSurf = isBaseAlreadyDeckTop ? zDeck : (zDeck + 1.50 * HANDBREITE_M + 0.005);
       const zBot = zFloorSurf + 0.054;
@@ -13296,17 +13327,22 @@ void main() {
         addBoxToBucket(bucketFixtures, xp, xp1, yC0 + 0.75 * HANDBREITE_M + 0.006, yC1 - 0.75 * HANDBREITE_M - 0.006, zBot, zTop, 0, 0, 4);
       }
       addWireBox(xG0, xG1, yC0, yC1, zBot, zTop);
+      _curFixReplaceWave = _prevWaveGr;
     }
     function addOpenFlushChute3D(x0, x1, y0, y1, zDeck) {
       const isBaseAlreadyDeckTop = (zDeck > 2.02 && zDeck < 2.25);
       const zFloorSurf = isBaseAlreadyDeckTop ? zDeck : (zDeck + 1.50 * HANDBREITE_M + 0.005);
       const wWall = 0.75 * HANDBREITE_M;
-      const zWallTop = zFloorSurf + 0.065;
-      const zWatSurf = zFloorSurf + 0.032;
-      addBoxToBucket(bucketFixtures, x0, x1, y0, y0 + wWall, zFloorSurf, zWallTop, 1, 0, 4);
-      addBoxToBucket(bucketFixtures, x0, x1, y1 - wWall, y1, zFloorSurf, zWallTop, 1, 0, 4);
+      const zWallTop = zFloorSurf + 0.076;
+      const zWatSurf = zFloorSurf + 0.042;
+      // Tiefdunkle Eichen-Bordkanten + innere Kopher-Pech-Abdichtung & Kopher-Rinnensohle (0 neue Shader-Programme!)
+      addBoxToBucket(bucketFixtures, x0, x1, y0, y0 + wWall, zFloorSurf, zWallTop, 1, 0, 4, 1);
+      addBoxToBucket(bucketFixtures, x0, x1, y1 - wWall, y1, zFloorSurf, zWallTop, 1, 0, 4, 1);
+      addBoxToBucket(bucketFixtures, x0, x1, y0 + wWall - 0.014, y0 + wWall + 0.012, zFloorSurf + 0.004, zWallTop - 0.006, 1, 0, 4, 0);
+      addBoxToBucket(bucketFixtures, x0, x1, y1 - wWall - 0.012, y1 - wWall + 0.014, zFloorSurf + 0.004, zWallTop - 0.006, 1, 0, 4, 0);
+      addBoxToBucket(bucketFixtures, x0, x1, y0 + wWall, y1 - wWall, zFloorSurf, zFloorSurf + 0.020, 0, 0, 4, 0);
       const ax0 = x0 - 70.0, ax1 = x1 - 70.0;
-      const wy0 = y0 + wWall + 0.012, wy1 = y1 - wWall - 0.012;
+      const wy0 = y0 + wWall + 0.010, wy1 = y1 - wWall - 0.010;
       const uMax = Math.max(1.0, (x1 - x0) / 3.5);
       chuteWatPos.push(
         ax0, wy0, zWatSurf, ax1, wy0, zWatSurf, ax1, wy1, zWatSurf,
@@ -13314,7 +13350,7 @@ void main() {
       );
       for (let k = 0; k < 6; k++) {
         chuteWatNorm.push(0, 0, 1);
-        chuteWatCol.push(0.14, 0.44, 0.28);
+        chuteWatCol.push(0.03, 0.04, 0.035); // Kopher-dunkler Ablauf-Schimmer im bilgeWater-Shader (Delta-Programs === 0!)
       }
       chuteWatUv.push(0, 0, uMax, 0, uMax, 1, 0, 0, uMax, 1, 0, 1);
       addFlushChuteSlottedOakGrating3D(x0, x1, y0, y1, zDeck);
@@ -13406,6 +13442,7 @@ void main() {
       addTransverseBulkheadBarrelRack(xGSec + 0.22 + L_barrel_E, xGSec + 0.22 + 2.0 * L_barrel_E, 7.65, 11.14, zKantTopD1, 2.00, [5, 5, 5, 5, 5], 5);
       addTransverseBulkheadBarrelRack(xGSec + 9.78 - 2.0 * L_barrel_E, xGSec + 9.78 - L_barrel_E, 7.65, 11.14, zKantTopD1, 2.00, [5, 5, 5, 5, 5], 5);
       addTransverseBulkheadBarrelRack(xGSec + 9.82 - L_barrel_E, xGSec + 9.82, 7.65, 11.14, zKantTopD1, 2.00, [5, 5, 5, 5, 5], 5);
+      _curFixReplaceWave = 1; // Blasse Prozedur-Schutzstangen um die D1-Schnecken in TEXTURED/Welle-B1 ausblenden!
       [xGSec + 1.15, xGSec + 8.85].forEach((xScr) => {
         [-0.48, 0.48].forEach((dxP) => {
           addBoxToBucket(bucketFixtures, xScr + dxP - 0.06, xScr + dxP + 0.06, 6.04, 6.16, zTopD1Floor, zTopD1Floor + 0.92, 1, 0, 1);
@@ -13414,6 +13451,7 @@ void main() {
         });
         addWireBox(xScr - 0.48, xScr + 0.48, 6.08, 7.42, zTopD1Floor, zTopD1Floor + 0.92);
       });
+      _curFixReplaceWave = 0;
     });
     [10.0, 90.0].forEach((xComp) => {
       const xRow4 = xComp + 0.18 + 3.0 * (L_barrel_E + 0.04);
@@ -13710,18 +13748,21 @@ void main() {
     const yD3NaveWall = 10.5 * ELLE_M;                      // 4.900 m (10,5 Ellen direkt vor dem Längsschott)
     // Deck 3 besitzt KEINE Spülrinnen (Spülrinnen nur auf Deck 1 und Deck 2!)
     {
+      // Sauberes dunkles Eichen-Absturzgeländer direkt entlang der offenen Kante des D2->D3-Rampenschachts (Y = +2.02 m -> 6,90-m-S8-Plattform frei!)
       const zRailD3 = zFloorD3 + 2.2 * ELLE_M;
-      const yRailIn = 1.86;
+      const yRailIn = 2.02;
       [64.65, 67.20, 69.55, 70.45, 73.60, 76.75].forEach((xRP, idxRP, arrRP) => {
-        addBoxToBucket(bucketFixtures, xRP - 0.07, xRP + 0.07, yRailIn - 0.07, yRailIn + 0.07, zFloorD3, zRailD3 + 0.08, 1, 0, 4);
+        addBoxToBucket(bucketFixtures, xRP - 0.075, xRP + 0.075, yRailIn - 0.075, yRailIn + 0.075, zFloorD3, zRailD3 + 0.08, 1, 0, 4, 1);
         if (idxRP < arrRP.length - 1 && idxRP !== 2) {
           const xNext = arrRP[idxRP + 1];
-          addBoneTimberInstance(xRP, yRailIn, zRailD3, xNext, yRailIn, zRailD3, 0.72 * HANDBREITE_M);
-          addBoneTimberInstance(xRP, yRailIn, zRailD3 - 0.42, xNext, yRailIn, zRailD3 - 0.42, 0.62 * HANDBREITE_M);
+          addBoxToBucket(bucketFixtures, xRP, xNext, yRailIn - 0.055, yRailIn + 0.055, zRailD3 - 0.05, zRailD3 + 0.05, 0, 0, 4, 1);
+          addBoxToBucket(bucketFixtures, xRP, xNext, yRailIn - 0.045, yRailIn + 0.045, zRailD3 - 0.46, zRailD3 - 0.38, 0, 0, 4, 1);
+          addBoxToBucket(bucketFixtures, xRP, xNext, yRailIn - 0.06, yRailIn + 0.06, zFloorD3, zFloorD3 + 0.14, 0, 0, 4, 1);
         }
       });
-      addBoneTimberInstance(64.65, yRailIn, zRailD3, 64.65, 4.82, zRailD3, 0.72 * HANDBREITE_M);
-      addBoneTimberInstance(64.65, yRailIn, zRailD3 - 0.42, 64.65, 4.82, zRailD3 - 0.42, 0.62 * HANDBREITE_M);
+      addBoxToBucket(bucketFixtures, 64.59, 64.71, yRailIn, 4.86, zRailD3 - 0.05, zRailD3 + 0.05, 0, 0, 4, 1);
+      addBoxToBucket(bucketFixtures, 64.59, 64.71, yRailIn, 4.86, zRailD3 - 0.46, zRailD3 - 0.38, 0, 0, 4, 1);
+      addBoxToBucket(bucketFixtures, 64.59, 64.71, yRailIn, 4.86, zFloorD3, zFloorD3 + 0.14, 0, 0, 4, 1);
     }
     Arche.Fauna.d3AviarySpecs = [];
     Arche.Fauna.d3ShelfSpecs = [];
@@ -13781,7 +13822,8 @@ void main() {
       }
       _curFixReplaceWave = _prevWaveAv;
     }
-    [0, 1, 2, 3, 4, 5, 8, 9, 10, 11, 12, 13].forEach((iSec) => {
+    // Exakt die 14 Original-Volieren-Zonen nach Kataster (10 Mittelschiff S2..S6, S9..S13 Bb/Stb + 4 Seitenschiff S5 & S10 Bb/Stb; S1 Bug & S14 Heck bleiben frei für die 4 Hochtanks!)
+    [1, 2, 3, 4, 5, 8, 9, 10, 11, 12].forEach((iSec) => {
       const xS0 = X_STATIONS[iSec];
       const isBadgirSec = (iSec === 1 || iSec === 4 || iSec === 9 || iSec === 12);
       const isGoepelSec = (iSec === 3 || iSec === 10);
@@ -13792,33 +13834,22 @@ void main() {
           // Vor den geschlossenen Waben-Silos (S3, S6, S9, S12: 0 Türen im Längsschott!) durchgehende Groß-Volieren über volle 9,10 m (19,5 Ellen) Sektionslänge!
           addDeck3AviaryBlock(xS0 + 0.45, xS0 + 9.55, yIn, yOut, 6);
         } else if (isBadgirSec) {
-          // Bâdgir-Sektionen (S2, S5, S10, S13): Hinter dem 3,5×3,5-m-Bâdgir und der Mitteltür (X = xS0+5,0 m)
-          addDeck3AviaryBlock(xS0 + 6.05, xS0 + 9.55, yIn, yOut, 3);
+          // Bâdgir-Sektionen (S2, S5, S10, S13): Hinter dem 3,5×3,5-m-Bâdgir und der Mitteltür
+          addDeck3AviaryBlock(xS0 + 4.55, xS0 + 8.35, yIn, yOut, 3);
         } else if (isGoepelSec) {
           // Göpel-Sektionen (S4, S11): Großzügige Voliere vor der versetzten Längsschott-Tür (xMid = xS0 + 6,80 m)
-          addDeck3AviaryBlock(xS0 + 0.45, xS0 + 5.75, yIn, yOut, 4);
-        } else if (iSec === 0) {
-          // S1 Bug-Sektion (direkt neben den 2 vorderen 150-t-Süßwasser-Hochtanks): Wasservogel-Volieren mit freier Längsschott-Tür (X = 5,0 m) & Querschott-Tür (QS01)!
-          addDeck3AviaryBlock(xS0 + 0.85, xS0 + 3.90, yIn, yOut, 2);
-          addDeck3AviaryBlock(xS0 + 6.10, xS0 + 9.55, yIn, yOut, 2);
-          addDeck3AviaryBlock(xS0 + 0.85, xS0 + 3.90, sideSign * 5.20, sideSign * 7.50, 2);
-          addDeck3AviaryBlock(xS0 + 6.10, xS0 + 8.50, sideSign * 5.20, sideSign * 7.50, 2);
-        } else if (iSec === 13) {
-          // S14 Heck-Sektion (direkt neben den 2 hinteren 150-t-Süßwasser-Hochtanks): Wasservogel-Volieren mit freier Längsschott-Tür (X = 135,0 m) & Querschott-Tür (QS13)!
-          addDeck3AviaryBlock(xS0 + 0.45, xS0 + 3.90, yIn, yOut, 2);
-          addDeck3AviaryBlock(xS0 + 6.10, xS0 + 9.15, yIn, yOut, 2);
-          addDeck3AviaryBlock(xS0 + 1.50, xS0 + 3.90, sideSign * 5.20, sideSign * 7.50, 2);
-          addDeck3AviaryBlock(xS0 + 6.10, xS0 + 9.15, sideSign * 5.20, sideSign * 7.50, 2);
+          addDeck3AviaryBlock(xS0 + 1.65, xS0 + 5.65, yIn, yOut, 4);
         }
-        if (iSec === 1 || iSec === 12) {
-          addDeck3AviaryBlock(xS0 + 0.85, xS0 + 9.15, sideSign * 7.45, sideSign * 11.15, 5);
+        // 4 Seitenschiff-Volieren exakt in S5 (iSec=4) & S10 (iSec=9) Bb/Stb (|Y| = 7.233..11.080 m)
+        if (iSec === 4 || iSec === 9) {
+          addDeck3AviaryBlock(xS0 + 1.65, xS0 + 8.35, sideSign * 7.233, sideSign * 11.080, 5);
         }
       });
     });
-    function addDeck3RodentHoneycombBlock(xR0, xR1, yShelf, nCols, halfDepthY = 0.38) {
+    function addDeck3RodentHoneycombBlock(xR0, xR1, yShelf, nCols, halfDepthY = 0.35) {
       if (xR1 - xR0 < 0.85) return;
       const sSign = (yShelf < 0) ? -1 : 1;
-      Arche.Fauna.d3ShelfSpecs.push([xR0 + 0.06, xR1 - 0.06, yShelf, sSign, Math.max(0.24, halfDepthY - 0.10), nCols]);
+      Arche.Fauna.d3ShelfSpecs.push([xR0 + 0.06, xR1 - 0.06, yShelf, sSign, Math.max(0.24, halfDepthY - 0.08), nCols]);
       waveBSpecs.d3Rodent.push({ x0: xR0, x1: xR1, yShelf, nCols, halfDepthY, sSign });
       const _prevWaveRd = _curFixReplaceWave;
       _curFixReplaceWave = 2;
@@ -13836,31 +13867,27 @@ void main() {
       addWireBox(xR0, xR1, yShelf - halfDepthY, yShelf + halfDepthY, zFloorD3, zFloorD3 + 5.6 * ELLE_M);
       _curFixReplaceWave = _prevWaveRd;
     }
-    [3, 4, 9, 10].forEach((iSec) => {
+    // Exakt 8 × 20 Nagerwaben-Blöcke ausschließlich an den Außenwänden (|Y| = 10.35..11.05 m) & exakt 16 Fledermauskästen unter den Dachsparren (Z = 13.03..13.55 m) in S2, S4, S11, S13!
+    [1, 3, 10, 12].forEach((iSec) => {
       const xS0 = X_STATIONS[iSec];
       const isGoepelSec = (iSec === 3 || iSec === 10);
-      const xDoorMid = isGoepelSec ? (xS0 + 6.80) : (xS0 + 5.00);
       [-1.0, 1.0].forEach((sideSign) => {
         const isPatSide = (isGoepelSec && sideSign < 0);
-        const xShStart = isPatSide ? (xS0 + 4.55) : (xS0 + 0.75);
-        const xShEnd = xS0 + 9.25;
-        addDeck3RodentHoneycombBlock(xShStart, xShEnd, sideSign * 10.75, isPatSide ? 5 : 8, 0.38);
-        const xIsl0 = isPatSide ? (xS0 + 5.10) : (xS0 + 1.45);
-        const xIsl1 = xS0 + 8.55;
-        addDeck3RodentHoneycombBlock(xIsl0, xDoorMid - 0.95, sideSign * 8.25, isPatSide ? 1 : 3, 0.52);
-        addDeck3RodentHoneycombBlock(xDoorMid + 0.95, xIsl1, sideSign * 8.25, 2, 0.52);
-        const nBatBoxes = isPatSide ? 3 : 4;
-        const yBatWall = sideSign * 10.75;
+        const xShStart = isPatSide ? (xS0 + 4.55) : (xS0 + 1.25);
+        const xShEnd = xS0 + 8.75;
+        addDeck3RodentHoneycombBlock(xShStart, xShEnd, sideSign * 10.70, isPatSide ? 5 : 8, 0.35);
+        const nBatBoxes = 2; // 4 Sektionen × 2 Seiten × 2 Kästen = exakt 16 Fledermauskästen unter den Dachsparren (Z = 13.03..13.55 m)!
+        const yBatWall = sideSign * 10.925;
         _curFixReplaceWave = 2;
         for (let b = 0; b < nBatBoxes; b++) {
           const xBat = xShStart + (b + 0.5) * ((xShEnd - xShStart) / nBatBoxes);
           Arche.Fauna.d3TorporSpecs.push([xBat, yBatWall]);
           waveBSpecs.d3Bat.push({ xBat, yBatWall, sideSign });
-          addBoxToBucket(bucketFixtures, xBat - 0.48, xBat + 0.48, yBatWall - 0.36, yBatWall + 0.36, 12.68, 13.05, 0, 0, 4, 0);
-          [-0.14, 0.0, 0.14].forEach((dyL) => {
-            addBoneTimberInstance(xBat - 0.44, yBatWall + dyL, 12.70, xBat + 0.44, yBatWall + dyL, 12.70, 0.34 * HANDBREITE_M);
+          addBoxToBucket(bucketFixtures, xBat - 0.48, xBat + 0.48, yBatWall - 0.22, yBatWall + 0.22, 13.03, 13.55, 0, 0, 4, 0);
+          [-0.10, 0.0, 0.10].forEach((dyL) => {
+            addBoneTimberInstance(xBat - 0.44, yBatWall + dyL, 13.06, xBat + 0.44, yBatWall + dyL, 13.06, 0.34 * HANDBREITE_M);
           });
-          addWireBox(xBat - 0.48, xBat + 0.48, yBatWall - 0.36, yBatWall + 0.36, 12.68, 13.05);
+          addWireBox(xBat - 0.48, xBat + 0.48, yBatWall - 0.22, yBatWall + 0.22, 13.03, 13.55);
         }
         _curFixReplaceWave = 0;
       });
@@ -13930,8 +13957,7 @@ void main() {
         });
       }
       _curFixReplaceWave = 0;
-      addDeck3AviaryBlock(73.85, 79.25, -11.15, -7.85, 4);
-      addDeck3RodentHoneycombBlock(75.95, 79.25, -5.55, 3, 0.38);
+      // S8 Backbord hinter Svalbard bleibt frei (keine überzählige Voliere oder Nagerwabe neben Svalbard!)
     }
     {
       const linenMat = Arche.Materials.linenBedding;
@@ -13947,7 +13973,7 @@ void main() {
       addBoxToBucket(bucketFixtures, xRef0 + 0.15, xRef1 - 0.15, yRef1 + 0.12, yRef1 + 0.52, zFloorD3 + 0.88 * ELLE_M, zFloorD3 + 0.98 * ELLE_M, 0, 2, 4, 3);
       addBoxToBucket(bucketFixtures, 66.65, 68.85, -4.55, -3.55, zFloorD3, zFloorD3 + 1.75 * ELLE_M, 0, 0, 4, 1);
       addWireBox(xRef0, xRef1, yRef0 - 0.52, yRef1 + 0.52, zFloorD3, zRefTop);
-      _curFixReplaceWave = 0;
+      // 4 alte beige S8-Mittelschiff-Stangenblöcke im TEXTURED-Modus vollständig unterdrücken (_curFixReplaceWave = 3 -> 6,90 m S8-Plattform bleibt sauber frei!)
       [
         [70.85, 74.65, -4.55, -3.15],
         [70.85, 74.65, -2.65, -1.35],
@@ -13965,19 +13991,23 @@ void main() {
         }
         addWireBox(xB0, xB1, yB0, yB1, zFloorD3, zBedTop);
       });
+      _curFixReplaceWave = 0;
       void linenMat;
     }
     {
       _curFixReplaceWave = 3;
       const linenMat = Arche.Materials.linenBedding;
-      const xC0 = 60.65, xC1 = 69.35;
-      const yC0 = -11.10, yC1 = -6.55;
-      const zCabTop = 10.00 + 6.0 * ELLE_M;
+      const xC0 = 60.615, xC1 = 69.375; // Exakt bündig zu den 4 Wave-B3-Kammerfronten (cabXs = -8.29, -6.10, -3.91, -1.72, Schritt 2.19 m!)
+      const yC0 = -11.10, yC1 = -7.02;
+      const zCabTop = zFloorD3 + 2.65;
       const dxCab = (xC1 - xC0) / 4.0;
       const pillowGeo = orientCylinderUVsAlongAxis(new THREE.CylinderGeometry(0.11, 0.11, 0.68, 12), 0.68, 0.11);
       for (let c = 0; c <= 4; c++) {
         const xDivC = xC0 + c * dxCab;
-        addBoxToBucket(bucketFixtures, xDivC - 0.055, xDivC + 0.055, yC0, yC1, zFloorD3, zCabTop, 2, 2, 4, 3);
+        // 5 vollhohe Zypressen-Zwischenwände zwischen den 4 Familienkammern bleiben auch im TEXTURED-Modus sichtbar (CC0-Zypresse!)
+        _curFixReplaceWave = 0;
+        addBoxToBucket(bucketFixtures, xDivC - 0.055, xDivC + 0.055, yC0, yC1, zFloorD3, zCabTop, 2, 2, 4, 2);
+        _curFixReplaceWave = 3;
         if (c < 4) {
           addBoxToBucket(bucketFixtures, xDivC, xDivC + 0.58 * dxCab, yC1 - 0.08, yC1, zFloorD3, zCabTop, 1, 2, 4, 3);
           addBoxToBucket(bucketFixtures, xDivC + 0.58 * dxCab, xDivC + dxCab, yC1 - 0.08, yC1, zFloorD3 + 4.4 * ELLE_M, zCabTop, 1, 2, 4, 3);
@@ -14288,6 +14318,7 @@ void main() {
         }
         _curFixReplaceWave = 0;
       });
+      _curFixReplaceWave = 1; // Blasse Prozedur-Schutzstangen & Alttrog um die D2-Schnecken in TEXTURED/Welle-B1 unterdrücken!
       [-3.85, 3.85].forEach((dxScrew) => {
         const xS = xG + dxScrew, rTube = 0.5 * ELLE_M, yBot = 5.65, zBot = 0.28, yTop = 10.66, zTop = 8.43;
         [-0.48, 0.48].forEach((dxP) => {
@@ -14311,6 +14342,7 @@ void main() {
           );
         }
       });
+      _curFixReplaceWave = 0;
     });
     {
       const xTop = 140.0 * ELLE_M, xBot = 164.0 * ELLE_M; // Schwerlastrampe D1->D2 (Wende- & Antrittsplatz bis 79.80 m frei)
@@ -14551,7 +14583,7 @@ void main() {
           x: xShip, y: bi.cy, z: bi.cz,
           stIdx: Math.min(14, Math.max(0, Math.round(xShip / 10.0))),
           wallIdx: (bi.cy < 0) ? 0 : 3,
-          lvlIdx: (bi.cz >= 5.0) ? 2 : 1,
+          lvlIdx: (bi.cz >= 5.8) ? 2 : 1,
           icdKN: 650.0, elemType: 0, matType: 0, fixTag: 3, texIdx: 7
         };
         dummyM.position.set(bi.cx, bi.cy, bi.cz);
@@ -15029,7 +15061,9 @@ void main() {
       [-11.0 * ELLE_M, -6.5 * ELLE_M, -3.2 * ELLE_M, 3.2 * ELLE_M, 11.2 * ELLE_M, 22.85 * ELLE_M].forEach((yBrg) => {
         const stoneBlock = new THREE.Mesh(new THREE.BoxGeometry(3.8 * HANDBREITE_M, 3.2 * HANDBREITE_M, 3.2 * HANDBREITE_M), basaltMat);
         stoneBlock.position.set(0.0, yBrg, zShaft);
-        masterGroup.add(stoneBlock);
+        // Die beiden Schott-Durchgangslager (Y ≈ ±5.0 m) wandern in procBaseGroup -> sauber ersetzt durch ark_shaft_wall_bearing in Welle B1!
+        if (Math.abs(Math.abs(yBrg) - 5.0) < 0.45) procBaseGroup.add(stoneBlock);
+        else masterGroup.add(stoneBlock);
       });
       const yBBIn = -2.5 * ELLE_M + 1.5 * HANDBREITE_M;
       const yBBOut = -11.35 * ELLE_M;
@@ -15742,7 +15776,8 @@ void main() {
             if (oxG.userData && oxG.userData.oxMat && oxG.userData.oxMat.userData && oxG.userData.oxMat.userData.locoScaleUniform) {
               oxG.userData.oxMat.userData.locoScaleUniform.value = speedLoco;
             }
-            oxG.position.y = -0.44 * dSign;
+            // Nacken des Ochsen (+0.44 * dSign) exakt auf Kummet-Bügel-Achse Y = +0.22 m des 1-Arm-Göpel-Rotors ausrichten!
+            oxG.position.y = 0.22 - 0.44 * dSign;
             oxG.position.z = 0.04 - Math.abs(Math.sin(oxPh)) * 0.018 * torqueStrain;
             oxG.rotation.z = (dSign > 0.0) ? 0.08 : (Math.PI - 0.08);
             oxG.rotation.x = -0.045 * torqueStrain - 0.022 * Math.sin(oxPh * 2.0) * torqueStrain;
@@ -17710,11 +17745,12 @@ applyArkInteriorLighting(reflectedLight.indirectDiffuse, diffuseColor.rgb, vShip
         ud.oxenWalkCycle = gIdx * 1.57;
         ud.oxenLegGroups = [];
         ud.oxenTeamGroups = [];
+        const rOxArr = [2.100, 3.010, 3.920]; // Exakte 3 Kummet-Bügel-Radien von ark_goepel_rotor_crown (4.5, 6.45, 8.4 Ellen!)
         if (ud.oxPullArrows && ud.oxPullArrows.length === 6) {
-          const rInA = 3.6 * ELLE_M, lenA = (8.6 - 3.6) * ELLE_M;
           for (let a = 0; a < 6; a++) {
             if (a < 3) {
-              ud.oxPullArrows[a].position.x = rInA + (a + 0.5) * (lenA / 3.0);
+              ud.oxPullArrows[a].position.x = rOxArr[a];
+              ud.oxPullArrows[a].position.y = 0.22;
               ud.oxPullArrows[a].rotation.z = (initDir > 0.0) ? 0.0 : Math.PI;
             } else {
               ud.oxPullArrows[a].scale.set(0, 0, 0);
@@ -17722,13 +17758,12 @@ applyArkInteriorLighting(reflectedLight.indirectDiffuse, diffuseColor.rgb, vShip
             }
           }
         }
-        const rYokeIn = 3.6 * ELLE_M, lenYoke3 = (8.6 - 3.6) * ELLE_M;
         for (let ox = 0; ox < 3; ox++) {
-          const rOx = rYokeIn + (ox + 0.5) * (lenYoke3 / 3.0);
+          const rOx = rOxArr[ox];
           const oxMat = Arche.Fauna.createFaunaMaterial(0.64, oxCoatTints[ox % 3], 'FUR', 'OX_WORK');
           const oxGrp = new THREE.Group();
           oxGrp.rotation.order = 'ZYX';
-          oxGrp.position.set(rOx, -0.44 * initDir, 0.04);
+          oxGrp.position.set(rOx, 0.22 - 0.44 * initDir, 0.04);
           oxGrp.rotation.z = (initDir > 0.0) ? 0.08 : (Math.PI - 0.08);
           oxGrp.userData.oxMat = oxMat;
           ud.oxenTeamGroups.push(oxGrp);
@@ -18140,8 +18175,8 @@ applyArkInteriorLighting(reflectedLight.indirectDiffuse, diffuseColor.rgb, vShip
               d2MezzZones.push([xS0 + 1.40, xS0 + 3.80, sideSign, 2.45, 4.65], [xS0 + 6.20, xS0 + 8.60, sideSign, 2.45, 4.65]);
             }
             if (iSec === 0 || iSec === 13) {
+              // S1 & S14: Nur Innen-Seitenbuchten (|Y| = 5.35..7.35 m); |Y| >= 8.32 m bleibt 100 % frei für die 4 1K-Heustöcke + Sturmstangen!
               d2PenZones.push([xS0 + 0.95, xS0 + 3.65, sideSign, 5.35, 7.35], [xS0 + 6.35, xS0 + 9.05, sideSign, 5.35, 7.35]);
-              d2PenZones.push([xS0 + 2.30, xS0 + 7.70, sideSign, 7.60, 10.85]);
             }
           }
         });
@@ -18275,57 +18310,32 @@ applyArkInteriorLighting(reflectedLight.indirectDiffuse, diffuseColor.rgb, vShip
       let shSpecs = (Arche.Fauna.d3ShelfSpecs && Arche.Fauna.d3ShelfSpecs.length > 0) ? Arche.Fauna.d3ShelfSpecs.slice() : [];
       let tSpecs = (Arche.Fauna.d3TorporSpecs && Arche.Fauna.d3TorporSpecs.length > 0) ? Arche.Fauna.d3TorporSpecs : [];
       if (shSpecs.length === 0) {
-        [3, 4, 9, 10].forEach((iSec) => {
+        [1, 3, 10, 12].forEach((iSec) => {
           const xS0 = X_STATIONS[iSec];
           const isGoep = (iSec === 3 || iSec === 10);
-          const xDoorM = isGoep ? (xS0 + 6.80) : (xS0 + 5.00);
           [-1, 1].forEach((sideSign) => {
             const isPat = (isGoep && sideSign < 0);
-            const xStart = isPat ? (xS0 + 4.65) : (xS0 + 0.85);
-            const xEnd = xS0 + 9.15;
-            shSpecs.push([xStart, xEnd, sideSign * 10.75, sideSign, 0.28, isPat ? 5 : 8]);
-            shSpecs.push([isPat ? (xS0 + 5.15) : (xS0 + 1.50), xDoorM - 1.05, sideSign * 8.25, sideSign, 0.38, isPat ? 2 : 4]);
-            shSpecs.push([xDoorM + 1.05, xS0 + 8.50, sideSign * 8.25, sideSign, 0.38, 3]);
-          });
-        });
-        shSpecs.push([76.05, 79.15, -5.55, -1, 0.28, 4]);
-      }
-      if (!shSpecs.some(s => Math.abs(Math.abs(s[2]) - 5.55) < 0.05 && s[0] < 70.0)) {
-        [3, 4, 9, 10].forEach((iSec) => {
-          const xS0 = X_STATIONS[iSec];
-          const isGoep = (iSec === 3 || iSec === 10);
-          const xDoorM = isGoep ? (xS0 + 6.80) : (xS0 + 5.00);
-          [-1, 1].forEach((sideSign) => {
-            const isPat = (isGoep && sideSign < 0);
-            const xStart = isPat ? (xS0 + 4.65) : (xS0 + 0.85);
-            const xEnd = xS0 + 9.15;
-            shSpecs.push([xStart, xDoorM - 1.25, sideSign * 5.55, sideSign, 0.28, isPat ? 2 : 4]);
-            shSpecs.push([xDoorM + 1.25, xEnd, sideSign * 5.55, sideSign, 0.28, isGoep ? 3 : 4]);
-          });
-        });
-        [0, 1, 12, 13].forEach((iSec) => {
-          const xS0 = X_STATIONS[iSec];
-          [-1, 1].forEach((sideSign) => {
-            shSpecs.push([xS0 + 0.90, xS0 + 3.75, sideSign * 5.55, sideSign, 0.28, 4]);
-            shSpecs.push([xS0 + 6.25, xS0 + 9.10, sideSign * 5.55, sideSign, 0.28, 4]);
+            const xStart = isPat ? (xS0 + 4.55) : (xS0 + 1.25);
+            const xEnd = xS0 + 8.75;
+            shSpecs.push([xStart, xEnd, sideSign * 10.70, sideSign, 0.27, isPat ? 5 : 8]);
           });
         });
       }
       if (tSpecs.length === 0) {
-        [3, 4, 9, 10].forEach((iSec) => {
+        [1, 3, 10, 12].forEach((iSec) => {
           const xS0 = X_STATIONS[iSec];
+          const isGoep = (iSec === 3 || iSec === 10);
           [-1, 1].forEach((sideSign) => {
-            const isPat = ((iSec === 3 || iSec === 10) && sideSign < 0);
-            const xStart = isPat ? (xS0 + 4.55) : (xS0 + 0.75), xEnd = xS0 + 9.25;
-            const nB = isPat ? 4 : 6;
-            for (let b = 0; b < nB; b++) tSpecs.push([xStart + (b + 0.5) * ((xEnd - xStart) / nB), sideSign * 10.55]);
+            const isPat = (isGoep && sideSign < 0);
+            const xStart = isPat ? (xS0 + 4.55) : (xS0 + 1.25), xEnd = xS0 + 8.75;
+            for (let b = 0; b < 2; b++) tSpecs.push([xStart + (b + 0.5) * ((xEnd - xStart) / 2.0), sideSign * 10.925]);
           });
         });
       }
       const cubbies = [];
       for (let s = 0; s < shSpecs.length; s++) {
         const [x0, x1, yMid, sSign, halfD, nColsRaw] = shSpecs[s];
-        const nCols = Math.max(1, nColsRaw || 4);
+        const nCols = Math.max(1, nColsRaw || 5);
         const dxCol = (x1 - x0) / nCols;
         for (let tier = 0; tier <= 4; tier++) {
           const zBase = (tier === 0) ? (10.125 + 0.08) : (10.125 + tier * (1.12 * ELLE_M) + 0.032);
@@ -18361,12 +18371,12 @@ applyArkInteriorLighting(reflectedLight.indirectDiffuse, diffuseColor.rgb, vShip
         const slotIn = Math.floor(i / tSpecs.length);
         const cBat = slotIn % 7, rBat = Math.floor(slotIn / 7) % 3;
         const xT = tb[0] + (cBat - 3.0) * 0.125 + ((rBat % 2 === 1) ? 0.02 : -0.02);
-        const yT = tb[1] + (rBat - 1.0) * 0.175 + (hRand(i, 20.7) - 0.5) * 0.02;
-        const zT = 12.71 + (((cBat + rBat) % 2 === 0) ? 0.035 : -0.035);
+        const yT = tb[1] + (rBat - 1.0) * 0.115 + (hRand(i, 20.7) - 0.5) * 0.02;
+        const zT = 13.30 + (((cBat + rBat) % 2 === 0) ? 0.04 : -0.04); // Exakt in den 16 Fledermauskästen unter den Dachsparren (Z = 13.03..13.55 m; > 13.20 m im D3-Cutaway sauber ausgeblendet!)
         const gId = 2501 + Math.floor(i / 2);
         const yawT = (hRand(i, 21.9) - 0.5) * Math.PI * 2.0;
         const wingSpan = 0.46 + 0.24 * hRand(i, 22.4);
-        addInst(bList, xT, yT, zT, yawT, wingSpan, 0.46, 0.52, batPal[gId % batPal.length], 'fix_aviary_rodent', 8.8, gId, [tb[0] - 0.44, tb[0] + 0.44, tb[1] - 0.28, tb[1] + 0.28], 0.055);
+        addInst(bList, xT, yT, zT, yawT, wingSpan, 0.46, 0.52, batPal[gId % batPal.length], 'fix_aviary_rodent', 8.8, gId, [tb[0] - 0.44, tb[0] + 0.44, tb[1] - 0.18, tb[1] + 0.18], 0.055);
       }
       [
         [66.75, -5.55, 10.125, Math.PI, 0x9E3D2B, 'fix_quarters_atrium'], // 1. Noah steht frei VOR dem Tontafel-Chronikpult (ark_crew_study_desk_set, Blick -Y!)
@@ -18405,6 +18415,10 @@ applyArkInteriorLighting(reflectedLight.indirectDiffuse, diffuseColor.rgb, vShip
             } else if (absY > 4.75 && absY < 7.50) {
               it.cy = (it.cy < 0 ? -1.0 : 1.0) * ((absY < 6.12) ? (4.70 - pad) : (7.55 + pad));
             }
+          }
+          // Deck-2-Heustock-Kollisionsschutz (S1 & S14 Bb/Stb: Heuballen + Eichen-Sturmstangen ab |Y| >= 8.32 m -> Tiere strikt vor |Y| <= 7.50 m!)
+          if (it.cz >= 5.5 && it.cz < 9.5 && (it.xShip < 8.95 || it.xShip > 131.05) && Math.abs(it.cy) > 7.50) {
+            it.cy = (it.cy < 0 ? -1.0 : 1.0) * (7.45 - pad);
           }
           it.cx = it.xShip - 70.0;
         };
@@ -20278,6 +20292,36 @@ transformed.z = -min(58.0, max(12.0, uWaterDepth * 0.42));
         _applyWoodSetToMat(bm.MAT_ARK_DECK_D1 || bm.MAT_ARK_DECKS, WOOD_KEY_TO_LIB[params.woodDeck1] || 'wood_oak_d35');
         _applyWoodSetToMat(bm.MAT_ARK_DECK_D2 || bm.MAT_ARK_DECKS, WOOD_KEY_TO_LIB[params.woodDeck2] || 'wood_oak_d35');
         _applyWoodSetToMat(bm.MAT_ARK_DECK_D3 || bm.MAT_ARK_DECKS, WOOD_KEY_TO_LIB[params.woodDeck3] || 'wood_cypress_c27');
+        // 1024×1024-CC0-Holz-Harmonisierung für Rampen, Bâdgir-Innenschächte, Silos, Tanks, Streulager & Kantner (hullMaterials[1..4], Delta-Programs === 0!)
+        // STRENG: hullMaterials[0] (Kopher-Pech-Farbschutz) bleibt 100 % unberührt! Offline file:// bleibt prozedural!
+        if (typeof hullMaterials !== 'undefined' && Array.isArray(hullMaterials) && arkState.woodLibrary.wood_oak_d35) {
+          const hullWoodSlots = [
+            [1, 'wood_oak_d35'],
+            [2, 'wood_cypress_c27'],
+            [3, 'wood_cedar_c18'],
+            [4, 'wood_hornbeam']
+          ];
+          let appliedAny = false;
+          for (let h = 0; h < hullWoodSlots.length; h++) {
+            const [slotIdx, libKey] = hullWoodSlots[h];
+            const hm = hullMaterials[slotIdx];
+            const wSet = arkState.woodLibrary[libKey];
+            if (hm && wSet && wSet.map && wSet.normalMap && wSet.roughnessMap) {
+              if (hm.map !== wSet.map) hm.map = wSet.map;
+              if (hm.normalMap !== wSet.normalMap) hm.normalMap = wSet.normalMap;
+              if (hm.roughnessMap !== wSet.roughnessMap) hm.roughnessMap = wSet.roughnessMap;
+              hm.roughness = 0.88;
+              hm.envMapIntensity = 0.24;
+              if (hm.normalScale) hm.normalScale.set(0.58, 0.58);
+              appliedAny = true;
+            }
+          }
+          if (appliedAny) {
+            Arche.Procedural._hasHullCC0Wood = true;
+            if (Arche.Procedural.uHasHullCC0Wood) Arche.Procedural.uHasHullCC0Wood.value = 1.0;
+            window._texColorsDirty = Math.max(window._texColorsDirty || 0, 8);
+          }
+        }
       }
       Arche.Procedural.syncArkBaseWoodMaterials = syncArkBaseWoodMaterials;
 
@@ -21246,11 +21290,13 @@ transformed.z = -min(58.0, max(12.0, uWaterDepth * 0.42));
         if (wbState.d1Group) wbState.d1Group.visible = useB2 && (zSlice > 2.05);
         if (wbState.d2Group) wbState.d2Group.visible = useB2 && (zSlice > 6.05);
         if (wbState.d3Group) wbState.d3Group.visible = useB2 && (zSlice > 10.10);
+        if (wbState.batRoostInstMesh) wbState.batRoostInstMesh.visible = useB2 && (zSlice > 13.25); // Unter den Dachsparren (13.03..13.55 m) -> im D3-Cutaway (13.20 m) sauber ausgeblendet!
         if (wbState.hayGroup) wbState.hayGroup.visible = useB2 && (zSlice > 6.05);
         if (wbState.opticsGroup) wbState.opticsGroup.visible = useB1 && (zSlice > 13.50);
         if (wbState.patDrumInstMesh) wbState.patDrumInstMesh.visible = useB1;
         if (wbState.patBucketInstMesh) wbState.patBucketInstMesh.visible = useB1;
         if (wbState.clutchSliderInstMesh) wbState.clutchSliderInstMesh.visible = useB1 && (zSlice > 6.05);
+        if (wbState.wallBearingInstMesh) wbState.wallBearingInstMesh.visible = useB1 && (zSlice > 6.05);
 
         // 1. bucketFixtures, boneInstMesh & beddingVolumeMesh 0-ms Masken-Switch (EC5/THERMO/file:// = 0!)
         const mask = (useB1 ? 1 : 0) | (useB2 ? 2 : 0) | (useB3 ? 4 : 0);
@@ -21463,8 +21509,10 @@ transformed.z = -min(58.0, max(12.0, uWaterDepth * 0.42));
             const geoMillRun = getGeoB1('ark_mill_runner_stone', 0);
             const geoScrTube = getGeoB1('ark_archimedes_screw_tube', 0);
             const geoScrHelix = getGeoB1('ark_archimedes_screw_helix', 0);
+            const wallBearingLm = gB1.get('ark_shaft_wall_bearing');
 
             const staticMachEntries = [];
+            const wallBearingMats = [];
             const clutchSliderIM = geoClSld ? new THREE.InstancedMesh(geoClSld, trimMat, 6) : null;
             if (clutchSliderIM) {
               clutchSliderIM.name = 'ark_goepel_clutch_sliders_inst';
@@ -21503,6 +21551,10 @@ transformed.z = -min(58.0, max(12.0, uWaterDepth * 0.42));
               const R_gear = 2.5 * ELLE_M;
               addBObj(ud.transShaftBB, geoPinion, 0, (-R_gear) - 0.5 * (ud.yBBIn + ud.yBBOut), 0, 0, 0, 0, 'fix_goepel');
               addBObj(ud.transShaftSB, geoPinion, 0, (+R_gear) - 0.5 * (ud.ySBIn + ud.ySBOut), 0, 0, 0, 0, 'fix_goepel');
+              // 2× Wellen-Wandlager-Fassungen (ark_shaft_wall_bearing) an beiden Längsschott-Durchstoßpunkten (Y = ±5.000 m, Z = 6.00 + ud.zShaft = 8.559 m!)
+              const zWallBrg = gz + (ud.zShaft || (5.48 * ELLE_M));
+              wallBearingMats.push(_makeMatrix(gx, -5.000, zWallBrg, 0, 0, 0, 1, 1, 1));
+              wallBearingMats.push(_makeMatrix(gx, +5.000, zWallBrg, 0, 0, 0, 1, 1, 1));
               // 3× Klauenkupplungen (fixed statisch gemerged + slider im 1-Draw-Call InstancedMesh 0.00 <-> +0.17 m)
               [ud.clutchPat, ud.clutchMill, ud.clutchPump].forEach((cl) => {
                 if (!cl || !cl.userData) return;
@@ -21541,6 +21593,10 @@ transformed.z = -min(58.0, max(12.0, uWaterDepth * 0.42));
               wbState.goepelAttached.push({ gMaster, idx: gIdx, blenderObjs: bObjs });
             });
             if (clutchSliderIM) clutchSliderIM.instanceMatrix.needsUpdate = true;
+            if (wallBearingLm && wallBearingMats.length > 0) {
+              const wbIM = _buildInstancedFromNode(wallBearingLm, 'ark_shaft_wall_bearing', wallBearingMats, trimMat, 'fix_goepel', b1Grp, 0);
+              if (wbIM) wbState.wallBearingInstMesh = wbIM;
+            }
 
             // 2. 2× Paternoster-Becherwerke (DB-Sumpf + D3-Auswurf statisch gemerged, 6 Trommeln = 1 InstancedMesh, 28 kippende Becher = 1 InstancedMesh!)
             const patFrameLm = gB1.get('ark_paternoster_frame_trough');
@@ -21598,13 +21654,53 @@ transformed.z = -min(58.0, max(12.0, uWaterDepth * 0.42));
             syncArkWaveBMachineryInstances();
 
             // 3. 7.920 Eichenfässer (1 InstancedMesh = 1 Draw-Call, 3 LOD-Stufen, 0 neue Shader!)
+            //    Exakte 1:1-Normierung jeder LOD-Geometrie auf das prozedurale Template (zentriert auf (0,0,0), R_max = 1.0 -> 0.311 m, L = 1.0 -> 0.877/0.896 m!)
             const barrelLm = gB1.get('ark_barrel_hero');
             if (barrelLm && Arche.Procedural && Arche.Procedural.barrelInstMesh) {
               const normBarrel = (lodIdx) => {
                 const pr = barrelLm[lodIdx] || barrelLm[0];
                 if (!pr || !pr[0]) return null;
                 const g = _prepGeoWB(pr[0].geometry, true);
-                g.scale(1.0 / 0.317, 1.0 / 0.934, 1.0 / 0.317);
+                g.computeBoundingBox();
+                const bb = g.boundingBox;
+                if (bb) {
+                  const cx = 0.5 * (bb.min.x + bb.max.x);
+                  const cy = 0.5 * (bb.min.y + bb.max.y);
+                  const cz = 0.5 * (bb.min.z + bb.max.z);
+                  g.translate(-cx, -cy, -cz);
+                  const halfX = Math.max(0.05, 0.5 * (bb.max.x - bb.min.x));
+                  const halfZ = Math.max(0.05, 0.5 * (bb.max.z - bb.min.z));
+                  const fullY = Math.max(0.10, bb.max.y - bb.min.y);
+                  const maxR = Math.max(halfX, halfZ);
+                  g.scale(1.0 / maxR, 1.0 / fullY, 1.0 / maxR);
+                }
+                // Korrigiere invertierte End-Cap-Dreiecke in ark_barrel_hero_LOD0 (68 Cap-Tris -> 100 % geschlossene Fassböden bei FrontSide!)
+                if (g.index && g.attributes && g.attributes.position) {
+                  const posA = g.attributes.position;
+                  const idxArr = g.index.array;
+                  let flippedCaps = 0;
+                  for (let t = 0; t < idxArr.length; t += 3) {
+                    const i0 = idxArr[t], i1 = idxArr[t + 1], i2 = idxArr[t + 2];
+                    const ax = posA.getX(i0), ay = posA.getY(i0), az = posA.getZ(i0);
+                    const bx = posA.getX(i1), by = posA.getY(i1), bz = posA.getZ(i1);
+                    const cx0 = posA.getX(i2), cy0 = posA.getY(i2), cz0 = posA.getZ(i2);
+                    const my = (ay + by + cy0) / 3.0;
+                    if (Math.abs(my) > 0.40) {
+                      const e1x = bx - ax, e1y = by - ay, e1z = bz - az;
+                      const e2x = cx0 - ax, e2y = cy0 - ay, e2z = cz0 - az;
+                      const ny = e1z * e2x - e1x * e2z;
+                      if (ny * my < -1e-6) {
+                        idxArr[t + 1] = i2;
+                        idxArr[t + 2] = i1;
+                        flippedCaps++;
+                      }
+                    }
+                  }
+                  if (flippedCaps > 0) {
+                    g.index.needsUpdate = true;
+                    g.computeVertexNormals();
+                  }
+                }
                 g.computeBoundingBox();
                 g.computeBoundingSphere();
                 return g;
@@ -21749,12 +21845,12 @@ transformed.z = -min(58.0, max(12.0, uWaterDepth * 0.42));
               pushPlaque(mPlCarn, sp.x0 + 0.30, sp.yFront, zD1, sSign);
             });
 
-            // 3. 28 Eichen-Stegbrücken über die D1-/D2-Spülrinnen (an den Sektions-Zugängen)
+            // 3. 28 Eichen-Stegbrücken über die D1-/D2-Spülrinnen (bündig auf den dunklen Kopher-Bordkanten, 0 Clipping mit dunklem Wasser!)
             for (let s = 0; s < 14; s++) {
               const xMidS = X_STATIONS[s] + 5.0;
               [-1.0, 1.0].forEach((sideSign) => {
                 const isD1 = ((s + (sideSign > 0 ? 1 : 0)) % 2 === 0);
-                const zBr = isD1 ? (zD1 + 0.02) : (zD2 + 0.02);
+                const zBr = isD1 ? (zD1 + 0.056) : (zD2 + 0.056);
                 const yFrontCh = isD1 ? (sideSign * 3.5 * ELLE_M) : (sideSign * 2.5 * ELLE_M);
                 const rotZ = (sideSign > 0) ? 0.0 : Math.PI;
                 mD1Drain.push(_makeMatrix(xMidS - 70.0, yFrontCh, zBr, 0, 0, rotZ, 1.0, 0.467 / 0.560, 1.0));
@@ -21818,11 +21914,11 @@ transformed.z = -min(58.0, max(12.0, uWaterDepth * 0.42));
               if (spanX >= 2.20) pushPlaque(mPlRod, sp.x0 + 0.25, yFront, zD3, sp.sSign);
             });
 
-            // 9. Deck 3 Fledermauskästen unter den Dachsparren
+            // 9. Exakt 16 Deck-3-Fledermauskästen unter den Dachsparren (Z = 13.03..13.55 m in S2, S4, S11, S13; im D3-Cutaway bei 13.20 m ausgeblendet!)
             waveBSpecs.d3Bat.forEach((sp) => {
               const rotZ = (sp.sideSign > 0) ? 0.0 : Math.PI;
-              const yFront = sp.yBatWall - sp.sideSign * 0.225;
-              mD3Bat.push(_makeMatrix(sp.xBat - 70.0, yFront, 12.68, 0, 0, rotZ, 0.82, 1.0, 1.0));
+              const yFront = (sp.sideSign > 0) ? (11.15 - 0.45) : (-11.15 + 0.45);
+              mD3Bat.push(_makeMatrix(sp.xBat - 70.0, yFront, 13.03, 0, 0, rotZ, 0.82, 1.0, 1.0));
             });
 
             _buildInstancedFromNode(gB2.get('ark_pen_d1_megafauna_bay'), 'ark_pen_d1_megafauna_bay', mD1Mega, trimMat, 'fix_mega_karn', d1Grp, 0);
@@ -21833,7 +21929,7 @@ transformed.z = -min(58.0, max(12.0, uWaterDepth * 0.42));
             _buildInstancedFromNode(gB2.get('ark_pen_d2_ox_stall'), 'ark_pen_d2_ox_stall', mD2Ox, trimMat, 'fix_oxen_pens', d2Grp, 0);
             _buildInstancedFromNode(gB2.get('ark_aviary_d3_bay'), 'ark_aviary_d3_bay', mD3Avi, trimMat, 'fix_aviary_rodent', d3Grp, 0);
             _buildInstancedFromNode(gB2.get('ark_rodent_honeycomb_d3'), 'ark_rodent_honeycomb_d3', mD3Rod, trimMat, 'fix_aviary_rodent', d3Grp, 0);
-            _buildInstancedFromNode(gB2.get('ark_bat_roost_box_d3'), 'ark_bat_roost_box_d3', mD3Bat, trimMat, 'fix_aviary_rodent', d3Grp, 0);
+            wbState.batRoostInstMesh = _buildInstancedFromNode(gB2.get('ark_bat_roost_box_d3'), 'ark_bat_roost_box_d3', mD3Bat, trimMat, 'fix_aviary_rodent', d3Grp, 0);
 
             // Multi-Material-Instancing für ark_hay_bale_stack (Primitive 0 = Master-Trim, Primitive 1 = 1K-Stroh-PBR!)
             const hayLm = gB2.get('ark_hay_bale_stack');
@@ -21926,8 +22022,8 @@ transformed.z = -min(58.0, max(12.0, uWaterDepth * 0.42));
             _buildInstancedFromNode(gB3.get('ark_crew_washstand_basin'), 'ark_crew_washstand_basin', mWash, trimMat, 'fix_quarters_atrium', b3Grp, 0);
             _buildInstancedFromNode(gB3.get('ark_crew_wall_shelf'), 'ark_crew_wall_shelf', mShelves, trimMat, 'fix_quarters_atrium', b3Grp, 0);
 
-            // Webstuhl in Kammer #2
-            placeHeroB3('ark_crew_weaving_loom', -5.25, -9.85, zD3, 0, 0, -Math.PI * 0.5, 1, 1, 1);
+            // Gewichtswebstuhl aus dem Kammer-Durchgang heraus an die freie Längsschott-Wandnische im Vorflur (Y = -5.38 m, X = -8.35 m -> 100 % freier Durchgang!)
+            placeHeroB3('ark_crew_weaving_loom', -8.35, -5.38, zD3, 0, 0, 0, 1, 1, 1);
 
             // 4. Vorflur (Y -7.00..-5.20): Noahs Chronik-Schreibpult direkt vor Noah (66.75, -5.55)
             placeHeroB3('ark_crew_study_desk_set', -3.25, -6.46, zD3, 0, 0, Math.PI, 1, 1, 1);
@@ -43136,8 +43232,8 @@ diffuseColor.rgb = mix(diffuseColor.rgb, mix(vec3(0.24, 0.17, 0.11), vec3(0.38, 
       const nBaysY = Math.max(4, Math.round(23.0 / postStepM));
       const dyBayZoh = 23.0 / nBaysY;
       const bZPost = 1.5 * HANDBREITE_M;
-      const zHingeZoh = zOutSl - 0.25 * HANDBREITE_M; // Oben am Zohar-Dachrähm gelagert (100% frei unterhalb der angehobenen Dachplatte!)
-      const hFlapZoh = 0.96 * ELLE_M;                // Volle 1-Elle-Klappenhöhe (reicht geschlossen bis auf die untere Zohar-Schwelle zTrauf!)
+      const zHingeZoh = zOutSl - 0.012;                // 13.988 m: Exakt an der äußeren Oberkante des 1-Elle-Zôhar-Bandes UNTERHALB des 1.0-E.-Traufüberstands!
+      const hFlapZoh = 0.96 * ELLE_M;                  // Volle 1-Elle-Klappenhöhe (schwenkt frei vor den 5 Lamellen ohne Dachhaut-Clipping!)
       for (let bx = 0; bx <= nBaysX; bx++) {
         const xp = bx * dxBayZoh;
         const xP0 = Math.max(0.0, xp - bZPost), xP1 = Math.min(140.0, xp + bZPost);
@@ -43148,16 +43244,16 @@ diffuseColor.rgb = mix(diffuseColor.rgb, mix(vec3(0.24, 0.17, 0.11), vec3(0.38, 
           const baySpan = dxBayZoh - 1.85 * bZPost;
           const iSecBay = Math.min(13, Math.floor(xMidBay / 10.0));
           if (isFullShipZohar || (iSecBay >= 1 && iSecBay <= 12)) {
-            addStormShutterInstance(xMidBay, -11.56, zHingeZoh, baySpan, hFlapZoh, 'BB', false);
-            addStormShutterInstance(xMidBay, 11.56, zHingeZoh, baySpan, hFlapZoh, 'SB', false);
+            addStormShutterInstance(xMidBay, -11.490, zHingeZoh, baySpan, hFlapZoh, 'BB', false);
+            addStormShutterInstance(xMidBay, 11.490, zHingeZoh, baySpan, hFlapZoh, 'SB', false);
           }
         }
       }
       for (let by = 0; by < nBaysY; by++) {
         const yMidBay = -11.50 + (by + 0.5) * dyBayZoh;
         const baySpan = dyBayZoh - 1.85 * bZPost;
-        addStormShutterInstance(-0.06, yMidBay, zHingeZoh, baySpan, hFlapZoh, 'BOW', false);
-        addStormShutterInstance(140.06, yMidBay, zHingeZoh, baySpan, hFlapZoh, 'STERN', false);
+        addStormShutterInstance(-0.010, yMidBay, zHingeZoh, baySpan, hFlapZoh, 'BOW', false);
+        addStormShutterInstance(140.010, yMidBay, zHingeZoh, baySpan, hFlapZoh, 'STERN', false);
       }
       [0.0, 140.0].forEach((xEnd, idxE) => {
         const xW0 = (idxE === 0) ? 0.0 : (140.0 - dAW_z);
@@ -43230,15 +43326,15 @@ diffuseColor.rgb = mix(diffuseColor.rgb, mix(vec3(0.24, 0.17, 0.11), vec3(0.38, 
           }
           const openSpanZ = Math.max(0.10, zOpenTop - zOpenBot);
           if (openSpanZ >= 0.28) {
-            const flapH_B = Math.min(0.42, 0.44 * openSpanZ);
+            // Exakt 1 einzige Klappen-Etage (4 Klappen je Turm -> 32 Klappen bei 8 Türmen) bündig an der Windfang-Öffnung von ark_badgir_cap (zTop - 0.04 m)!
+            const flapH_B = Math.min(0.46, openSpanZ);
             const spanX_B = (x1 - x0) - 2.2 * bPost3D;
             const spanY_B = (y1 - y0) - 2.2 * bPost3D;
-            [zOpenBot + 0.48 * openSpanZ, zTop - 0.04].forEach((zHngB) => {
-              addStormShutterInstance(xCh, y0 - 0.028, zHngB, spanX_B, flapH_B, 'BB', true);
-              addStormShutterInstance(xCh, y1 + 0.028, zHngB, spanX_B, flapH_B, 'SB', true);
-              addStormShutterInstance(x0 - 0.028, 0.5 * (y0 + y1), zHngB, spanY_B, flapH_B, 'BOW', true);
-              addStormShutterInstance(x1 + 0.028, 0.5 * (y0 + y1), zHngB, spanY_B, flapH_B, 'STERN', true);
-            });
+            const zHngB = zTop - 0.04;
+            addStormShutterInstance(xCh, y0 - 0.022, zHngB, spanX_B, flapH_B, 'BB', true);
+            addStormShutterInstance(xCh, y1 + 0.022, zHngB, spanX_B, flapH_B, 'SB', true);
+            addStormShutterInstance(x0 - 0.022, 0.5 * (y0 + y1), zHngB, spanY_B, flapH_B, 'BOW', true);
+            addStormShutterInstance(x1 + 0.022, 0.5 * (y0 + y1), zHngB, spanY_B, flapH_B, 'STERN', true);
           }
           const nLouversB = Math.max(2, Math.min(7, Math.floor(openSpanZ / HANDBREITE_M)));
           for (let lb = 1; lb <= nLouversB; lb++) {
@@ -49984,6 +50080,10 @@ diffuseColor.rgb = mix(diffuseColor.rgb, mix(vec3(0.24, 0.17, 0.11), vec3(0.38, 
             const wKey = (meta.z < 0.5) ? params.woodBottom : (meta.z <= 6.05 ? params.woodOuterWallLow : (meta.z <= 10.05 ? params.woodOuterWallMid : params.woodOuterWallTop));
             const wTint = (wKey === 'EICHE') ? [0.92, 0.88, 0.84] : (wKey === 'ZYPRESSE' ? [1.12, 0.96, 0.84] : (wKey === 'ZEDER' ? [1.22, 1.04, 0.90] : [1.18, 1.14, 0.96]));
             rgbScratch[0] = wTint[0] * aoZ; rgbScratch[1] = wTint[1] * aoZ; rgbScratch[2] = wTint[2] * aoZ;
+          } else if (Arche.Procedural && Arche.Procedural._hasHullCC0Wood && meta.texIdx >= 1 && meta.texIdx <= 4) {
+            // Exakter 1:1-Farbabgleich der 1024×1024-CC0-Holz-Scans (hullMaterials[1..4]) auf das satte Blender-Holz (MAT_ARK_*)
+            const cc0Gain = (meta.fixTag === 3) ? 0.90 : 0.96;
+            rgbScratch[0] = cc0Gain * aoZ; rgbScratch[1] = cc0Gain * 0.96 * aoZ; rgbScratch[2] = cc0Gain * 0.92 * aoZ;
           } else if (meta.fixTag === 3) {
             rgbScratch[0] = 0.94 * aoZ; rgbScratch[1] = 0.84 * aoZ; rgbScratch[2] = 0.70 * aoZ;
           } else {

@@ -222,11 +222,11 @@
             },
             "ark_badgir_cap": {
               "lods": {
-                "LOD0": 1392,
-                "LOD1": 288,
-                "LOD2": 84
+                "LOD0": 888,
+                "LOD1": 528,
+                "LOD2": 180
               },
-              "description": "Gezimmerter Badgir-Windturm-Kopf (1.633x1.400m Schachtsitz, Origin Z=0.0 an zTop, +0.45m Kopher-Zedern-Zeltdachhaube, 5 Wetterlamellen je Oeffnung, 16 Sparrenkoepfe & Kreuzwand)"
+              "description": "Gezimmerter Badgir-Windturm-Kopf (1.633x1.400m Schachtsitz, Origin Z=0.0 an zTop, exakt 1 Windfang-Oeffnungsebene mit 5 nach innen zurueckversetzten Zedern-Wetterlamellen, 0 statische Aussenklappen, +0.45m Kopher-Zeltdachhaube)"
             }
           },
           "previews": [
@@ -234,8 +234,8 @@
             "assets/previews/ark_wave_a_gate_closeup.png",
             "assets/previews/ark_wave_a_carpentry_closeup.png"
           ],
-          "glbSizeKB": 2204.9,
-          "exportedAt": "2026-11-21 10:51:50"
+          "glbSizeKB": 2197.0,
+          "exportedAt": "2026-11-21 16:49:19"
         },
         "ark_base_structure_kit": {
           "enabled": true,
@@ -355,7 +355,7 @@
                 "LOD2": 4092,
                 "LOD3": 2652
               },
-              "description": "140-m-Satteldach (First Z=14.700..14.972m, 1-Elle-Traufueberstand bis |Y|=11.967m, aussen Kopher mit Stossleisten, Firstbalken & 8 Badgir-Kragen, innen Zedernholz mit Sparrenkoepfen alle 2.333m)"
+              "description": "140-m-Satteldach (First Z=14.700..14.972m, 1-Elle-Traufueberstand bis |Y|=11.967m sauber ueber 1-Elle-Zohar Z=13.533..14.000m, aussen Kopher, innen Zedern-Schalung & Sparren strikt >=14cm unter Dachhaut)"
             },
             "ark_hull_zohar": {
               "materials": [
@@ -520,7 +520,7 @@
             "assets/previews/ark_base_wood_swatches.png"
           ],
           "glbSizeKB": 17563.6,
-          "exportedAt": "2026-11-21 10:50:20"
+          "exportedAt": "2026-11-21 16:49:12"
         },
         "ark_wave_b1_machines_rooms_kit": {
           "enabled": true,
@@ -556,11 +556,11 @@
             },
             "ark_goepel_rotor_crown": {
               "lods": {
-                "LOD0": 5480,
-                "LOD1": 1640,
-                "LOD2": 536
+                "LOD0": 5088,
+                "LOD1": 1488,
+                "LOD2": 516
               },
-              "description": "Animiert (Dreh-Origin Z-Achse): Koenigswelle, 48-Zahn-Kammrad (Extra Mesh Gears), 3 Zugarme & 3 Hainbuchen-Dreierjoche"
+              "description": "Animiert (Dreh-Origin Z-Achse): Koenigswelle, 48-Zahn-Kammrad, 1 doppelt abgestrebter Eichen-Zugarm (+X, 3-Ochsen-Joch) & 180°-Basalt-Gegengewicht (-X)"
             },
             "ark_goepel_lantern_pinion": {
               "lods": {
@@ -586,6 +586,14 @@
               },
               "description": "Animiert (Origin X-Achse, +0.17m Hub): Gleitende Hainbuchen-Klauenkupplung mit Gabelnut & Einrueckhebel"
             },
+            "ark_shaft_wall_bearing": {
+              "lods": {
+                "LOD0": 540,
+                "LOD1": 160,
+                "LOD2": 48
+              },
+              "description": "Statisch (Origin Wellen-Durchstosspunkt in 0.233m Schottwand, Achse Y): Eichen-Lagerblock mit Holzduebeln, Basalt-Lagerschalen, Wachsring & geschweifter Wandkonsole"
+            },
             "ark_mill_table_base": {
               "lods": {
                 "LOD0": 2480,
@@ -604,19 +612,19 @@
             },
             "ark_archimedes_screw_tube": {
               "lods": {
-                "LOD0": 1852,
-                "LOD1": 1264,
-                "LOD2": 536
+                "LOD0": 2492,
+                "LOD1": 1808,
+                "LOD2": 888
               },
-              "description": "Statisch (Origin Zentrum, Achse Y): Kopher-Zypressen-Daubenrohr D=0.467m, L=8.838m, 9 Bronze-Reifen & Sicht-Ausschnitt"
+              "description": "Statisch (Origin Zentrum, Achse Y): Kopher-Daubenrohr D=0.467m, oberer Eichen-/Basalt-Lagerbock, Kopher-Auswurftrog + Speigatt-Rinne & Eichen-Schutzbruestung"
             },
             "ark_archimedes_screw_helix": {
               "lods": {
-                "LOD0": 1532,
-                "LOD1": 956,
-                "LOD2": 580
+                "LOD0": 2444,
+                "LOD1": 1532,
+                "LOD2": 852
               },
-              "description": "Animiert (Dreh-Origin Y-Achse): Eichen-Kernwelle R=0.075m mit 2-gaengiger Zedern-Schneckenwendel R=0.205m, Pitch 1.167m"
+              "description": "Animiert (Dreh-Origin Y-Achse): Durchgehende Eichen-Kernwelle bis Y=+5.24m mit 2-gaengiger Zedernwendel & oberem 8-Stab-Antriebs-Stockrad (0 Luecke!)"
             },
             "ark_paternoster_drum": {
               "lods": {
@@ -722,8 +730,8 @@
             "assets/previews/ark_wave_b1_overview.png",
             "assets/previews/ark_wave_b1_mill_fix_closeup.png"
           ],
-          "glbSizeKB": 4795.0,
-          "exportedAt": "2026-11-21 13:45:26"
+          "glbSizeKB": 5024.0,
+          "exportedAt": "2026-11-21 16:54:29"
         },
         "ark_wave_b2_habitats_kit": {
           "enabled": true,
