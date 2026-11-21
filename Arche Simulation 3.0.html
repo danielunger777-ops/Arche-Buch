@@ -5854,49 +5854,70 @@ void applyArkInteriorLighting(inout vec3 indirectDiff, vec3 baseAlbedo, vec3 shi
   float inHull  = inHullX * inHullY * inHullZ;
   if (inHull <= 0.001) return;
 
-  float zFall = exp(-max(0.0, 14.0 - shipPos.z) * 0.125);
-  float slotMask = 1.0 - smoothstep(1.4, 3.2, abs(shipPos.y));
-  float ribCadence = 0.82 + 0.18 * cos(shipPos.x * 0.6283);
+  // 1. Zôhar-Tageslichtschächte & S7/S8-Atrium (weicher Tiefenabfall bis Deck 1)
+  float zFall = exp(-max(0.0, 14.0 - shipPos.z) * 0.115);
+  float slotMask = 1.0 - smoothstep(1.5, 3.6, abs(shipPos.y));
+  float ribCadence = 0.80 + 0.20 * cos(shipPos.x * 0.6283);
   float atriumX = smoothstep(-10.5, -5.0, shipPos.x) * (1.0 - smoothstep(12.5, 16.5, shipPos.x));
-  float atriumY = 1.0 - smoothstep(3.4, 5.8, abs(shipPos.y));
-  float zoharShaft = max(slotMask * 0.90 * ribCadence, atriumX * atriumY * 1.28) * zFall * uDayLightFactor;
+  float atriumY = 1.0 - smoothstep(3.6, 6.2, abs(shipPos.y));
+  float zoharShaft = max(slotMask * 0.94 * ribCadence, atriumX * atriumY * 1.32) * zFall * uDayLightFactor;
 
+  // 2. S7-Seitentor-Tageslichtportal (Backbord X=-5.0, Y=-11.5, Z=7.6)
   float dGateX = abs(shipPos.x + 5.0);
   float dGateY = max(0.0, shipPos.y + 11.5);
-  float dGateZ = abs(shipPos.z - 6.2);
-  float gateMask = exp(-dGateX * 0.16) * exp(-dGateY * 0.10) * exp(-dGateZ * 0.22) * smoothstep(-12.2, -11.0, shipPos.y);
-  float gateGlow = gateMask * uGateOpenGlow * (0.35 + 0.65 * uDayLightFactor);
+  float dGateZ = abs(shipPos.z - 7.4);
+  float gateMask = exp(-dGateX * 0.15) * exp(-dGateY * 0.095) * exp(-dGateZ * 0.22) * smoothstep(-12.2, -11.0, shipPos.y);
+  float gateGlow = gateMask * uGateOpenGlow * (0.38 + 0.62 * uDayLightFactor);
 
+  // 3. Mittelschiff-Olivenöl-Laternen-Pools (Deck 1/2/3, lebendiger Flimmer-Puls)
   float dxLamp = (fract((shipPos.x + 10.0) / 10.0) - 0.5) * 10.0;
   float dyLamp = abs(shipPos.y);
-  float dzLamp = min(abs(shipPos.z - 3.6), min(abs(shipPos.z - 7.6), abs(shipPos.z - 11.8)));
-  float lampDist2 = dxLamp * dxLamp * 0.085 + dyLamp * dyLamp * 0.22 + dzLamp * dzLamp * 0.28;
-  float lampFall = exp(-lampDist2 * 0.30) * smoothstep(68.0, 56.0, abs(shipPos.x));
+  float dzLamp = min(abs(shipPos.z - 3.8), min(abs(shipPos.z - 7.8), abs(shipPos.z - 11.8)));
+  float lampDist2 = dxLamp * dxLamp * 0.085 + dyLamp * dyLamp * 0.20 + dzLamp * dzLamp * 0.26;
+  float lampFall = exp(-lampDist2 * 0.28) * smoothstep(69.2, 58.0, abs(shipPos.x));
   float aisleMask = 1.0 - smoothstep(2.4, 6.2, abs(shipPos.y));
-  float outerCalm = mix(0.44, 1.0, max(aisleMask, atriumX * atriumY));
-  float lampFlick = 0.96 + 0.04 * sin(uShipLightTime * 5.2 + shipPos.x * 0.37 + shipPos.z * 0.7);
-  float deepDeckAmb = (1.0 - smoothstep(5.5, 10.2, shipPos.z)) * 0.34 + 0.22;
-  float lampStr = max(uNightLampFactor * 1.25, deepDeckAmb * (0.65 + 0.75 * aisleMask));
-  vec3 lampCol = vec3(1.00, 0.68, 0.28) * (lampFall * lampStr * lampFlick * (0.55 + 0.65 * max(aisleMask, atriumX)));
+  float outerCalm = mix(0.66, 1.0, max(aisleMask, atriumX * atriumY));
+  float lampFlick = 0.955 + 0.045 * sin(uShipLightTime * 5.2 + shipPos.x * 0.37 + shipPos.z * 0.7);
+  float deepDeckAmb = (1.0 - smoothstep(5.5, 10.4, shipPos.z)) * 0.38 + 0.24;
+  float lampStr = max(uNightLampFactor * 1.28, deepDeckAmb * (0.70 + 0.72 * aisleMask));
+  vec3 lampCol = vec3(1.00, 0.70, 0.30) * (lampFall * lampStr * lampFlick * (0.58 + 0.62 * max(aisleMask, atriumX)));
 
-  float dHearth = length(shipPos - vec3(-5.0, 5.5, 9.8));
-  float hearthFall = (1.0 - smoothstep(0.8, 7.5, dHearth)) * exp(-dHearth * 0.20);
+  // 4. Welle C: Seitenschiff-Laternen-Pools entlang beider Längsgänge (|Y| ≈ 6.2..8.5 m, Deck 1/2/3!)
+  float dySideLamp = abs(abs(shipPos.y) - 7.1);
+  float sideLampDist2 = dxLamp * dxLamp * 0.090 + dySideLamp * dySideLamp * 0.12 + dzLamp * dzLamp * 0.25;
+  float sideLampFall = exp(-sideLampDist2 * 0.26) * smoothstep(69.6, 62.0, abs(shipPos.x)) * smoothstep(4.2, 5.5, abs(shipPos.y));
+  float sideFlick = 0.955 + 0.045 * sin(uShipLightTime * 4.7 + shipPos.x * 0.43 - shipPos.y * 0.29 + shipPos.z * 0.65);
+  float sideDeckAmb = (1.0 - smoothstep(5.4, 10.8, shipPos.z)) * 0.44 + 0.40;
+  float sideLampStr = max(uNightLampFactor * 1.18, sideDeckAmb);
+  vec3 sideLampCol = vec3(1.00, 0.73, 0.36) * (sideLampFall * sideLampStr * sideFlick);
+
+  // 5. Welle C: Warmes Holz-Bounce-Ambient für tiefe Deck-1-Zonen & Seitenschiffe (0 schwarze Schattenlöcher!)
+  float deepD1Mask = 1.0 - smoothstep(4.8, 8.6, shipPos.z);
+  float sideZoneMask = smoothstep(3.8, 6.2, abs(shipPos.y));
+  float warmBounceStr = (0.15 + 0.24 * deepD1Mask + 0.18 * sideZoneMask * (0.50 + 0.50 * deepD1Mask))
+    * (0.62 + 0.38 * max(uDayLightFactor, uNightLampFactor));
+  vec3 woodBounceCol = vec3(0.96, 0.70, 0.42) * warmBounceStr;
+
+  // 6. S7-Kombüsen-Herdglut-Schein (Basalt-Herdblock S7 Stb bei X=-4.2, Y=+9.2, Z=11.0)
+  float dHearth = length(shipPos - vec3(-4.2, 9.2, 11.0));
+  float hearthFall = (1.0 - smoothstep(0.8, 8.2, dHearth)) * exp(-dHearth * 0.18);
   float hearthPulse = 0.86 + 0.10 * sin(uShipLightTime * 4.6) + 0.06 * cos(uShipLightTime * 8.1 + shipPos.y * 0.9);
-  vec3 hearthCol = vec3(1.00, 0.40, 0.12) * (hearthFall * hearthPulse * (0.68 + 0.55 * uNightLampFactor));
+  vec3 hearthCol = vec3(1.00, 0.42, 0.13) * (hearthFall * hearthPulse * (0.72 + 0.55 * uNightLampFactor));
 
+  // 7. Analytische Innenraum-Ecken-AO (Böden, Querschotten, Längsschotten)
   float dFloor = min(abs(shipPos.z - 0.4), min(abs(shipPos.z - 2.0), min(abs(shipPos.z - 6.0), abs(shipPos.z - 10.0))));
   float dTransBH = abs((fract((shipPos.x + 75.0) / 10.0) - 0.5) * 10.0);
   float dLongBH = min(abs(abs(shipPos.y) - 5.0), abs(11.4 - abs(shipPos.y)));
-  float deckAO = 1.0 - smoothstep(0.0, 0.46, dFloor);
-  float bhAO = 1.0 - smoothstep(0.0, 0.40, dTransBH);
-  float wallAO = 1.0 - smoothstep(0.0, 0.44, dLongBH);
-  float aoDark = clamp(deckAO * 0.54 + bhAO * 0.38 + wallAO * 0.36, 0.0, 1.0);
-  float aoFactor = mix(1.0, (1.0 - 0.22 * aoDark) * mix(0.82, 1.0, outerCalm), inHull);
+  float deckAO = 1.0 - smoothstep(0.0, 0.44, dFloor);
+  float bhAO = 1.0 - smoothstep(0.0, 0.38, dTransBH);
+  float wallAO = 1.0 - smoothstep(0.0, 0.42, dLongBH);
+  float aoDark = clamp(deckAO * 0.48 + bhAO * 0.34 + wallAO * 0.32, 0.0, 1.0);
+  float aoFactor = mix(1.0, (1.0 - 0.20 * aoDark) * mix(0.86, 1.0, outerCalm), inHull);
 
   indirectDiff *= aoFactor;
-  vec3 skyShaftCol = vec3(0.76, 0.89, 1.00) * (zoharShaft * 0.52);
-  vec3 gateBeamCol = vec3(1.00, 0.92, 0.78) * (gateGlow * 0.50);
-  vec3 bounceLight = skyShaftCol + gateBeamCol + lampCol * 0.58 + hearthCol * 0.62;
+  vec3 skyShaftCol = vec3(0.78, 0.90, 1.00) * (zoharShaft * 0.54);
+  vec3 gateBeamCol = vec3(1.00, 0.92, 0.78) * (gateGlow * 0.52);
+  vec3 bounceLight = skyShaftCol + gateBeamCol + lampCol * 0.58 + sideLampCol * 0.54 + woodBounceCol + hearthCol * 0.64;
   indirectDiff += baseAlbedo * bounceLight * (inHull * aoFactor);
 }
 `;
@@ -8779,7 +8800,7 @@ diffuseColor.rgb *= (1.0 - 0.24 * uWetness);`
       bilgeWater: new THREE.MeshPhongMaterial({ vertexColors: true, emissive: 0x042430, specular: 0xCCF4FF, shininess: 110, transparent: true, opacity: 0.76, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }),
       zoharMirror: new THREE.MeshStandardMaterial({ color: 0xFFD166, emissive: 0x3A2600, roughness: 0.24, metalness: 0.85, roughnessMap: Arche.Procedural.roughnessMap, side: THREE.DoubleSide }),
       alabasterLens: new THREE.MeshStandardMaterial({ color: 0xFFF8E7, emissive: 0x382E18, roughness: 0.45, transparent: true, opacity: 0.78 }),
-      daylightBeam: new THREE.MeshBasicMaterial({ color: 0xFFE898, transparent: true, opacity: 0.14, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending }),
+      daylightBeam: new THREE.MeshBasicMaterial({ color: 0xFFEAA0, vertexColors: true, transparent: true, opacity: 0.16, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending }),
       micaLampCore: new THREE.MeshBasicMaterial({ color: 0xFFB703 }),
       copperLampMesh: new THREE.MeshLambertMaterial({ color: 0xB85D19 })
     };
@@ -9845,7 +9866,8 @@ if (uAssetMode > 1.5) {
       uDoorOpen: { value: 1.0 },
       uGateOpen: { value: 0.0 },
       uBadgirActive: { value: 1.0 },
-      uStallHeatNorm: { value: 0.35 }
+      uStallHeatNorm: { value: 0.35 },
+      uDustGlow: { value: 0.0 }
     };
 
     const airflowFragShader = `
@@ -9919,6 +9941,7 @@ uniform float uDoorOpen;
 uniform float uGateOpen;
 uniform float uBadgirActive;
 uniform float uStallHeatNorm;
+uniform float uDustGlow;
 varying float vFlowU;
 varying float vPathType;
 varying float vLocalZ;
@@ -9926,13 +9949,20 @@ varying float vLuvLeeFactor;
 
 void main() {
 if (vLocalZ > uMaxSliceZ) discard;
-if (vPathType < 0.5 && uBadgirActive < 0.5) discard;
-if (vPathType > 2.5 && uGateOpen < 0.5) discard;
-
 vec2 pc = gl_PointCoord * 2.0 - 1.0;
 float r2 = dot(pc, pc);
 if (r2 > 1.0) discard;
 float disc = exp(-r2 * 3.2) * (1.0 - r2);
+if (vPathType > 3.5) {
+  if (uDustGlow <= 0.01) discard;
+  float shimmer = 0.52 + 0.48 * sin(uTime * 1.45 + vFlowU * 37.7 + vLocalZ * 2.1);
+  vec3 dustCol = mix(vec3(1.00, 0.86, 0.54), vec3(1.00, 0.96, 0.78), clamp((vLocalZ - 4.0) / 9.5, 0.0, 1.0));
+  float dustAlpha = disc * uDustGlow * shimmer * vLuvLeeFactor * 0.68;
+  gl_FragColor = vec4(dustCol, clamp(dustAlpha, 0.0, 0.82));
+  return;
+}
+if (vPathType < 0.5 && uBadgirActive < 0.5) discard;
+if (vPathType > 2.5 && uGateOpen < 0.5) discard;
 
 float effU = (vPathType > 1.2 && vPathType < 1.8 && uWindVec.y < 0.0) ? (1.0 - vFlowU) : vFlowU;
 float dirSign = (vPathType > 1.2 && vPathType < 1.8 && uWindVec.y < 0.0) ? -1.0 : 1.0;
@@ -10041,6 +10071,22 @@ varying float vLuvLeeFactor;
 void main() {
 vFlowU = aFlowU;
 vPathType = aPathType;
+
+if (aPathType > 3.5) {
+  float ph = aFlowU * 6.283185;
+  vec3 pDust = position + vec3(
+    sin(uTime * 0.34 + ph + aNextPos.x) * 0.42,
+    cos(uTime * 0.29 + ph * 1.3 + aNextPos.y) * 0.34,
+    sin(uTime * 0.22 + ph * 0.7 + aNextPos.z) * 0.28
+  );
+  vLocalZ = pDust.z;
+  float beamZone = 0.55 + 0.45 * clamp(cos(pDust.x * 0.6283) * 0.5 + 0.5, 0.0, 1.0);
+  vLuvLeeFactor = beamZone * clamp(aNextPos.z, 0.55, 1.35);
+  vec4 mvDust = modelViewMatrix * vec4(pDust, 1.0);
+  gl_Position = projectionMatrix * mvDust;
+  gl_PointSize = clamp((52.0 * clamp(aNextPos.z, 0.75, 1.35)) / max(3.5, -mvDust.z), 1.8, 4.4);
+  return;
+}
 
 vec2 wDir = (length(uWindVec) > 0.05) ? normalize(uWindVec) : vec2(0.707, 0.707);
 float sideSignY = (abs(position.y) > 0.2) ? sign(position.y) : 0.0;
@@ -12186,17 +12232,17 @@ void main() {
       addQuadToBucket(bucket, [x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y0, z1], [x1, y1, z1], [x0, y1, z1], 0, 0, 1, elemType, matType, fixTag, null, forceTexIdx);
       addQuadToBucket(bucket, [x0, y1, z0], [x1, y1, z0], [x1, y0, z0], [x0, y1, z0], [x1, y0, z0], [x0, y0, z0], 0, 0, -1, elemType, matType, fixTag, null, forceTexIdx);
     }
-    function addThickQuadToBucket(bucket, p1, p2, p3, p4, dx, dy, dz, nx, ny, nz, elemType, matType, fixTag = 0) {
+    function addThickQuadToBucket(bucket, p1, p2, p3, p4, dx, dy, dz, nx, ny, nz, elemType, matType, fixTag = 0, forceTexIdx = -1) {
       const q1 = [p1[0] + dx, p1[1] + dy, p1[2] + dz];
       const q2 = [p2[0] + dx, p2[1] + dy, p2[2] + dz];
       const q3 = [p3[0] + dx, p3[1] + dy, p3[2] + dz];
       const q4 = [p4[0] + dx, p4[1] + dy, p4[2] + dz];
-      addQuadToBucket(bucket, p1, p2, p3, p1, p3, p4, nx, ny, nz, elemType, matType, fixTag);
-      addQuadToBucket(bucket, q4, q3, q2, q4, q2, q1, -nx, -ny, -nz, elemType, matType, fixTag);
-      addQuadToBucket(bucket, p1, p2, q2, p1, q2, q1, 0, -1, 0, elemType, matType, fixTag);
-      addQuadToBucket(bucket, p2, p3, q3, p2, q3, q2, 1, 0, 0, elemType, matType, fixTag);
-      addQuadToBucket(bucket, p3, p4, q4, p3, q4, q3, 0, 1, 0, elemType, matType, fixTag);
-      addQuadToBucket(bucket, p4, p1, q1, p4, q1, q4, -1, 0, 0, elemType, matType, fixTag);
+      addQuadToBucket(bucket, p1, p2, p3, p1, p3, p4, nx, ny, nz, elemType, matType, fixTag, null, forceTexIdx);
+      addQuadToBucket(bucket, q4, q3, q2, q4, q2, q1, -nx, -ny, -nz, elemType, matType, fixTag, null, forceTexIdx);
+      addQuadToBucket(bucket, p1, p2, q2, p1, q2, q1, 0, -1, 0, elemType, matType, fixTag, null, forceTexIdx);
+      addQuadToBucket(bucket, p2, p3, q3, p2, q3, q2, 1, 0, 0, elemType, matType, fixTag, null, forceTexIdx);
+      addQuadToBucket(bucket, p3, p4, q4, p3, q4, q3, 0, 1, 0, elemType, matType, fixTag, null, forceTexIdx);
+      addQuadToBucket(bucket, p4, p1, q1, p4, q1, q4, -1, 0, 0, elemType, matType, fixTag, null, forceTexIdx);
     }
     const gpuBarrelInstances = [];
     const gpuBoneTimberInstances = [];
@@ -13355,6 +13401,21 @@ void main() {
       chuteWatUv.push(0, 0, uMax, 0, uMax, 1, 0, 0, uMax, 1, 0, 1);
       addFlushChuteSlottedOakGrating3D(x0, x1, y0, y1, zDeck);
     }
+    // Bündige dunkle Eichen-Bohlen-Abdeckung der Spülrinnen im Foyer- & Rampenbereich S7/S8 (xShip 60..80 m -> barrierefreier Schwerlastboden!)
+    function addCoveredFoyerFlushChute3D(x0, x1, y0, y1, zDeck) {
+      const _prevWaveCov = _curFixReplaceWave;
+      _curFixReplaceWave = 0; // Bleibt auch im TEXTURED-Modus als bündiger dunkler Eichenbohlen-Deckel sichtbar!
+      const isBaseAlreadyDeckTop = (zDeck > 2.02 && zDeck < 2.25);
+      const zFloorSurf = isBaseAlreadyDeckTop ? zDeck : (zDeck + 1.50 * HANDBREITE_M + 0.005);
+      const zLidTop = zFloorSurf + 0.052;
+      // Durchgehender bündiger Eichen-Bohlen-Deckel in dunklem CC0-Eichenholz (forceTexIdx = 1)
+      addBoxToBucket(bucketFixtures, x0, x1, y0, y1, zFloorSurf, zLidTop, 0, 0, 4, 1);
+      // Feine seitliche Eichen-Einfassleisten (bündig, 0 Stolperkante)
+      addBoxToBucket(bucketFixtures, x0, x1, y0 - 0.025, y0 + 0.025, zFloorSurf, zLidTop + 0.006, 0, 0, 4, 1);
+      addBoxToBucket(bucketFixtures, x0, x1, y1 - 0.025, y1 + 0.025, zFloorSurf, zLidTop + 0.006, 0, 0, 4, 1);
+      addWireBox(x0, x1, y0, y1, zFloorSurf, zLidTop);
+      _curFixReplaceWave = _prevWaveCov;
+    }
     const zTopD1Chute = 2.00 + 1.5 * HANDBREITE_M + 0.005;
     [-1.0, 1.0].forEach((sideSign) => {
       const yC0 = (sideSign < 0) ? -yD1ChuteOut : yD1CorrHalf;
@@ -13362,7 +13423,11 @@ void main() {
       for (let s = 0; s < 14; s++) {
         const xC0 = X_STATIONS[s] + (s === 0 ? 3.30 : 0.35);
         const xC1 = X_STATIONS[s + 1] - (s === 13 ? 3.30 : 0.35);
-        addOpenFlushChute3D(xC0, xC1, yC0, yC1, zTopD1Chute);
+        if (s === 6 || s === 7) {
+          addCoveredFoyerFlushChute3D(X_STATIONS[s] + 0.16, X_STATIONS[s + 1] - 0.16, yC0, yC1, zTopD1Chute);
+        } else {
+          addOpenFlushChute3D(xC0, xC1, yC0, yC1, zTopD1Chute);
+        }
       }
     });
     for (let q = 1; q <= 13; q++) {
@@ -13380,13 +13445,7 @@ void main() {
       addBoxToBucket(bucketFixtures, xCrossD1, xCrossD1 + 1.0 * ELLE_M, -yD1ChuteOut, 6.20, zTopD1Chute, zTopD1Chute + 2.5 * HANDBREITE_M, 0, 1, 2);
       addWireBox(xCrossD1, xCrossD1 + 1.0 * ELLE_M, -yD1ChuteOut, 6.20, zTopD1Chute, zTopD1Chute + 2.5 * HANDBREITE_M);
     });
-    // Massive Eichenbohlen-Überfahrtsbrücke über die Backbord-Spülrinne am Rampen-Antrittsplatz S8
-    addBoxToBucket(bucketFixtures, 76.65, 79.55, -2.15, -1.58, zTopD1Chute + 0.06, zTopD1Chute + 0.14, 0, 0, 4);
-    addWireBox(76.65, 79.55, -2.15, -1.58, zTopD1Chute + 0.06, zTopD1Chute + 0.14);
-    addBoxToBucket(bucketFixtures, 76.65, 79.55, -2.25, -2.15, zTopD1Chute, zTopD1Chute + 0.06, 0, 0, 4);
-    addBoxToBucket(bucketFixtures, 76.65, 79.55, -1.58, -1.48, zTopD1Chute, zTopD1Chute + 0.06, 0, 0, 4);
-    addBoxToBucket(bucketFixtures, 76.45, 76.65, -2.15, -1.58, zTopD1Chute, zTopD1Chute + 0.06, 0, 0, 4);
-    addBoxToBucket(bucketFixtures, 79.55, 79.75, -2.15, -1.58, zTopD1Chute, zTopD1Chute + 0.06, 0, 0, 4);
+    // (S7 & S8 Spülrinnen auf Deck 1 sind vollständig bündig mit dunklen Eichenbohlen abgedeckt — kein offener Graben am Rampen-Antritt!)
     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].forEach((iSec) => {
       const xS0 = X_STATIONS[iSec];
       const isBadgirSec = (iSec === 1 || iSec === 4 || iSec === 9 || iSec === 12);
@@ -13624,7 +13683,11 @@ void main() {
       for (let s = 0; s < 14; s++) {
         const xC0 = X_STATIONS[s] + (s === 0 ? 1.80 : 0.32);
         const xC1 = X_STATIONS[s + 1] - (s === 13 ? 1.80 : 0.32);
-        addOpenFlushChute3D(xC0, xC1, yC0, yC1, 6.00);
+        if (s === 6 || s === 7) {
+          addCoveredFoyerFlushChute3D(X_STATIONS[s] + 0.16, X_STATIONS[s + 1] - 0.16, yC0, yC1, 6.00);
+        } else {
+          addOpenFlushChute3D(xC0, xC1, yC0, yC1, 6.00);
+        }
       }
     });
     // Deck 2 besitzt ausschließlich Spülrinnen im Hauptgang (|Y| = 2,5..3,5 Ellen); Fallrohre in S4/S11 leiten direkt in die Deck-1-Hauptgangrinne ab:
@@ -13642,19 +13705,28 @@ void main() {
     addBoxToBucket(bucketFixtures, xGateR0, xGateR1, -9.96, -9.40, zDeck2Top, 6.00 + 2.0 * hSillStep, 0, 0, 4, 1);
     addBoxToBucket(bucketFixtures, xGateR0, xGateR1, -9.40, -8.84, zDeck2Top, 6.00 + 1.0 * hSillStep, 0, 0, 4, 1);
     [xGateR0 + 0.08, xGateR1 - 0.08].forEach((xStP) => {
-      addBoxToBucket(bucketFixtures, xStP - 0.08, xStP + 0.08, -11.06, -10.90, 6.00 + 4.0 * hSillStep, 6.00 + 4.0 * hSillStep + 0.95, 1, 0, 4, 1);
-      addBoxToBucket(bucketFixtures, xStP - 0.08, xStP + 0.08, -9.00, -8.84, zDeck2Top, zDeck2Top + 0.95, 1, 0, 4, 1);
-      addBoneTimberInstance(xStP, -10.98, 6.00 + 4.0 * hSillStep + 0.88, xStP, -8.92, zDeck2Top + 0.88, 0.72 * HANDBREITE_M);
-      addBoneTimberInstance(xStP, -10.98, 6.00 + 4.0 * hSillStep + 0.46, xStP, -8.92, zDeck2Top + 0.46, 0.62 * HANDBREITE_M);
+      const zStHi = 6.00 + 4.0 * hSillStep;
+      addBoxToBucket(bucketFixtures, xStP - 0.08, xStP + 0.08, -11.06, -10.90, zStHi, zStHi + 0.96, 1, 0, 4, 1);
+      addBoxToBucket(bucketFixtures, xStP - 0.08, xStP + 0.08, -9.00, -8.84, zDeck2Top, zDeck2Top + 0.96, 1, 0, 4, 1);
+      // Dunkle CC0-Eichen-Handläufe an der Flutsüll-Treppe (forceTexIdx = 1, 0 hellgelbe Stangen!)
+      addThickQuadToBucket(bucketFixtures,
+        [xStP - 0.055, -10.98, zStHi + 0.84], [xStP - 0.055, -8.92, zDeck2Top + 0.84],
+        [xStP - 0.055, -8.92, zDeck2Top + 0.94], [xStP - 0.055, -10.98, zStHi + 0.94],
+        0.11, 0, 0, -1, 0, 0, 0, 0, 4, 1);
+      addThickQuadToBucket(bucketFixtures,
+        [xStP - 0.045, -10.98, zStHi + 0.42], [xStP - 0.045, -8.92, zDeck2Top + 0.42],
+        [xStP - 0.045, -8.92, zDeck2Top + 0.50], [xStP - 0.045, -10.98, zStHi + 0.50],
+        0.09, 0, 0, -1, 0, 0, 0, 0, 4, 1);
     });
     addWireBox(xGateR0, xGateR1, -11.08, -8.84, zDeck2Top, 6.00 + 1.25 * ELLE_M);
     {
-      const xShaftStart = 140.0 * ELLE_M; // 65.333 m (Beginn des Gefälles hinab nach Deck 1)
-      const xShaftEnd = 164.0 * ELLE_M; // 76.533 m (Ende des Deck-2-Schachtdurchbruchs in S8)
-      const yGuardEdge = -4.5 * ELLE_M + 0.08; // -2.020 m (direkt neben der inneren Schachtkante Y = -2.10m)
-      const zCurbTop = zDeck2Top + 2.2 * HANDBREITE_M; // 17 cm hohes Eichen-Schrammbord (Rad- & Hufabweiser!)
+      // Durchgehende dunkle CC0-Eichen-Rampen- & Schacht-Brüstungsgeländer (D2->D1 & D2->D3, forceTexIdx = 1!)
+      const xShaftStart = 140.0 * ELLE_M; // 65.333 m (Beginn Schwerlastrampe D2->D1)
+      const xShaftEnd = 164.0 * ELLE_M;   // 76.533 m (Ende Deck-2-Schachtdurchbruch in S8)
+      const yGuardEdge = -4.5 * ELLE_M + 0.08; // -2.020 m (innere Schachtkante Y = -2.10 m)
+      const zCurbTop = zDeck2Top + 2.2 * HANDBREITE_M; // 17 cm Eichen-Schrammbord
       const zRailMid = zDeck2Top + 1.25 * ELLE_M;      // 58 cm Knieholm
-      const zRailTop = zDeck2Top + 2.30 * ELLE_M;      // 1.07 m schwerer Brustholm (Handlauf)
+      const zRailTop = zDeck2Top + 2.30 * ELLE_M;      // 1.07 m schwerer Brustholm
       addBoxToBucket(bucketFixtures, xShaftStart, 69.65, yGuardEdge - 0.09, yGuardEdge + 0.09, zDeck2Top, zCurbTop, 0, 0, 4, 1);
       addBoxToBucket(bucketFixtures, 70.35, xShaftEnd + 0.10, yGuardEdge - 0.09, yGuardEdge + 0.09, zDeck2Top, zCurbTop, 0, 0, 4, 1);
       const xGuardPosts = [xShaftStart + 0.06, 67.45, 69.55, 70.45, 73.45, xShaftEnd];
@@ -13665,23 +13737,48 @@ void main() {
         addBoxToBucket(bucketFixtures, xp - halfP, xp + halfP, yGuardEdge - halfP, yGuardEdge + halfP, zDeck2Top, zRailTop + (isBollard ? 0.14 : 0.06), 1, 0, 4, 1);
         if (p < xGuardPosts.length - 1 && p !== 2) {
           const xNext = xGuardPosts[p + 1];
-          addBoneTimberInstance(xp, yGuardEdge, zRailTop, xNext, yGuardEdge, zRailTop, 0.88 * HANDBREITE_M);
-          addBoneTimberInstance(xp, yGuardEdge, zRailMid, xNext, yGuardEdge, zRailMid, 0.76 * HANDBREITE_M);
+          // Dunkler CC0-Eichen-Brustholm & Knieholm (forceTexIdx = 1 statt hellgelbem boneInst!)
+          addBoxToBucket(bucketFixtures, xp, xNext, yGuardEdge - 0.065, yGuardEdge + 0.065, zRailTop - 0.055, zRailTop + 0.055, 0, 0, 4, 1);
+          addBoxToBucket(bucketFixtures, xp, xNext, yGuardEdge - 0.052, yGuardEdge + 0.052, zRailMid - 0.045, zRailMid + 0.045, 0, 0, 4, 1);
         }
       }
+      // Quer-Absturzgeländer an der hinteren Kante des D2->D1-Schachtes (x = 76.533 m, Y = -4.85..-2.02 m)
       addBoxToBucket(bucketFixtures, xShaftEnd - 0.08, xShaftEnd + 0.10, -4.85, yGuardEdge, zDeck2Top, zCurbTop, 0, 0, 4, 1);
       [-3.45, -4.78].forEach((yEndP) => {
         addBoxToBucket(bucketFixtures, xShaftEnd - 0.09, xShaftEnd + 0.09, yEndP - 0.09, yEndP + 0.09, zDeck2Top, zRailTop + 0.08, 1, 0, 4, 1);
       });
-      addBoneTimberInstance(xShaftEnd, yGuardEdge, zRailTop, xShaftEnd, -3.45, zRailTop, 0.88 * HANDBREITE_M);
-      addBoneTimberInstance(xShaftEnd, yGuardEdge, zRailMid, xShaftEnd, -3.45, zRailMid, 0.76 * HANDBREITE_M);
-      addBoneTimberInstance(xShaftEnd, -3.45, zRailTop, xShaftEnd, -4.78, zRailTop, 0.88 * HANDBREITE_M);
-      addBoneTimberInstance(xShaftEnd, -3.45, zRailMid, xShaftEnd, -4.78, zRailMid, 0.76 * HANDBREITE_M);
-      const yUpGuard = 4.5 * ELLE_M - 0.08; // +2.020 m
-      addBoxToBucket(bucketFixtures, 139.0 * ELLE_M - 0.08, 139.0 * ELLE_M + 0.12, yUpGuard - 0.11, yUpGuard + 0.11, zDeck2Top, zDeck2Top + 1.15, 1, 0, 4, 1);
-      addBoxToBucket(bucketFixtures, 69.45, 69.63, yUpGuard - 0.09, yUpGuard + 0.09, 6.00 + 1.35, 6.00 + 2.45, 1, 0, 4, 1);
-      addBoneTimberInstance(139.0 * ELLE_M, yUpGuard, zDeck2Top + 1.02, 69.54, yUpGuard, 6.00 + 2.35, 0.82 * HANDBREITE_M);
-      addBoneTimberInstance(139.0 * ELLE_M, yUpGuard, zDeck2Top + 0.54, 69.54, yUpGuard, 6.00 + 1.85, 0.70 * HANDBREITE_M);
+      addBoxToBucket(bucketFixtures, xShaftEnd - 0.065, xShaftEnd + 0.065, -4.78, yGuardEdge, zRailTop - 0.055, zRailTop + 0.055, 0, 0, 4, 1);
+      addBoxToBucket(bucketFixtures, xShaftEnd - 0.052, xShaftEnd + 0.052, -4.78, yGuardEdge, zRailMid - 0.045, zRailMid + 0.045, 0, 0, 4, 1);
+
+      // Durchgehendes dunkles CC0-Eichen-Geländer über die VOLLE Länge der D2->D3-Leichtrampe (S7-Antritt 64.867 m bis hoch zum D3-Austritt in S8 bei 76.533 m!)
+      const xBotUp = 139.0 * ELLE_M; // 64.867 m (Z = 6.00 m)
+      const xTopUp = 164.0 * ELLE_M; // 76.533 m (Z = 10.00 m)
+      const yUpGuard = 4.5 * ELLE_M - 0.08; // +2.020 m (innere Rampenwange)
+      const evalRampUpZ = (xPos) => 6.00 + 4.00 * Math.max(0.0, Math.min(1.0, (xPos - xBotUp) / (xTopUp - xBotUp)));
+      const upSegs = [
+        [xBotUp, 67.25, 69.54],       // Untere Hälfte in S7 (vor QS07)
+        [70.46, 73.50, xTopUp]        // Obere Hälfte in S8 (bis hoch auf Deck 3!)
+      ];
+      upSegs.forEach((pts) => {
+        for (let pi = 0; pi < pts.length; pi++) {
+          const xp = pts[pi];
+          const zp = evalRampUpZ(xp);
+          const isEndPost = (xp === xBotUp || xp === xTopUp);
+          const hp = isEndPost ? 0.105 : 0.085;
+          addBoxToBucket(bucketFixtures, xp - hp, xp + hp, yUpGuard - hp, yUpGuard + hp, zp, zp + 1.12 + (isEndPost ? 0.06 : 0.0), 1, 0, 4, 1);
+        }
+        const xa = pts[0], xb = pts[pts.length - 1];
+        const za = evalRampUpZ(xa), zb = evalRampUpZ(xb);
+        // Durchgehender Brustholm (+1.04 m) & Knieholm (+0.56 m) in dunkler CC0-Eiche (forceTexIdx = 1)
+        addThickQuadToBucket(bucketFixtures,
+          [xa, yUpGuard - 0.062, za + 0.99], [xb, yUpGuard - 0.062, zb + 0.99],
+          [xb, yUpGuard - 0.062, zb + 1.10], [xa, yUpGuard - 0.062, za + 1.10],
+          0, 0.124, 0, 0, -1, 0, 0, 0, 4, 1);
+        addThickQuadToBucket(bucketFixtures,
+          [xa, yUpGuard - 0.050, za + 0.52], [xb, yUpGuard - 0.050, zb + 0.52],
+          [xb, yUpGuard - 0.050, zb + 0.61], [xa, yUpGuard - 0.050, za + 0.61],
+          0, 0.100, 0, 0, -1, 0, 0, 0, 4, 1);
+      });
     }
     [0, 1, 2, 4, 5, 8, 9, 11, 12, 13].forEach((iSec) => {
       const xS0 = X_STATIONS[iSec];
@@ -13715,9 +13812,7 @@ void main() {
         }
       });
     });
-    // Rampen-Hub Deck 2 Tierbuchten (S7 Steuerbord vor Leichtrampe & S8 Backbord hinter Rampenschacht)
-    addDeck2AnimalPenRow(60.45, 64.20, 4.90, 1.63, 2, false);
-    addDeck2AnimalPenRow(76.85, 79.55, -4.90, -1.63, 1, false);
+    // S7 & S8 Mittelschiff auf Deck 2 sind reines Einschiffungs-Foyer & Rampenhalle (0 Tierbuchten -> 100 % freie Türen & Rampen-Antritte!)
     for (let iSec = 0; iSec < 14; iSec++) {
       const isSiloSec = (iSec === 2 || iSec === 5 || iSec === 8 || iSec === 11);
       const xS0 = X_STATIONS[iSec];
@@ -13867,15 +13962,13 @@ void main() {
       addWireBox(xR0, xR1, yShelf - halfDepthY, yShelf + halfDepthY, zFloorD3, zFloorD3 + 5.6 * ELLE_M);
       _curFixReplaceWave = _prevWaveRd;
     }
-    // Exakt 8 × 20 Nagerwaben-Blöcke ausschließlich an den Außenwänden (|Y| = 10.35..11.05 m) & exakt 16 Fledermauskästen unter den Dachsparren (Z = 13.03..13.55 m) in S2, S4, S11, S13!
+    // Exakt 8 × 2 Nagerwaben-Module (~6,40 m Wandlänge, 1:1!) an den Außenwänden (|Y| = 10.35..11.05 m) & exakt 16 Fledermauskästen unter den Dachsparren (Z = 13.03..13.55 m) in S2, S4, S11, S13!
     [1, 3, 10, 12].forEach((iSec) => {
       const xS0 = X_STATIONS[iSec];
-      const isGoepelSec = (iSec === 3 || iSec === 10);
       [-1.0, 1.0].forEach((sideSign) => {
-        const isPatSide = (isGoepelSec && sideSign < 0);
-        const xShStart = isPatSide ? (xS0 + 4.55) : (xS0 + 1.25);
-        const xShEnd = xS0 + 8.75;
-        addDeck3RodentHoneycombBlock(xShStart, xShEnd, sideSign * 10.70, isPatSide ? 5 : 8, 0.35);
+        const xShStart = xS0 + 1.80;
+        const xShEnd = xS0 + 8.20;
+        addDeck3RodentHoneycombBlock(xShStart, xShEnd, sideSign * 10.70, 10, 0.35);
         const nBatBoxes = 2; // 4 Sektionen × 2 Seiten × 2 Kästen = exakt 16 Fledermauskästen unter den Dachsparren (Z = 13.03..13.55 m)!
         const yBatWall = sideSign * 10.925;
         _curFixReplaceWave = 2;
@@ -14351,8 +14444,29 @@ void main() {
       const dSlab = 3.0 * HANDBREITE_M; // 3 Hände (23.3 cm) massive Zypressen-Fahrbahnbohlen
       const wCurb = 5.0 * HANDBREITE_M; // 5 Hände (38.9 cm) hohe Eichen-Seitenwangen
       addThickQuadToBucket(bucketFixtures, [xTop, yR0, zTop], [xBot, yR0, zBot], [xBot, yR1, zBot], [xTop, yR1, zTop], 0, 0, -dSlab, 0.24, 0, 0.97, 0, 1, 4);
-      addThickQuadToBucket(bucketFixtures, [xTop, yR0, zTop], [xBot, yR0, zBot], [xBot, yR0, zBot + wCurb], [xTop, yR0, zTop + wCurb], 0, 0.16, 0, 0, -1, 0, 1, 0, 4);
-      addThickQuadToBucket(bucketFixtures, [xTop, yR1, zTop], [xBot, yR1, zBot], [xBot, yR1, zBot + wCurb], [xTop, yR1, zTop + wCurb], 0, -0.16, 0, 0, 1, 0, 1, 0, 4);
+      addThickQuadToBucket(bucketFixtures, [xTop, yR0, zTop], [xBot, yR0, zBot], [xBot, yR0, zBot + wCurb], [xTop, yR0, zTop + wCurb], 0, 0.16, 0, 0, -1, 0, 1, 0, 4, 1);
+      addThickQuadToBucket(bucketFixtures, [xTop, yR1, zTop], [xBot, yR1, zBot], [xBot, yR1, zBot + wCurb], [xTop, yR1, zTop + wCurb], 0, -0.16, 0, 0, 1, 0, 1, 0, 4, 1);
+      // Durchgehendes dunkles CC0-Eichen-Geländer auf der inneren Schwerlastrampen-Wange (D2 -> D1, forceTexIdx = 1)
+      {
+        const yHeavyRail = yR1 - 0.08;
+        const evalHeavyZ = (xPos) => zTop + (zBot - zTop) * Math.max(0.0, Math.min(1.0, (xPos - xTop) / (xBot - xTop)));
+        [[xTop + 0.12, 67.55, 69.54], [70.46, 73.50, xBot - 0.10]].forEach((ptsH) => {
+          ptsH.forEach((xp) => {
+            const zp = evalHeavyZ(xp);
+            addBoxToBucket(bucketFixtures, xp - 0.08, xp + 0.08, yHeavyRail - 0.08, yHeavyRail + 0.08, zp + 0.10, zp + 1.12, 1, 0, 4, 1);
+          });
+          const xa = ptsH[0], xb = ptsH[ptsH.length - 1];
+          const za = evalHeavyZ(xa), zb = evalHeavyZ(xb);
+          addThickQuadToBucket(bucketFixtures,
+            [xa, yHeavyRail - 0.06, za + 0.99], [xb, yHeavyRail - 0.06, zb + 0.99],
+            [xb, yHeavyRail - 0.06, zb + 1.10], [xa, yHeavyRail - 0.06, za + 1.10],
+            0, 0.12, 0, 0, -1, 0, 0, 0, 4, 1);
+          addThickQuadToBucket(bucketFixtures,
+            [xa, yHeavyRail - 0.048, za + 0.56], [xb, yHeavyRail - 0.048, zb + 0.56],
+            [xb, yHeavyRail - 0.048, zb + 0.65], [xa, yHeavyRail - 0.048, za + 0.65],
+            0, 0.096, 0, 0, -1, 0, 0, 0, 4, 1);
+        });
+      }
       for (let b = 1; b <= 5; b++) {
         const uB = b / 6.0;
         const xBck = xTop + (xBot - xTop) * uB;
@@ -14387,8 +14501,8 @@ void main() {
       const dSlabL = 2.0 * HANDBREITE_M;
       const wCurbL = 4.0 * HANDBREITE_M;
       addThickQuadToBucket(bucketFixtures, [xBotL, yL0, zBotL], [xTopL, yL0, zTopL], [xTopL, yL1, zTopL], [xBotL, yL1, zBotL], 0, 0, -dSlabL, -0.26, 0, 0.97, 0, 1, 4);
-      addThickQuadToBucket(bucketFixtures, [xBotL, yL0, zBotL], [xTopL, yL0, zTopL], [xTopL, yL0, zTopL + wCurbL], [xBotL, yL0, zBotL + wCurbL], 0, 0.12, 0, 0, -1, 0, 1, 0, 4);
-      addThickQuadToBucket(bucketFixtures, [xBotL, yL1, zBotL], [xTopL, yL1, zTopL], [xTopL, yL1, zTopL + wCurbL], [xBotL, yL1, zBotL + wCurbL], 0, -0.12, 0, 0, 1, 0, 1, 0, 4);
+      addThickQuadToBucket(bucketFixtures, [xBotL, yL0, zBotL], [xTopL, yL0, zTopL], [xTopL, yL0, zTopL + wCurbL], [xBotL, yL0, zBotL + wCurbL], 0, 0.12, 0, 0, -1, 0, 1, 0, 4, 1);
+      addThickQuadToBucket(bucketFixtures, [xBotL, yL1, zBotL], [xTopL, yL1, zTopL], [xTopL, yL1, zTopL + wCurbL], [xBotL, yL1, zBotL + wCurbL], 0, -0.12, 0, 0, 1, 0, 1, 0, 4, 1);
       for (let b = 1; b <= 4; b++) {
         const uB = b / 5.0;
         const xBck = xBotL + (xTopL - xBotL) * uB;
@@ -18066,7 +18180,7 @@ applyArkInteriorLighting(reflectedLight.indirectDiffuse, diffuseColor.rgb, vShip
               d1SideZones.push([xS0 + 2.15, xS0 + 4.85, sideSign, false, yLo, yHi], [xS0 + 5.15, xS0 + 7.85, sideSign, false, yLo, yHi]);
             }
           } else {
-            d1SideZones.push([xS0 + 3.28, xS0 + 6.72, sideSign, (iSec === 12), yLo, yHi]);
+            d1SideZones.push([xS0 + 3.28, xS0 + 6.72, sideSign, (iSec === 4 || iSec === 9 || iSec === 12), yLo, yHi]);
           }
         });
       }
@@ -18312,22 +18426,16 @@ applyArkInteriorLighting(reflectedLight.indirectDiffuse, diffuseColor.rgb, vShip
       if (shSpecs.length === 0) {
         [1, 3, 10, 12].forEach((iSec) => {
           const xS0 = X_STATIONS[iSec];
-          const isGoep = (iSec === 3 || iSec === 10);
           [-1, 1].forEach((sideSign) => {
-            const isPat = (isGoep && sideSign < 0);
-            const xStart = isPat ? (xS0 + 4.55) : (xS0 + 1.25);
-            const xEnd = xS0 + 8.75;
-            shSpecs.push([xStart, xEnd, sideSign * 10.70, sideSign, 0.27, isPat ? 5 : 8]);
+            shSpecs.push([xS0 + 1.80, xS0 + 8.20, sideSign * 10.70, sideSign, 0.27, 10]);
           });
         });
       }
       if (tSpecs.length === 0) {
         [1, 3, 10, 12].forEach((iSec) => {
           const xS0 = X_STATIONS[iSec];
-          const isGoep = (iSec === 3 || iSec === 10);
           [-1, 1].forEach((sideSign) => {
-            const isPat = (isGoep && sideSign < 0);
-            const xStart = isPat ? (xS0 + 4.55) : (xS0 + 1.25), xEnd = xS0 + 8.75;
+            const xStart = xS0 + 1.80, xEnd = xS0 + 8.20;
             for (let b = 0; b < 2; b++) tSpecs.push([xStart + (b + 0.5) * ((xEnd - xStart) / 2.0), sideSign * 10.925]);
           });
         });
@@ -18379,8 +18487,8 @@ applyArkInteriorLighting(reflectedLight.indirectDiffuse, diffuseColor.rgb, vShip
         addInst(bList, xT, yT, zT, yawT, wingSpan, 0.46, 0.52, batPal[gId % batPal.length], 'fix_aviary_rodent', 8.8, gId, [tb[0] - 0.44, tb[0] + 0.44, tb[1] - 0.18, tb[1] + 0.18], 0.055);
       }
       [
-        [66.75, -5.55, 10.125, Math.PI, 0x9E3D2B, 'fix_quarters_atrium'], // 1. Noah steht frei VOR dem Tontafel-Chronikpult (ark_crew_study_desk_set, Blick -Y!)
-        [63.8, -1.95, 10.125, Math.PI, 0x3B6E8C, 'fix_quarters_atrium'], // 2. Noahs Frau steht frei VOR dem 8er-Refektoriumstisch (Y=-2.125m, Blick -Y zur Tafel!)
+        [67.70, -5.65, 10.125, Math.PI, 0x9E3D2B, 'fix_quarters_atrium'], // 1. Noah steht frei VOR dem Tontafel-Chronikpult (ark_crew_study_desk_set, Blick -Y!)
+        [63.8, -1.05, 10.125, Math.PI, 0x3B6E8C, 'fix_quarters_atrium'], // 2. Noahs Frau steht frei VOR dem 8er-Refektoriumstisch (Y=-1.24m, Blick -Y zur Tafel!)
         [65.6, 7.92, 10.428, 0.0, 0xC87A38, 'fix_galley'],          // 3. Schwiegertochter 1 steht bündig auf dem Kombüsen-Ziegelbett VOR den 3 Bronzekesseln (Blick +Y!)
         [63.4, 7.92, 10.428, 0.0, 0x5A8242, 'fix_galley'],          // 4. Ham steht bündig auf dem Kombüsen-Ziegelbett VOR dem Rüsttisch (Blick +Y!)
         [73.1, 9.32, 10.125, 0.0, 0x7A5432, 'fix_workshop_optics'], // 5. Sem steht frei VOR der Eichen-Hobelbank (Y=+9.85m, Blick +Y zur Werkbank!)
@@ -21834,19 +21942,24 @@ transformed.z = -min(58.0, max(12.0, uWaterDepth * 0.42));
               if (spanX >= 2.10) pushPlaque(mPlMega, sp.x0 + 0.28, sp.yFront, zD1, sSign);
             });
 
-            // 2. Deck 1 Raubtier-Doppelgitter-Trakte (S5, S10 & S13 Bb/Stb, Front exakt |Y| = 7.233 m)
+            // 2. Deck 1 Raubtier-Doppelgitter-Trakte (S5, S10 & S13 Bb/Stb: jeweils 3 Module nahtlos nebeneinander, Front exakt |Y| = 7.233 m Richtung Gang!)
             waveBSpecs.d1Carn.forEach((sp) => {
               const spanX = sp.x1 - sp.x0;
               const depthY = Math.abs(sp.yBack - sp.yFront);
               const sSign = (sp.yBack > sp.yFront) ? 1.0 : -1.0;
               const rotZ = (sSign > 0) ? 0.0 : Math.PI;
-              const cx = 0.5 * (sp.x0 + sp.x1) - 70.0;
-              mD1Carn.push(_makeMatrix(cx, sp.yFront, zD1, 0, 0, rotZ, spanX / 2.20, depthY / 3.873, 1.0));
+              const nMods = 3;
+              const modW = spanX / nMods;
+              for (let m = 0; m < nMods; m++) {
+                const cx = (sp.x0 + (m + 0.5) * modW) - 70.0;
+                mD1Carn.push(_makeMatrix(cx, sp.yFront, zD1, 0, 0, rotZ, modW / 2.20, depthY / 3.873, 1.0));
+              }
               pushPlaque(mPlCarn, sp.x0 + 0.30, sp.yFront, zD1, sSign);
             });
 
-            // 3. 28 Eichen-Stegbrücken über die D1-/D2-Spülrinnen (bündig auf den dunklen Kopher-Bordkanten, 0 Clipping mit dunklem Wasser!)
+            // 3. Eichen-Stegbrücken über die offenen D1-/D2-Spülrinnen (S7/S8 ausgelassen, da Foyer & Rampenbereich bündig mit Eichenbohlen abgedeckt!)
             for (let s = 0; s < 14; s++) {
+              if (s === 6 || s === 7) continue;
               const xMidS = X_STATIONS[s] + 5.0;
               [-1.0, 1.0].forEach((sideSign) => {
                 const isD1 = ((s + (sideSign > 0 ? 1 : 0)) % 2 === 0);
@@ -21903,15 +22016,19 @@ transformed.z = -min(58.0, max(12.0, uWaterDepth * 0.42));
               if (spanX >= 2.40) pushPlaque(mPlBird, sp.x0 + 0.28, yFront, zD3, sp.sSign);
             });
 
-            // 8. Deck 3 20er-Nagerwaben-Blöcke
+            // 8. Deck 3 20er-Nagerwaben-Blöcke: exakt 8 × 2 = 16 Module (je 2 Module à 3,20 m = 6,40 m 1:1 nebeneinander, offene Fächer sauber Richtung Gang!)
             waveBSpecs.d3Rodent.forEach((sp) => {
               const spanX = sp.x1 - sp.x0;
               const depthY = sp.halfDepthY * 2.0;
               const yFront = (sp.sSign > 0) ? (sp.yShelf - sp.halfDepthY) : (sp.yShelf + sp.halfDepthY);
               const rotZ = (sp.sSign > 0) ? 0.0 : Math.PI;
-              const cx = 0.5 * (sp.x0 + sp.x1) - 70.0;
-              mD3Rod.push(_makeMatrix(cx, yFront, zD3, 0, 0, rotZ, spanX / 3.20, depthY / 0.70, 1.0));
-              if (spanX >= 2.20) pushPlaque(mPlRod, sp.x0 + 0.25, yFront, zD3, sp.sSign);
+              const nMods = 2;
+              const modW = spanX / nMods;
+              for (let m = 0; m < nMods; m++) {
+                const cx = (sp.x0 + (m + 0.5) * modW) - 70.0;
+                mD3Rod.push(_makeMatrix(cx, yFront, 10.125, 0, 0, rotZ, modW / 3.20, depthY / 0.70, 1.0));
+              }
+              if (spanX >= 2.20) pushPlaque(mPlRod, sp.x0 + 0.25, yFront, 10.125, sp.sSign);
             });
 
             // 9. Exakt 16 Deck-3-Fledermauskästen unter den Dachsparren (Z = 13.03..13.55 m in S2, S4, S11, S13; im D3-Cutaway bei 13.20 m ausgeblendet!)
@@ -21984,15 +22101,15 @@ transformed.z = -min(58.0, max(12.0, uWaterDepth * 0.42));
               return lod;
             };
 
-            // 1. Refektorium (S7 D3-Mittelschiff xShip 61.40..66.20, Y -4.48..-2.12 — Mittelgang 100 % frei!)
-            placeHeroB3('ark_crew_carpet', -6.20, -3.30, zD3 + 0.004, 0, 0, 0, 1.85, 1.45, 1.0);
-            placeHeroB3('ark_crew_dining_feast_table', -6.20, -3.30, zD3, 0, 0, 0, 1, 1, 1);
+            // 1. Refektorium (S7 D3-Mittelschiff xShip 61.40..66.20, Y -3.60..-1.24 -> 1,28 m freier Durchgang zur S7-Bb-Tür & 100 % freie Kombüsentür S7-Stb!)
+            placeHeroB3('ark_crew_carpet', -6.20, -2.42, zD3 + 0.004, 0, 0, 0, 1.85, 1.38, 1.0);
+            placeHeroB3('ark_crew_dining_feast_table', -6.20, -2.42, zD3, 0, 0, 0, 1, 1, 1);
             placeHeroB3('ark_crew_sideboard_cupboard', -0.62, -3.35, zD3, 0, 0, -Math.PI * 0.5, 1, 1, 1);
 
-            // 2. Mittelschiff-Schlafzone (S7 D3 xShip 60.8..64.0, Y +2.35..+4.65 — Rampen-Antritt frei!)
+            // 2. 2 Seegangs-Hängematten an der geschlossenen Wand in S8 Mittelschiff Bb (xShip 77.11..79.39 m, Y -4.68..-2.52 m -> 1,41 m frei von S8-Bb-Tür & 4,5 m frei von Stb-Leichtrampe!)
             const mHammocks = [
-              _makeMatrix(-7.40, 2.92, zD3, 0, 0, 0, 1, 1, 1),
-              _makeMatrix(-7.40, 4.12, zD3, 0, 0, 0, 1, 1, 1)
+              _makeMatrix(8.25, -4.20, zD3, 0, 0, 0, 1, 1, 1),
+              _makeMatrix(8.25, -3.00, zD3, 0, 0, 0, 1, 1, 1)
             ];
             _buildInstancedFromNode(gB3.get('ark_crew_hammock_frame'), 'ark_crew_hammock_frame', mHammocks, trimMat, 'fix_quarters_atrium', b3Grp, 0);
 
@@ -22004,15 +22121,18 @@ transformed.z = -min(58.0, max(12.0, uWaterDepth * 0.42));
               mBeds.push(_makeMatrix(cx - 0.22, -9.98, zD3, 0, 0, Math.PI * 0.5, 0.96, 0.94, 1.0));
               mChests.push(_makeMatrix(cx, -8.22, zD3, 0, 0, 0, 0.95, 0.95, 1.0));
             });
-            // Zusätzliche Truhe in der Mittelschiff-Schlafzone
-            mChests.push(_makeMatrix(-9.15, 3.52, zD3, 0, 0, Math.PI * 0.5, 0.95, 0.95, 1.0));
+            // 2 Vorratstruhen sauber an der geschlossenen S8-Bb-Wand neben den Hängematten (xShip 70.57..73.09 m, Y = -4.48 m -> >= 1,21 m frei von S8-Bb-Tür & QS07-Tür!)
+            mChests.push(
+              _makeMatrix(1.18, -4.48, zD3, 0, 0, 0, 0.95, 0.95, 1.0),
+              _makeMatrix(2.48, -4.48, zD3, 0, 0, 0, 0.95, 0.95, 1.0)
+            );
             // 2 Waschplätze (Kammern #1 & #3)
             mWash.push(_makeMatrix(-7.42, -9.90, zD3, 0, 0, -Math.PI * 0.5, 1, 1, 1));
             mWash.push(_makeMatrix(-3.04, -9.90, zD3, 0, 0, -Math.PI * 0.5, 1, 1, 1));
-            // 4 Wandregale (2 im Refektorium an LBH -5.0 m, 2 in Kammern #1 & #4 an Außenwand -11.04 m)
+            // 4 Wandregale (2 im Refektorium an türfreier LBH-Wand -5.0 m, 2 in Kammern #1 & #4 an Außenwand -11.04 m)
             mShelves.push(
               _makeMatrix(-7.60, -4.85, zD3 + 1.35, 0, 0, 0, 1, 1, 1),
-              _makeMatrix(-4.80, -4.85, zD3 + 1.35, 0, 0, 0, 1, 1, 1),
+              _makeMatrix(-2.10, -4.85, zD3 + 1.35, 0, 0, 0, 1, 1, 1),
               _makeMatrix(-8.29, -11.04, zD3 + 1.35, 0, 0, 0, 1, 1, 1),
               _makeMatrix(-1.72, -11.04, zD3 + 1.35, 0, 0, 0, 1, 1, 1)
             );
@@ -22025,8 +22145,8 @@ transformed.z = -min(58.0, max(12.0, uWaterDepth * 0.42));
             // Gewichtswebstuhl aus dem Kammer-Durchgang heraus an die freie Längsschott-Wandnische im Vorflur (Y = -5.38 m, X = -8.35 m -> 100 % freier Durchgang!)
             placeHeroB3('ark_crew_weaving_loom', -8.35, -5.38, zD3, 0, 0, 0, 1, 1, 1);
 
-            // 4. Vorflur (Y -7.00..-5.20): Noahs Chronik-Schreibpult direkt vor Noah (66.75, -5.55)
-            placeHeroB3('ark_crew_study_desk_set', -3.25, -6.46, zD3, 0, 0, Math.PI, 1, 1, 1);
+            // 4. Vorflur (Y -7.00..-5.20): Noahs Chronik-Schreibpult exakt mittig zwischen S7-Bb-Tür & QS07-Seitentür (xShip 66.80..68.64 m -> >= 1,24 m Freiraum zu allen Türen!)
+            placeHeroB3('ark_crew_study_desk_set', -2.30, -6.54, zD3, 0, 0, Math.PI, 0.84, 0.94, 1);
 
             wbState.b3Loaded = true;
           }
@@ -41595,7 +41715,8 @@ diffuseColor.rgb = mix(diffuseColor.rgb, mix(vec3(0.24, 0.17, 0.11), vec3(0.38, 
         if (typeof interiorGroup !== 'undefined' && interiorGroup) interiorGroup.visible = true;
         if (Arche.Groups && Arche.Groups.airflow3D) Arche.Groups.airflow3D.visible = Boolean(params.showAirflow3D);
         if (typeof zoharOpticsGroup !== 'undefined' && zoharOpticsGroup) zoharOpticsGroup.visible = (zSliceVal > 13.50);
-        if (typeof zoharLightBeamGroup !== 'undefined' && zoharLightBeamGroup) zoharLightBeamGroup.visible = showF && (zSliceVal > 13.50);
+        if (typeof zoharLightBeamGroup !== 'undefined' && zoharLightBeamGroup) zoharLightBeamGroup.visible = showF && (Arche.State.viewShader === 'TEXTURED') && (zSliceVal > 13.50);
+        if (typeof zoharDustPoints !== 'undefined' && zoharDustPoints) zoharDustPoints.visible = showF && (Arche.State.viewShader === 'TEXTURED');
         if (typeof beddingVolumeMesh !== 'undefined' && beddingVolumeMesh) beddingVolumeMesh.visible = true;
         if (Arche.Procedural && typeof Arche.Procedural.syncArkWaveAVisibility === 'function') {
           Arche.Procedural.syncArkWaveAVisibility('OPEN');
@@ -41700,6 +41821,7 @@ diffuseColor.rgb = mix(diffuseColor.rgb, mix(vec3(0.24, 0.17, 0.11), vec3(0.38, 
           if (Arche.Groups && Arche.Groups.airflow3D) Arche.Groups.airflow3D.visible = false;
           if (typeof zoharOpticsGroup !== 'undefined' && zoharOpticsGroup) zoharOpticsGroup.visible = false;
           if (typeof zoharLightBeamGroup !== 'undefined' && zoharLightBeamGroup) zoharLightBeamGroup.visible = false;
+          if (typeof zoharDustPoints !== 'undefined' && zoharDustPoints) zoharDustPoints.visible = false;
           if (typeof beddingVolumeMesh !== 'undefined' && beddingVolumeMesh) beddingVolumeMesh.visible = false;
 
           // In der Werftphase (alle Profile) bleiben nur Tier-Gruppen sichtbar, die sich gerade aktiv direkt auf der Backbord-Rampe befinden;
@@ -41838,6 +41960,8 @@ diffuseColor.rgb = mix(diffuseColor.rgb, mix(vec3(0.24, 0.17, 0.11), vec3(0.38, 
         if (typeof crestFoamPoints !== 'undefined') crestFoamPoints.visible = false;
         if (typeof splashPoints !== 'undefined') splashPoints.visible = false;
         if (typeof rainImpactPoints !== 'undefined') rainImpactPoints.visible = false;
+        if (typeof zoharLightBeamGroup !== 'undefined' && zoharLightBeamGroup) zoharLightBeamGroup.visible = false;
+        if (typeof zoharDustPoints !== 'undefined' && zoharDustPoints) zoharDustPoints.visible = false;
       }
       const en = Arche.I18n && Arche.I18n.isEN();
       if (isTex) {
@@ -42726,26 +42850,47 @@ diffuseColor.rgb = mix(diffuseColor.rgb, mix(vec3(0.24, 0.17, 0.11), vec3(0.38, 
     const _zOptScale = new THREE.Vector3(1, 1, 1);
     const _alabasterGeo = new THREE.CylinderGeometry(0.65, 0.65, 0.08, 12);
     _alabasterGeo.rotateX(Math.PI * 0.5);
-    const _beamGeo = new THREE.CylinderGeometry(0.26, 0.68, 3.6, 12, 1, true);
-    _beamGeo.rotateX(Math.PI * 0.5);
-    const _beamShortGeo = new THREE.CylinderGeometry(0.42, 0.95, 3.8, 8, 1, true);
-    _beamShortGeo.rotateX(Math.PI * 0.5);
+    // Welle C: Weich abfallende atmosphärische Zôhar-Tageslichtkegel (vertikaler Vertex-Color-Gradient -> 0 harte Ränder, 1 Draw-Call, castShadow = false!)
+    const _makeSoftBeamConeGeo = (rTop, rBot, height, radSegs) => {
+      const g = new THREE.CylinderGeometry(rTop, rBot, height, radSegs, 6, true);
+      g.rotateX(Math.PI * 0.5);
+      const pos = g.attributes.position;
+      const cols = new Float32Array(pos.count * 3);
+      for (let i = 0; i < pos.count; i++) {
+        const zNorm = (pos.getZ(i) + 0.5 * height) / height; // 0 = unten, 1 = oben an Alabaster-Linse
+        const topFade = Math.min(1.0, (1.0 - zNorm) * 4.5);
+        const botFade = Math.pow(Math.max(0.0, zNorm), 1.45);
+        const fall = Math.max(0.0, Math.min(1.0, topFade * botFade));
+        cols[i * 3] = 1.00 * fall;
+        cols[i * 3 + 1] = 0.93 * fall;
+        cols[i * 3 + 2] = 0.72 * fall;
+      }
+      g.setAttribute('color', new THREE.BufferAttribute(cols, 3));
+      return g;
+    };
+    const _beamGeo = _makeSoftBeamConeGeo(0.32, 1.05, 4.4, 12);
+    const _beamShortGeo = _makeSoftBeamConeGeo(0.50, 1.55, 4.6, 12);
+    const _beamAtriumGeo = _makeSoftBeamConeGeo(0.55, 2.25, 6.8, 12);
 
     [15.0, 25.0, 35.0, 45.0, 55.0, 65.0, 75.0, 85.0, 95.0, 105.0, 115.0, 125.0].forEach((xOpt, idxO) => {
       const xc = xOpt - 70.0;
       zoharOptBatch.addBox(tinBronzeMirrorMat, xc, 0.0, 14.38, 3.0 * ELLE_M, 2.0 * ELLE_M, 0.08, 0.28, 0, 0);
       _zOptPos.set(xc, 0.0, 13.75); _zOptQuat.identity(); _zOptM4.compose(_zOptPos, _zOptQuat, _zOptScale);
       zoharOptBatch.addGeometry(alabasterLensMat, _alabasterGeo, _zOptM4);
-      if (idxO % 2 === 0 && xOpt !== 35.0 && xOpt !== 105.0) {
+      if (xOpt === 65.0 || xOpt === 75.0) {
+        // S7/S8 Atrium-Lichtkegel: reicht atmosphärisch weich bis in die Rampenhalle hinab!
+        _zOptPos.set(xc, 0.0, 10.65); _zOptM4.compose(_zOptPos, _zOptQuat, _zOptScale);
+        zoharBeamBatch.addGeometry(daylightBeamMat, _beamAtriumGeo, _zOptM4);
+      } else if (idxO % 2 === 0 && xOpt !== 35.0 && xOpt !== 105.0) {
         [-1.5 * ELLE_M, 1.5 * ELLE_M].forEach((yBeamSide, bIdx) => {
           const signB = (bIdx === 0) ? -1.0 : 1.0;
           zoharOptBatch.addBox(tinBronzeMirrorMat, xc, yBeamSide, 8.95, 1.4 * ELLE_M, 1.1 * ELLE_M, 0.05, signB * Math.PI * 0.22, 0, 0);
           zoharOptBatch.addBox(tinBronzeMirrorMat, xc, yBeamSide, 4.95, 1.3 * ELLE_M, 1.0 * ELLE_M, 0.05, signB * Math.PI * 0.20, 0, 0);
-          _zOptPos.set(xc, yBeamSide, 12.45); _zOptM4.compose(_zOptPos, _zOptQuat, _zOptScale);
+          _zOptPos.set(xc, yBeamSide, 11.80); _zOptM4.compose(_zOptPos, _zOptQuat, _zOptScale);
           zoharBeamBatch.addGeometry(daylightBeamMat, _beamGeo, _zOptM4);
         });
       } else {
-        _zOptPos.set(xc, 0.0, 12.35); _zOptM4.compose(_zOptPos, _zOptQuat, _zOptScale);
+        _zOptPos.set(xc, 0.0, 11.75); _zOptM4.compose(_zOptPos, _zOptQuat, _zOptScale);
         zoharBeamBatch.addGeometry(daylightBeamMat, _beamShortGeo, _zOptM4);
       }
     });
@@ -42771,6 +42916,55 @@ diffuseColor.rgb = mix(diffuseColor.rgb, mix(vec3(0.24, 0.17, 0.11), vec3(0.38, 
     shipGroup.add(zoharOpticsGroup);
     shipGroup.add(zoharLightBeamGroup);
     shipGroup.add(nightLampGroup);
+
+    // Welle C: 780 feine goldene Lichtstaub-Partikel im Mittelschiff (teilt Arche.Materials.airflowParticles -> Delta-Programs === 0, castShadow = false!)
+    const zoharDustPoints = (() => {
+      const nDust = 780;
+      const dPos = new Float32Array(nDust * 3);
+      const dNext = new Float32Array(nDust * 3);
+      const dFlowU = new Float32Array(nDust);
+      const dPathType = new Float32Array(nDust);
+      const dHash = (i, s) => {
+        const v = Math.sin(i * 127.1 + s * 311.7) * 43758.5453;
+        return v - Math.floor(v);
+      };
+      const beamXs = [-55, -45, -35, -25, -15, -5, 5, 15, 25, 35, 45, 55];
+      for (let i = 0; i < nDust; i++) {
+        const i3 = i * 3;
+        const inBeam = (i < 520);
+        let px, py, pz;
+        if (inBeam) {
+          const bx = beamXs[i % beamXs.length];
+          px = bx + (dHash(i, 1.3) - 0.5) * 4.4;
+          py = (dHash(i, 2.7) - 0.5) * 4.2;
+          pz = 6.4 + dHash(i, 4.1) * 7.1; // Besonders dicht unter den 12 Zôhar-Linsen & im D2/D3-Atrium
+        } else {
+          px = (dHash(i, 5.9) - 0.5) * 124.0;
+          py = (dHash(i, 7.1) - 0.5) * 8.4;
+          pz = 2.5 + dHash(i, 8.3) * 10.7; // Sanfter Lichtstaub über Deck 1, 2 & 3 im Mittelschiff
+        }
+        dPos[i3] = px; dPos[i3 + 1] = py; dPos[i3 + 2] = pz;
+        dNext[i3] = dHash(i, 9.7) * 6.283;
+        dNext[i3 + 1] = dHash(i, 11.3) * 6.283;
+        dNext[i3 + 2] = 0.72 + dHash(i, 13.1) * 0.58; // Partikelgröße & Helligkeitsgewicht
+        dFlowU[i] = dHash(i, 15.7);
+        dPathType[i] = 4.0; // Kennung für Welle-C-Lichtstaub im bestehenden airflowParticles-Shader!
+      }
+      const dGeo = new THREE.BufferGeometry();
+      dGeo.setAttribute('position', new THREE.BufferAttribute(dPos, 3));
+      dGeo.setAttribute('aNextPos', new THREE.BufferAttribute(dNext, 3));
+      dGeo.setAttribute('aFlowU', new THREE.BufferAttribute(dFlowU, 1));
+      dGeo.setAttribute('aPathType', new THREE.BufferAttribute(dPathType, 1));
+      const pts = new THREE.Points(dGeo, Arche.Materials.airflowParticles);
+      pts.name = 'ark_zohar_light_dust';
+      pts.castShadow = false;
+      pts.receiveShadow = false;
+      pts.frustumCulled = false;
+      pts.visible = false;
+      return pts;
+    })();
+    Arche.Groups.zoharDust = zoharDustPoints;
+    shipGroup.add(zoharDustPoints);
     const _BG_PAIRS_0 = [];
     const _BG_PAIRS_4 = [42.00, 92.00];
     const _BG_PAIRS_8 = [12.00, 42.00, 92.00, 122.00];
@@ -46145,6 +46339,7 @@ diffuseColor.rgb = mix(diffuseColor.rgb, mix(vec3(0.24, 0.17, 0.11), vec3(0.38, 
     const _rcInstHit = new THREE.Vector3();
     const _rcInstWorldPt = new THREE.Vector3();
     const _rcSphere = new THREE.Sphere();
+    const _rcArkCutBox = new THREE.Box3();
     const _rcCandidates = [];
     let _hoverSkipCacheKey = '';
     const _hoverSkipSet = new Set();
@@ -46228,7 +46423,7 @@ diffuseColor.rgb = mix(diffuseColor.rgb, mix(vec3(0.24, 0.17, 0.11), vec3(0.38, 
       }
     }
 
-    function _raycastInstancedFast(obj, worldRay, bestLimitDist) {
+    function _raycastInstancedFast(obj, worldRay, bestLimitDist, maxShipSliceZ = Infinity) {
       const geo = obj.geometry;
       if (!geo || obj.count <= 0) return null;
       if (!geo.boundingBox) geo.computeBoundingBox();
@@ -46245,6 +46440,7 @@ diffuseColor.rgb = mix(diffuseColor.rgb, mix(vec3(0.24, 0.17, 0.11), vec3(0.38, 
       const rBase = bSphere.radius;
       const arr = obj.instanceMatrix.array;
       const cnt = obj.count;
+      const checkSlice = Number.isFinite(maxShipSliceZ) && maxShipSliceZ < 50.0;
       let bestDist = bestLimitDist;
       let bestId = -1;
       for (let k = 0; k < cnt; k++) {
@@ -46272,6 +46468,11 @@ diffuseColor.rgb = mix(diffuseColor.rgb, mix(vec3(0.24, 0.17, 0.11), vec3(0.38, 
         const hLoc = _rcInstRay.intersectBox(bBox, _rcInstHit);
         if (!hLoc) continue;
         _rcWorldHitPt.copy(_rcInstHit).applyMatrix4(_rcInstMat).applyMatrix4(obj.matrixWorld);
+        if (checkSlice) {
+          _hoverLocalPt.copy(_rcWorldHitPt);
+          shipGroup.worldToLocal(_hoverLocalPt);
+          if (_hoverLocalPt.z > maxShipSliceZ + 0.05 || _hoverLocalPt.z <= -50.0) continue;
+        }
         const dist = _rcWorldHitPt.distanceTo(worldRay.origin);
         if (dist < bestDist) {
           bestDist = dist;
@@ -46360,19 +46561,48 @@ diffuseColor.rgb = mix(diffuseColor.rgb, mix(vec3(0.24, 0.17, 0.11), vec3(0.38, 
         _collectHoverTargets(Arche.Environment.floatingMatGroup, targets);
       }
 
+      const _isLandNode = (n) => {
+        let pCheck = n;
+        while (pCheck) {
+          if ((typeof shipyardGroup !== 'undefined' && pCheck === shipyardGroup) ||
+            (typeof araratGroup !== 'undefined' && pCheck === araratGroup)) return true;
+          pCheck = pCheck.parent;
+        }
+        return false;
+      };
+
       // 1. Ultraschnelle Welt-Bounding-Sphere- & lokale Bounding-Box-Vorfilterung + Distanz-Sortierung
       const ray = _hoverRaycaster.ray;
+      const isCutawayActive = (zSliceMax < 15.0) || Boolean(params.cutawayBB);
+      // Schnittpunkt-Distanz des Strahls mit dem Arche-Cutaway-Volumen (verhindert, dass Außenwelt-Forst-Tooltips durch Decks hindurchschlagen!)
+      let arkCutawayEntryDist = Infinity;
+      if (isCutawayActive && typeof shipGroup !== 'undefined' && shipGroup) {
+        _rcInvMat.copy(shipGroup.matrixWorld).invert();
+        _rcLocalRay.copy(ray).applyMatrix4(_rcInvMat);
+        _rcArkCutBox.min.set(-70.4, -11.6, -0.6);
+        _rcArkCutBox.max.set(70.4, 11.6, Math.min(15.2, zSliceMax + 0.25));
+        const _cutHit = _rcLocalRay.intersectBox(_rcArkCutBox, _rcHitPt);
+        if (_cutHit) {
+          if (_rcArkCutBox.containsPoint(_rcLocalRay.origin)) {
+            arkCutawayEntryDist = 0.0;
+          } else {
+            _rcWorldHitPt.copy(_rcHitPt).applyMatrix4(shipGroup.matrixWorld);
+            arkCutawayEntryDist = _rcWorldHitPt.distanceTo(ray.origin);
+          }
+        }
+      }
       _rcCandidates.length = 0;
       for (let i = 0; i < targets.length; i++) {
         const obj = targets[i];
         if (!obj || !obj.visible || !obj.geometry) continue;
+        const isLandObj = _isLandNode(obj);
         const geo = obj.geometry;
         if (!geo.boundingBox) geo.computeBoundingBox();
         if (!geo.boundingSphere) geo.computeBoundingSphere();
         if (obj.isInstancedMesh) {
-          const fastHit = _raycastInstancedFast(obj, ray, Infinity);
+          const fastHit = _raycastInstancedFast(obj, ray, Infinity, isLandObj ? Infinity : zSliceMax);
           if (fastHit) {
-            _rcCandidates.push({ obj, minDist: fastHit.distance, fastHit });
+            _rcCandidates.push({ obj, isLand: isLandObj, minDist: fastHit.distance, fastHit });
           }
         } else {
           if (geo.boundingSphere) {
@@ -46401,6 +46631,7 @@ diffuseColor.rgb = mix(diffuseColor.rgb, mix(vec3(0.24, 0.17, 0.11), vec3(0.38, 
           );
           _rcCandidates.push({
             obj,
+            isLand: isLandObj,
             minDist,
             fastHit: isFlatOuterHull ? { object: obj, distance: minDist, point: _rcWorldHitPt.clone() } : null
           });
@@ -46410,43 +46641,51 @@ diffuseColor.rgb = mix(diffuseColor.rgb, mix(vec3(0.24, 0.17, 0.11), vec3(0.38, 
         _rcCandidates.sort((a, b) => a.minDist - b.minDist);
       }
 
-      // 2. Gezielte Prüfung in Distanz-Reihenfolge mit sofortigem Early-Exit sobald nächster gültiger Treffer feststeht
-      let validHit = null;
-      const _isLandNode = (n) => {
-        let pCheck = n;
-        while (pCheck) {
-          if ((typeof shipyardGroup !== 'undefined' && pCheck === shipyardGroup) ||
-            (typeof araratGroup !== 'undefined' && pCheck === araratGroup)) return true;
-          pCheck = pCheck.parent;
-        }
-        return false;
-      };
+      // 2. Gezielte Prüfung: Arche-Treffer haben im Cutaway strikte Priorität vor dahinterliegenden Außenwelt-Meshes!
+      let validArkHit = null;
+      let validLandHit = null;
       for (let c = 0; c < _rcCandidates.length; c++) {
         const cand = _rcCandidates[c];
-        if (validHit && cand.minDist >= validHit.distance) break;
+        const curLimit = cand.isLand
+          ? Math.min(validLandHit ? validLandHit.distance : Infinity, validArkHit ? validArkHit.distance : Infinity)
+          : (validArkHit ? validArkHit.distance : Infinity);
+        if (cand.minDist >= curLimit) continue;
         if (cand.fastHit) {
           const h = cand.fastHit;
-          if (!validHit || h.distance < validHit.distance) {
+          if (cand.isLand) {
+            if (!validLandHit || h.distance < validLandHit.distance) validLandHit = h;
+          } else {
             _hoverLocalPt.copy(h.point);
             shipGroup.worldToLocal(_hoverLocalPt);
-            if (_isLandNode(h.object) || (_hoverLocalPt.z <= zSliceMax + 0.05 && _hoverLocalPt.z > -50.0)) {
-              validHit = h;
+            if (_hoverLocalPt.z <= zSliceMax + 0.05 && _hoverLocalPt.z > -50.0) {
+              if (!validArkHit || h.distance < validArkHit.distance) validArkHit = h;
             }
           }
         } else {
           const hits = _hoverRaycaster.intersectObject(cand.obj, false);
           for (let i = 0; i < hits.length; i++) {
             const h = hits[i];
-            if (validHit && h.distance >= validHit.distance) break;
             if (!h.object || !h.object.visible || h.object.isLineSegments) continue;
-            _hoverLocalPt.copy(h.point);
-            shipGroup.worldToLocal(_hoverLocalPt);
-            if (_isLandNode(h.object) || (_hoverLocalPt.z <= zSliceMax + 0.05 && _hoverLocalPt.z > -50.0)) {
-              validHit = h;
+            if (cand.isLand) {
+              if (!validLandHit || h.distance < validLandHit.distance) validLandHit = h;
               break;
+            } else {
+              _hoverLocalPt.copy(h.point);
+              shipGroup.worldToLocal(_hoverLocalPt);
+              if (_hoverLocalPt.z <= zSliceMax + 0.05 && _hoverLocalPt.z > -50.0) {
+                if (!validArkHit || h.distance < validArkHit.distance) validArkHit = h;
+                break;
+              }
             }
           }
         }
+      }
+      // Im Cutaway-Modus: Jeder sichtbare Arche-Treffer schlägt Außenwelt-Treffer hinter dem Arche-Rumpf; kein Außenwelt-Forst-Tooltip durch Decks hindurch!
+      let validHit = null;
+      if (validArkHit && (!validLandHit || validArkHit.distance <= validLandHit.distance || isCutawayActive)) {
+        validHit = validArkHit;
+      } else if (validLandHit && (!isCutawayActive || validLandHit.distance < arkCutawayEntryDist - 0.15)) {
+        validHit = validLandHit;
       }
       if (validHit) {
         _hoverLocalPt.copy(validHit.point);
@@ -50949,6 +51188,7 @@ void main() {
       if (typeof splashPoints !== 'undefined') _hideTemp(splashPoints);
       if (typeof rainImpactPoints !== 'undefined') _hideTemp(rainImpactPoints);
       if (typeof zoharLightBeamGroup !== 'undefined') _hideTemp(zoharLightBeamGroup);
+      if (typeof zoharDustPoints !== 'undefined') _hideTemp(zoharDustPoints);
       if (Arche.Groups && Arche.Groups.airflow3D) _hideTemp(Arche.Groups.airflow3D);
       if (Arche.Procedural && Arche.Procedural.beddingVolumePoints) _hideTemp(Arche.Procedural.beddingVolumePoints);
 
@@ -51345,11 +51585,21 @@ void main() {
         const pl = nightLampGroup.children[li];
         if (pl.isPointLight) pl.intensity = nightLampIntensity * 1.45;
       }
-      const bronzeBeamOpacity = (sunAltDeg > 0.5 && params.showFixtures)
-        ? Math.min(0.24, (0.04 + 0.20 * Math.sin(sunAltRad) * (1.0 - 0.55 * cloudFrac)))
+      const isTexWelleC = (Arche.State && Arche.State.viewShader === 'TEXTURED');
+      const cullNowWelleC = (typeof liveState !== 'undefined' && liveState && liveState.activeCullMode) ? liveState.activeCullMode : 'OPEN';
+      const isClosedWelleC = (cullNowWelleC === 'EXTERIOR_CLOSED' || cullNowWelleC === 'PORTAL_PEEK');
+      const bronzeBeamOpacity = (isTexWelleC && !isClosedWelleC && sunAltDeg > 0.5 && params.showFixtures)
+        ? Math.min(0.32, (0.08 + 0.24 * Math.sin(sunAltRad) * (1.0 - 0.50 * cloudFrac)))
         : 0.0;
-      zoharLightBeamGroup.visible = (bronzeBeamOpacity > 0.005) && ((Arche.Environment.zSliceMaxLocal || 100.0) > 13.50);
+      zoharLightBeamGroup.visible = isTexWelleC && !isClosedWelleC && (bronzeBeamOpacity > 0.005) && ((Arche.Environment.zSliceMaxLocal || 100.0) > 13.50);
       daylightBeamMat.opacity = bronzeBeamOpacity;
+      if (typeof zoharDustPoints !== 'undefined' && zoharDustPoints) {
+        const showDustNow = isTexWelleC && !isClosedWelleC && Boolean(params.showFixtures);
+        zoharDustPoints.visible = showDustNow;
+        if (Arche.Environment && Arche.Environment.airflowUniforms && Arche.Environment.airflowUniforms.uDustGlow) {
+          Arche.Environment.airflowUniforms.uDustGlow.value = showDustNow ? (0.48 + 0.52 * Math.max(dayLightFactorNow, nightLampFactorNow * 0.85)) : 0.0;
+        }
+      }
       micaLampMat.color.setHex(nightLampIntensity > 0.2 ? 0xFFE169 : 0x7F5539);
       liveState.windVeerDeg = windVeerDeg;
       liveState.effAngleDeg = effAngleDeg;
@@ -54439,6 +54689,7 @@ void main() {
           typeof bilgeWaterMesh !== 'undefined' ? bilgeWaterMesh : null,
           typeof zoharOpticsGroup !== 'undefined' ? zoharOpticsGroup : null,
           typeof zoharLightBeamGroup !== 'undefined' ? zoharLightBeamGroup : null,
+          typeof zoharDustPoints !== 'undefined' ? zoharDustPoints : null,
           typeof interiorGroup !== 'undefined' ? interiorGroup : null,
           typeof faunaGroup !== 'undefined' ? faunaGroup : null,
           typeof fixturesGroup !== 'undefined' ? fixturesGroup : null,
