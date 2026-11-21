@@ -41781,7 +41781,8 @@ diffuseColor.rgb = mix(diffuseColor.rgb, mix(vec3(0.24, 0.17, 0.11), vec3(0.38, 
       if (typeof updateGate3D === 'function') {
         updateGate3D(params.gateMode);
       }
-      if (typeof updateZoharAndBadgirGeometry === 'function' && Arche.Procedural && Arche.Procedural.arkWaveA && Arche.Procedural.arkWaveA.waveALoaded) {
+      if (typeof updateZoharAndBadgirGeometry === 'function' && Arche.Procedural && Arche.Procedural.arkWaveA && Arche.Procedural.arkWaveA.waveALoaded && window._lastZoharViewShader !== Arche.State.viewShader) {
+        window._lastZoharViewShader = Arche.State.viewShader;
         updateZoharAndBadgirGeometry();
       }
       if (Arche.Procedural.uUseTexMap) {
@@ -42581,7 +42582,7 @@ diffuseColor.rgb = mix(diffuseColor.rgb, mix(vec3(0.24, 0.17, 0.11), vec3(0.38, 
       }
       updateLegendMode(params.heatmapMode);
       syncChronicleUI();
-      if (!window._isRunningTests && domModalBackdrop && domModalBackdrop.style.display === 'flex') {
+      if (!window._isRunningTests && _activeModalMode !== 'tests' && domModalBackdrop && domModalBackdrop.style.display === 'flex') {
         refreshICDMarkdown();
       }
       if (activeTooltipTarget) renderActiveTooltipContent();
@@ -45256,7 +45257,12 @@ diffuseColor.rgb = mix(diffuseColor.rgb, mix(vec3(0.24, 0.17, 0.11), vec3(0.38, 
     }
     function refreshICDMarkdown() {
       if (_activeModalMode === 'tests') {
+        if (window._isRunningTests) return;
         const testRun = runArcheUnitTests();
+        const tot = testRun.passedCount + testRun.failedCount;
+        if (domModalTitle) {
+          domModalTitle.textContent = `🧪 Automatisierter First-Principles Unit-Test-Bericht (T01–T${tot} | ${testRun.passedCount}/${tot} PASS in ${testRun.elapsedMs} ms)`;
+        }
         domModalTextarea.value = testRun.markdown;
       } else {
         domModalTextarea.value = translateMarkdownReportEN(generateICDMarkdownReport());
@@ -52826,6 +52832,7 @@ void main() {
       stepFrame: () => animate(true)
     });
     function runArcheUnitTests() {
+      if (window._isRunningTests && window._lastUnitTestResult) return window._lastUnitTestResult;
       window._isRunningTests = true;
       if (Arche.Performance && Arche.Performance.updateExteriorPortalCulling && typeof camera !== 'undefined') {
         Arche.Performance.updateExteriorPortalCulling(camera);
@@ -54123,11 +54130,11 @@ void main() {
       } finally {
         for (const k in savedParams) params[k] = savedParams[k];
         Object.assign(S, savedState);
-        window._isRunningTests = false;
         toggleLanguage(params.language);
         updateGate3D(params.gateMode);
         animate(true);
         syncChronicleUI();
+        window._isRunningTests = false;
       }
       const elapsedMs = +(performance.now() - tStart).toFixed(2);
       const btnTests = document.getElementById('btn-run-tests');
@@ -54145,7 +54152,9 @@ void main() {
         report += `| ${r.ok ? '✅ PASS' : '❌ FAIL'} | ${r.suite} | **${r.name}** | \`${r.detail}\` |\n`;
       }
       console.table(results);
-      return { passedCount, failedCount, elapsedMs, results, markdown: report };
+      const out = { passedCount, failedCount, elapsedMs, results, markdown: report };
+      window._lastUnitTestResult = out;
+      return out;
     }
     window.runArcheUnitTests = runArcheUnitTests;
     function openUnitTestModal(e) {

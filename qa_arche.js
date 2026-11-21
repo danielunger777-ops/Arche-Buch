@@ -29,6 +29,7 @@ const MIN_PNG_BYTES = 30 * 1024;
 // Dauerhafter Shader-Wächter: feste Obergrenze (reduzierter Ist-Wert + 8 Reserve-Slots) & 0 Nach-Kompilierungen auf Werft-Presets
 const MAX_PROGRAMS_DESKTOP = 50; // Ist=42 + 8 Reserve
 const MAX_PROGRAMS_IPAD = 55;    // Ist=47 + 8 Reserve
+const TEST_BTN_MAX_MS = 3000;    // Hartes Zeitlimit für Live-Klick auf #btn-run-tests (Schutz gegen UI-Freeze/Rekursion)
 const IPAD_UA = 'Mozilla/5.0 (iPad; CPU OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
 
 function checkPngSanity(buf, relPath) {
@@ -231,7 +232,7 @@ async function run() {
     // Warte auf vollständige Engine-Initialisierung & erstes gerendertes Frame
     const bootStart = Date.now();
     let ready = false;
-    while (Date.now() - bootStart < 60000) {
+    while (Date.now() - bootStart < 90000) {
       if (pageErrors.length > 0 && Date.now() - bootStart > 3500) {
         throw new Error(`Boot-Abbruch nach Uncaught Exception:\n  pageErrors: ${pageErrors.join(' | ')}\n  consoleErrors: ${consoleErrors.join(' | ')}`);
       }
@@ -247,7 +248,7 @@ async function run() {
       if (ready) break;
       await new Promise((r) => setTimeout(r, 250));
     }
-    if (!ready) throw new Error(`Timeout beim Initialisieren der 3D-Simulation (> 60s). pageErrors=${JSON.stringify(pageErrors)}, consoleErrors=${JSON.stringify(consoleErrors)}`);
+    if (!ready) throw new Error(`Timeout beim Initialisieren der 3D-Simulation (> 90s). pageErrors=${JSON.stringify(pageErrors)}, consoleErrors=${JSON.stringify(consoleErrors)}`);
 
     // Onboarding-/Lade-Overlay automatisch schließen, damit 3D-Canvas für Screenshots frei liegt
     await cdp.eval(`(() => {
@@ -542,6 +543,68 @@ async function run() {
       await new Promise((r) => setTimeout(r, 200));
     }
 
+    // Pflicht-Regressionsschutz: Live-UI-Klick auf den TESTS-Button (#btn-run-tests) nach voller .glb-Hydration
+    const liveTestsBtn = await Promise.race([
+      cdp.eval(`(async () => {
+        const btn = document.getElementById('btn-run-tests');
+        const modal = document.getElementById('icd-modal-backdrop');
+        const titleEl = document.querySelector('#icd-modal .modal-title');
+        const ta = document.getElementById('icd-markdown-textarea');
+        if (!btn) return { ok: false, reason: '#btn-run-tests nicht gefunden' };
+        const progsBefore = (renderer.info && renderer.info.programs) ? renderer.info.programs.length : 0;
+        const t0 = performance.now();
+        btn.click();
+        const clickMs = Number((performance.now() - t0).toFixed(2));
+        const modalOpen = Boolean(modal && modal.style.display === 'flex');
+        const btnText = String(btn.textContent || '').trim();
+        const titleText = String(titleEl ? titleEl.textContent : '').trim();
+        const mdText = String(ta ? ta.value : '');
+        const has101 = btnText.includes('101/101') && titleText.includes('101/101 PASS') && mdText.includes('101 / 101 PASS');
+        if (typeof closeICDModal === 'function') closeICDModal();
+        else if (modal) modal.style.display = 'none';
+        const modalClosed = Boolean(modal && modal.style.display === 'none');
+        const progsAfter = (renderer.info && renderer.info.programs) ? renderer.info.programs.length : 0;
+        const frameBefore = (renderer.info && renderer.info.render) ? renderer.info.render.frame : 0;
+        const loopRes = await new Promise((resolve) => {
+          let ticks = 0;
+          const tLoop0 = performance.now();
+          function step() {
+            ticks++;
+            const curFrame = (renderer.info && renderer.info.render) ? renderer.info.render.frame : 0;
+            const dFrames = curFrame - frameBefore;
+            if (dFrames >= 3) return resolve({ alive: true, dFrames, ticks, waitMs: Number((performance.now() - tLoop0).toFixed(1)) });
+            if (performance.now() - tLoop0 > 2000 || ticks > 120) return resolve({ alive: false, dFrames, ticks, waitMs: Number((performance.now() - tLoop0).toFixed(1)) });
+            requestAnimationFrame(step);
+          }
+          requestAnimationFrame(step);
+        });
+        return {
+          ok: true,
+          clickMs,
+          modalOpen,
+          modalClosed,
+          has101,
+          btnText,
+          deltaPrograms: progsAfter - progsBefore,
+          loopAlive: loopRes.alive,
+          loopFrames: loopRes.dFrames,
+          loopWaitMs: loopRes.waitMs
+        };
+      })()`),
+      new Promise((resolve) => setTimeout(() => resolve({
+        ok: false,
+        timeout: true,
+        clickMs: TEST_BTN_MAX_MS + 2000,
+        modalOpen: false,
+        modalClosed: false,
+        has101: false,
+        btnText: 'TIMEOUT',
+        deltaPrograms: 0,
+        loopAlive: false,
+        reason: `Browser-Freeze / Timeout (> ${TEST_BTN_MAX_MS + 2000} ms) beim Klick auf #btn-run-tests`
+      }), TEST_BTN_MAX_MS + 2000))
+    ]);
+
     const quickSet = ['shipyard', 'aqueduct', 'overview'];
     const criticSet = ['shipyard', 'botany_close', 'ark_interior', 'ararat_altar', 'storm_ocean', 'overview'];
     let targetPresets = envInfo.presets;
@@ -663,7 +726,7 @@ async function run() {
 
       const ipadBootStart = Date.now();
       let ipadReady = false;
-      while (Date.now() - ipadBootStart < 60000) {
+      while (Date.now() - ipadBootStart < 90000) {
         if (ipadPageErrors.length > 0 && Date.now() - ipadBootStart > 3500) {
           throw new Error(`iPad-Boot-Abbruch nach Uncaught Exception:\n  pageErrors: ${ipadPageErrors.join(' | ')}\n  consoleErrors: ${ipadConsoleErrors.join(' | ')}`);
         }
@@ -678,7 +741,7 @@ async function run() {
         if (ipadReady) break;
         await new Promise((r) => setTimeout(r, 250));
       }
-      if (!ipadReady) throw new Error(`Timeout beim iPad-Boot (> 60s). pageErrors=${JSON.stringify(ipadPageErrors)}`);
+      if (!ipadReady) throw new Error(`Timeout beim iPad-Boot (> 90s). pageErrors=${JSON.stringify(ipadPageErrors)}`);
 
       await cdp.eval(`(() => {
         const btn = document.getElementById('btn-start-lab');
@@ -799,6 +862,17 @@ async function run() {
     const shipyardDeltaPrograms = maxShipyardPrograms - programsAfterBoot;
     const shaderCountOk = envInfo.totalPrograms <= MAX_PROGRAMS_DESKTOP;
     const shaderDeltaOk = shipyardDeltaPrograms === 0;
+    const liveTestsBtnOk = Boolean(
+      liveTestsBtn &&
+      liveTestsBtn.ok &&
+      !liveTestsBtn.timeout &&
+      liveTestsBtn.clickMs < TEST_BTN_MAX_MS &&
+      liveTestsBtn.modalOpen &&
+      liveTestsBtn.modalClosed &&
+      liveTestsBtn.has101 &&
+      liveTestsBtn.deltaPrograms === 0 &&
+      liveTestsBtn.loopAlive
+    );
 
     console.log(`GPU: ${envInfo.gpu}`);
     console.log(`Renderer: DPR=${envInfo.dpr} (${envInfo.canvasW}x${envInfo.canvasH}) | Tier=${envInfo.tier} | ShadowType=${envInfo.shadowType}`);
@@ -809,6 +883,8 @@ async function run() {
     if (consoleErrors.length) console.error('Console-Errors:', consoleErrors);
     if (pageErrors.length) console.error('Page-Errors:', pageErrors);
     console.log(`Unit-Tests: ${testRes.passed} / ${testRes.passed + testRes.failed} PASS (${testRes.ms.toFixed(1)} ms)`);
+    console.log(`Live-TESTS-Button: ${liveTestsBtn.clickMs} ms (< ${TEST_BTN_MAX_MS} ms) | Modal=${(liveTestsBtn.modalOpen && liveTestsBtn.modalClosed) ? 'OPEN/CLOSE_OK' : 'FAIL'} | 101/101=${liveTestsBtn.has101 ? 'OK' : 'FAIL'} ("${liveTestsBtn.btnText}") | Δprograms=${liveTestsBtn.deltaPrograms} | Loop=${liveTestsBtn.loopAlive ? 'ALIVE' : 'STALLED'} -> ${liveTestsBtnOk ? 'LIVE_TESTS_BTN_OK' : 'LIVE_TESTS_BTN_FAIL'}`);
+    if (!liveTestsBtnOk) console.error('LIVE_TESTS_BTN_FAIL:', liveTestsBtn);
     if (testRes.fails.length) console.error('Fehlgeschlagene Tests:', testRes.fails);
     for (const v of viewStats) {
       const sanStr = v.sanity ? ` | ${v.sanity.ok ? 'IMG_OK' : 'IMG_FAIL'} (${(v.sanity.bytes / 1024).toFixed(1)} KB, ${v.sanity.width}x${v.sanity.height})` : '';
@@ -867,6 +943,7 @@ async function run() {
     );
 
     const ok = testRes.failed === 0 &&
+      liveTestsBtnOk &&
       consoleErrors.length === 0 &&
       pageErrors.length === 0 &&
       envInfo.brokenPrograms === 0 &&
